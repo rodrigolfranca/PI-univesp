@@ -1,11 +1,20 @@
-import { ConfigService } from "@nestjs/config";
-import { Sequelize } from "sequelize-typescript";
-import { User } from "src/common/models/users.model";
+import { ConfigService } from '@nestjs/config';
+import { Sequelize } from 'sequelize-typescript';
+import {
+    Client,
+    DocumentTemplates,
+    Pop,
+    Procedure,
+    Professional,
+    Schedule,
+    Session,
+    User,
+} from 'src/common/models';
 
 export const DatabaseProvider = {
     provide: 'DATABASE_PROVIDER',
-    useFactory: async () => {
-        const configService = new ConfigService();
+    inject: [ConfigService],
+    useFactory: async (configService: ConfigService) => {
         const host = configService.get<string>('DB_HOST')!;
         const port = configService.get<number>('DB_PORT')!;
         const username = configService.get<string>('DB_USERNAME')!;
@@ -21,9 +30,18 @@ export const DatabaseProvider = {
             database,
         });
 
-        sequelize.addModels([User]);
-        sequelize.sync()
+        sequelize.addModels([
+            User,
+            Client,
+            Professional,
+            Pop,
+            Procedure,
+            Session,
+            DocumentTemplates,
+            Schedule,
+        ]);
 
+        await sequelize.sync();
         return sequelize;
-    }
-}
+    },
+};

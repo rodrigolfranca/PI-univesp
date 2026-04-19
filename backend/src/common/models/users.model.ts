@@ -1,4 +1,4 @@
-import { Column, DataType, Model, Table } from "sequelize-typescript";
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table({
     tableName: 'users',
@@ -6,46 +6,46 @@ import { Column, DataType, Model, Table } from "sequelize-typescript";
     paranoid: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    deletedAt: 'deleted_at'
+    deletedAt: 'deleted_at',
 })
 export class User extends Model {
     @Column({
         type: DataType.INTEGER,
         primaryKey: true,
         allowNull: false,
-        autoIncrement: true
+        autoIncrement: true,
     })
     declare id: number;
 
     @Column({
         type: DataType.STRING(100),
-        allowNull: false
+        allowNull: false,
     })
     name: string;
 
     @Column({
         type: DataType.STRING(11),
-        allowNull: false
+        allowNull: false,
     })
     document: string;
 
     @Column({
         type: DataType.STRING(11),
-        allowNull: false
+        allowNull: false,
     })
     phone_number: string;
 
     @Column({
         type: DataType.STRING(100),
         allowNull: false,
-        unique: true
+        unique: true,
     })
     email: string;
 
     @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
-        defaultValue: false
+        defaultValue: false,
     })
     email_confirmed: boolean;
 }

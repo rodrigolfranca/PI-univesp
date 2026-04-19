@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class EnvirontmentVariables {
     @IsNotEmpty()
@@ -35,7 +35,8 @@ export function validate(config: Record<string, unknown>) {
 
     for (const [key, value] of Object.entries(config)) {
         if (key in validatedConfig) {
-            validatedConfig[key as keyof EnvirontmentVariables] = value as never;
+            validatedConfig[key as keyof EnvirontmentVariables] =
+                value as never;
         }
     }
 
