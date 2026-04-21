@@ -34,7 +34,7 @@ This API coordinates users, clients, professionals, schedules, document template
 4. **Start Docker for database usage:**
 
     ```bash
-    docker compose --env-file .env.dev up postgres-service -d
+    docker compose --env-file=.env.dev up postgres-service -d
     ```
 
 5. **Run the application in development mode:**
