@@ -20,10 +20,9 @@ services:
             - .env.dev
         depends_on:
             - postgres-service
-        command:
-            - 'npm run start:dev'
+        command: ['npm', 'run', 'start:dev']
         ports:
-            - '${PORT}:80'
+            - '${PORT}:3000'
 
 volumes:
     postgres-service-data:
