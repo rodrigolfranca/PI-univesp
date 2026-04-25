@@ -23,7 +23,7 @@ services:
         command:
             - 'npm run start:dev'
         ports:
-            - '${PORT}:80'
+            - '${PORT}:${PORT}'
 
 volumes:
     postgres-service-data:
