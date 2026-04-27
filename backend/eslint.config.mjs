@@ -27,14 +27,6 @@ export default tseslint.config(
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-floating-promises': 'warn',
             '@typescript-eslint/no-unsafe-argument': 'warn',
-            'prettier/prettier': ['error', {
-                singleQuote: true,
-                printWidth: 80,
-                semi: true,
-                tabWidth: 4,
-                trailingComma: 'all',
-                bracketSpacing: false,
-            }],
         },
     },
 );

@@ -7,6 +7,7 @@ export class UsersListDTO {
         description: 'Número da página para paginação (padrão: 1)',
         example: 1,
         type: Number,
+        required: false,
     })
     @IsOptional()
     @Type(() => Number)
@@ -18,6 +19,7 @@ export class UsersListDTO {
         description: 'Número de itens por página para paginação (padrão: 10)',
         example: 10,
         type: Number,
+        required: false,
     })
     @IsOptional()
     @Type(() => Number)
