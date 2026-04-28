@@ -22,7 +22,7 @@ services:
     pi-backend:
         build:
             context: .
-            dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile.dev-full
         env_file:
             - .env.dev
         depends_on:

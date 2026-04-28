@@ -1,0 +1,27 @@
+services:
+    postgres-service:
+        image: postgres:17.9-alpine3.22
+        env_file:
+            - .env.dev
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - '${DB_PORT}:5432'
+        volumes:
+            - postgres-service-data:/var/lib/postgresql/data
+
+    pi-backend:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev-hybrid
+        env_file:
+            - .env.dev
+        depends_on:
+            - postgres-service
+        ports:
+            - '${PORT}:${PORT}'
+
+volumes:
+    postgres-service-data:
