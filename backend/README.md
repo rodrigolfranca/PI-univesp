@@ -2,65 +2,74 @@
 
 ## Description
 
-This API serves as the backend for our Integration Project App. It is a platform where clients can book appointments with an aesthetic professional. The professional, in turn, can manage their single schedule, employees, as well as the required documents for each service and the related Standard Operating Procedures (here named POPs).
+This API is the backend for our Integration Project App. It is a platform where clients can book appointments with an aesthetic professional. The professional, in turn, can manage their single schedule, employees, as well as the required documents for each service and the related Standard Operating Procedures (here named POPs).
 
 This API coordinates users, clients, professionals, schedules, document templates, sessions, procedures, and POP workflows.
 
 ## Prerequisites
 
-- **Node.js** (recommended: >= 22.X LTS) - Prefer version 22 for development
-- **npm** (Comes with Node.js package)
-- **Docker** and **Docker Compose**
-- **Git** (For version control and repository cloning)
+- **Docker Engine** and **Docker Compose**
+- **Git**
 
-## Installation
+## Development Architecture
+
+This project is fully containerized for development:
+
+- NestJS runs inside a Docker container
+- PostgreSQL runs in a separate container
+- Hot reload enabled via volume mounting
+- Backend waits for PostgreSQL healthcheck before starting
+- Environment variables are loaded via `.env.dev`
+
+## Running on Development Mode
 
 1. **Clone the repository:**
 
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/rodrigolfranca/PI-univesp.git
     cd PI-univesp/backend
     ```
 
-2. **Install dependencies:**
+2. **Set up environment variables:**
 
     ```bash
-    npm ci
+    cp .env.example .env.dev
     ```
 
-3. **Set up environment variables:**
-   Copy `.env.example` to `.env.dev` and fill in the values according to your needs.
-
-4. **Start Docker for database usage:**
+3. **Build and run Docker environment:**
 
     ```bash
-    docker compose --env-file=.env.dev up postgres-service -d
+    docker compose --env-file .env.dev up --build -d
     ```
 
-5. **Run the application in development mode:**
+### Access
+
+The application ports are defined in `.env.dev`.
+
+Default values:
+- Backend: http://localhost:3000
+- PostgreSQL: localhost:5432
+
+### Application Logs
+
+    Backend:
     ```bash
-    npm run start:dev
+    docker compose --env-file .env.dev logs -f pi-backend
     ```
 
-## Running the Application
+    Database:
+    ```bash
+    docker compose --env-file .env.dev logs -f postgres-service
+    ```
 
-### Local Development
+### Stop Environment
+
+    ```bash
+    docker compose --env-file .env.dev down
+    ```
+
+### Reset environment (clean database)
 
 ```bash
-# build tsc
-$ npm run build
-
-# development
-$ npm run start:dev
-
-# production
-$ npm run start
+docker compose --env-file .env.dev down -v
 ```
-
-> **On Windows, add `:w` at the end of the command.**<br>
-> Example: `npm run start:dev:w`
-
-## Main Scripts
-
-- `npm run start` Starts the application in production mode
-- `npm run start:dev` Starts the application in development mode
