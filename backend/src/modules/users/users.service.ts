@@ -17,7 +17,7 @@ export class UsersService {
         private readonly usersRepository: UsersRepository,
         private readonly clientsRepository: ClientsRepository,
         private readonly professionalsRepository: ProfessionalsRepository,
-    ) {}
+    ) { }
 
     async createUser(userCreateDTO: UsersCreateDTO) {
         return await this.usersRepository.create(userCreateDTO);
@@ -139,5 +139,9 @@ export class UsersService {
 
     async deleteUser(id: number) {
         return await this.usersRepository.delete(id);
+    }
+
+    async findByPhoneNumber(phone_number: string) {
+        return await this.usersRepository.findByPhoneNumber(phone_number);
     }
 }

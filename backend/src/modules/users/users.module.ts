@@ -13,5 +13,6 @@ import { UsersService } from './users.service';
         ClientsRepository,
         ProfessionalsRepository,
     ],
+    exports: [UsersService],
 })
-export class UsersModule {}
+export class UsersModule { }

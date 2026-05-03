@@ -12,7 +12,24 @@ services:
         volumes:
             - postgres-service-data:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+            test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME} -d ${DB_NAME}']
+            interval: 5s
+            timeout: 3s
+            retries: 5
+            start_period: 5s
+        restart: unless-stopped
+
+    redis-service:
+        image: redis:7.4-alpine3.22
+        env_file:
+            - .env.dev
+        command: redis-server
+        ports:
+            - '${REDIS_PORT}:6379'
+        volumes:
+            - redis-service-data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
             interval: 5s
             timeout: 3s
             retries: 5
@@ -28,6 +45,8 @@ services:
         depends_on:
             postgres-service:
                 condition: service_healthy
+            redis-service:
+                condition: service_healthy
         ports:
             - '${PORT}:${PORT}'
         volumes:
@@ -37,3 +56,4 @@ services:
 
 volumes:
     postgres-service-data:
+    redis-service-data:
