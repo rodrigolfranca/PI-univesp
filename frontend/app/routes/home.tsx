@@ -1,3 +1,4 @@
+import { Button } from "@mantine/core";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
@@ -8,5 +9,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return <h1>Bom dia</h1>;
+  return <Button>Bom dia</Button>;
 }
