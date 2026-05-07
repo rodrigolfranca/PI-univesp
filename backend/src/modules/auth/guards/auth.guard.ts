@@ -3,15 +3,15 @@ import {
     ExecutionContext,
     Inject,
     Injectable,
-    InternalServerErrorException,
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import Redis from 'ioredis/built/Redis';
+import { Redis } from 'ioredis';
 import { RequestWithUser } from 'src/common/types/request.type';
 import { UserWithType } from 'src/common/types/users.type';
+import { Utils } from 'src/common/utils/utils';
 import { UsersService } from 'src/modules/users/users.service';
 import { JwtPayload } from '../types/jwt-payload.interface';
 
@@ -63,9 +63,7 @@ export class AuthGuard implements CanActivate {
             return true;
         } catch (e) {
             this.logger.error(`Authentication failed: ${e}`);
-            throw new InternalServerErrorException(
-                'Error while trying to authenticate user',
-            );
+            Utils.handleError(e);
         }
     }
 
@@ -75,7 +73,7 @@ export class AuthGuard implements CanActivate {
             return payload;
         } catch (e) {
             this.logger.error(`Failed to verify JWT token: ${e}`);
-            throw new UnauthorizedException('Invalid or no token');
+            Utils.handleError(e);
         }
     }
 }

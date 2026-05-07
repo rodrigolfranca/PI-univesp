@@ -2,11 +2,11 @@ import {
     CanActivate,
     ExecutionContext,
     Injectable,
-    InternalServerErrorException,
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 import { RequestWithUser } from 'src/common/types/request.type';
+import { Utils } from 'src/common/utils/utils';
 
 @Injectable()
 export class ProfessionalOrSelfGuard implements CanActivate {
@@ -34,9 +34,7 @@ export class ProfessionalOrSelfGuard implements CanActivate {
             return true;
         } catch (e) {
             this.logger.error(`Authentication failed: ${e}`);
-            throw new InternalServerErrorException(
-                'Error while trying to authenticate user',
-            );
+            Utils.handleError(e);
         }
     }
 }
