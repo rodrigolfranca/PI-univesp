@@ -41,8 +41,8 @@ export class UsersController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Obtém um usuário por ID' })
-    async getUserById(@Param('id', ParseIntPipe) id: number) {
-        return await this.usersService.getUserById(id);
+    async findById(@Param('id', ParseIntPipe) id: number) {
+        return await this.usersService.findById(id);
     }
 
     @Patch(':id')

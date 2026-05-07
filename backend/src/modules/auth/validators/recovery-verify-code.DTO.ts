@@ -1,7 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumberString, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumberString, Matches } from 'class-validator';
 
-export class LoginVerifyCodeDTO {
+export class RecoveryVerifyCodeDTO {
+    @ApiProperty({
+        description: 'Endereço de email usado para recuperação.',
+        example: 'joao.silva@example.com',
+        type: String,
+    })
+    @IsNotEmpty()
+    @IsEmail()
+    email: string;
+
     @ApiProperty({
         description:
             'Número de telefone do usuário (apenas dígitos, 11 caracteres)',

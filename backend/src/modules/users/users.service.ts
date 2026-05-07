@@ -17,7 +17,7 @@ export class UsersService {
         private readonly usersRepository: UsersRepository,
         private readonly clientsRepository: ClientsRepository,
         private readonly professionalsRepository: ProfessionalsRepository,
-    ) { }
+    ) {}
 
     async createUser(userCreateDTO: UsersCreateDTO) {
         return await this.usersRepository.create(userCreateDTO);
@@ -108,7 +108,7 @@ export class UsersService {
         };
     }
 
-    async getUserById(id: number) {
+    async findById(id: number) {
         return await this.usersRepository.getById(id);
     }
 
@@ -143,5 +143,22 @@ export class UsersService {
 
     async findByPhoneNumber(phone_number: string) {
         return await this.usersRepository.findByPhoneNumber(phone_number);
+    }
+
+    async findByEmail(email: string) {
+        return await this.usersRepository.findByEmail(email);
+    }
+
+    async changePhoneNumber(id: number, phone_number: string) {
+        if (
+            !!(await this.usersRepository.findByPhoneNumber(phone_number)) &&
+            !(await this.usersRepository.isUserPhoneNumber(id, phone_number))
+        ) {
+            throw new BadRequestException('Número de telefone já cadastrado');
+        }
+
+        return await this.usersRepository.update(id, {
+            phone_number,
+        } as UserUpdateDTO);
     }
 }
