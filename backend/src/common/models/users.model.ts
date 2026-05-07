@@ -1,4 +1,5 @@
 import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
+import { UserWithType } from '../types/users.type';
 import { Client } from './clients.model';
 import { Professional } from './professionals.model';
 
@@ -69,4 +70,20 @@ export class User extends Model {
         as: 'client',
     })
     client?: Client;
+
+    public toJSON(): UserWithType {
+        const values: UserWithType = {
+            id: this.id,
+            name: this.name,
+            phone_number: this.phone_number,
+            phone_number_confirmed: this.phone_number_confirmed,
+            email: this.email,
+            email_confirmed: this.email_confirmed,
+        } as UserWithType;
+        values.professional = this.professional
+            ? this.professional.toJSON()
+            : undefined;
+        values.client = this.client ? this.client.toJSON() : undefined;
+        return values;
+    }
 }

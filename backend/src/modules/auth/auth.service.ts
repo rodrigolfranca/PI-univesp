@@ -22,21 +22,26 @@ export class AuthService {
     ) {}
 
     async requestCode(requestCodeDTO: LoginRequestCodeDTO) {
-        const { phone_number } = requestCodeDTO;
-        const user = await this.userService.findByPhoneNumber(phone_number);
+        try {
+            const { phone_number } = requestCodeDTO;
+            const user = await this.userService.findByPhoneNumber(phone_number);
 
-        if (!user) {
-            throw new NotFoundException('User not found');
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+
+            const code = this.cryptoService.generateCode();
+            await this.redis.setex(`auth_code:${phone_number}`, 300, code);
+
+            // Z-API integration to send the code via WhatsApp
+
+            this.logger.log(`Code for ${phone_number}: ${code}`); // For development purposes, log the code
+
+            return { message: 'Code sent successfully' };
+        } catch (e) {
+            this.logger.error(`Failed to request code: ${e}`);
+            throw e;
         }
-
-        const code = this.cryptoService.generateCode();
-        await this.redis.setex(`auth_code:${phone_number}`, 300, code);
-
-        // Z-API integration to send the code via WhatsApp
-
-        this.logger.log(`Code for ${phone_number}: ${code}`); // For development purposes, log the code
-
-        return { message: 'Code sent successfully' };
     }
 
     async verifyCode(verifyCodeDTO: LoginVerifyCodeDTO) {

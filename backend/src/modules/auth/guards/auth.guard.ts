@@ -3,14 +3,15 @@ import {
     ExecutionContext,
     Inject,
     Injectable,
+    InternalServerErrorException,
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import Redis from 'ioredis/built/Redis';
-import { User } from 'src/common/models';
 import { RequestWithUser } from 'src/common/types/request.type';
+import { UserWithType } from 'src/common/types/users.type';
 import { UsersService } from 'src/modules/users/users.service';
 import { JwtPayload } from '../types/jwt-payload.interface';
 
@@ -25,35 +26,47 @@ export class AuthGuard implements CanActivate {
     logger = new Logger(AuthGuard.name);
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest<Request>();
-        const token = request.headers.authorization?.split(' ')[1];
+        try {
+            const request = context.switchToHttp().getRequest<Request>();
+            const token = request.headers.authorization?.split(' ')[1];
 
-        if (!token) {
-            throw new UnauthorizedException('Invalid or no token');
+            if (!token) {
+                throw new UnauthorizedException('Invalid or no token');
+            }
+
+            const data = this.extractTokenData(token);
+
+            let user: UserWithType | null = null;
+
+            const cachedUser = await this.redis.get(`user:${data.id}`);
+            if (cachedUser) {
+                user = JSON.parse(cachedUser) as UserWithType;
+            }
+
+            if (!user) {
+                user =
+                    (await this.usersService.findById(data.id))?.toJSON() ??
+                    null;
+            }
+
+            if (!user) {
+                throw new UnauthorizedException('Invalid or no token');
+            }
+
+            await this.redis.setex(
+                `user:${data.id}`,
+                3600,
+                JSON.stringify(user),
+            );
+
+            (request as unknown as RequestWithUser).user = user;
+            return true;
+        } catch (e) {
+            this.logger.error(`Authentication failed: ${e}`);
+            throw new InternalServerErrorException(
+                'Error while trying to authenticate user',
+            );
         }
-
-        const data = this.extractTokenData(token);
-
-        let user: User | null = null;
-
-        const cachedUser = await this.redis.get(`user:${data.id}`);
-        if (cachedUser) {
-            user = JSON.parse(cachedUser) as User;
-        }
-
-        if (!user) {
-            user =
-                (await this.usersService.findById(data.id))?.toJSON() ?? null;
-        }
-
-        if (!user) {
-            throw new UnauthorizedException('Invalid or no token');
-        }
-
-        await this.redis.setex(`user:${data.id}`, 3600, JSON.stringify(user));
-
-        (request as unknown as RequestWithUser).user = user;
-        return true;
     }
 
     private extractTokenData(token: string): JwtPayload {
