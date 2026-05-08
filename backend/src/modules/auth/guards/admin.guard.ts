@@ -20,8 +20,6 @@ export class AdminGuard implements CanActivate {
                 .switchToHttp()
                 .getRequest<RequestWithUser>();
 
-            console.log(request.user)
-
             if (
                 !request.user ||
                 !request.user.professional ||
