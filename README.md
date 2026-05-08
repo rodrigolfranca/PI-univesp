@@ -1,0 +1,4 @@
+- https://code.visualstudio.com/
+- https://nodejs.org/en
+- https://git-scm.com/install/windows
+- https://cli.github.com/

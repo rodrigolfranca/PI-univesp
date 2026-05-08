@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiSchema } from '@nestjs/swagger';
 import { UsersList } from './types/users.interfaces';
 import { UsersService } from './users.service';
@@ -9,7 +19,7 @@ import { UserUpdateDTO } from './validation/users-update.DTO';
 @ApiSchema({ name: 'Users', description: 'Endpoints relacionados a usuários' })
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) { }
+    constructor(private readonly usersService: UsersService) {}
 
     @Post('client')
     @ApiOperation({ summary: 'Cria um novo cliente' })
@@ -31,20 +41,22 @@ export class UsersController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Obtém um usuário por ID' })
-    async getUserById(@Param('id') id: number) {
+    async getUserById(@Param('id', ParseIntPipe) id: number) {
         return await this.usersService.getUserById(id);
     }
 
     @Patch(':id')
     @ApiOperation({ summary: 'Atualiza um usuário por ID' })
-    async updateUser(@Param('id') id: number, @Body() userUpdateDTO: UserUpdateDTO) {
+    async updateUser(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() userUpdateDTO: UserUpdateDTO,
+    ) {
         return await this.usersService.updateUser(id, userUpdateDTO);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Exclui um usuário por ID' })
-    async deleteUser(@Param('id') id: number) {
+    async deleteUser(@Param('id', ParseIntPipe) id: number) {
         return await this.usersService.deleteUser(id);
     }
 }
-

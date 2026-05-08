@@ -1,4 +1,6 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
+import { Client } from './clients.model';
+import { Professional } from './professionals.model';
 
 @Table({
     tableName: 'users',
@@ -27,7 +29,7 @@ export class User extends Model {
         type: DataType.STRING(11),
         allowNull: true,
     })
-    document: string;
+    document: string | null;
 
     @Column({
         type: DataType.STRING(11),
@@ -55,4 +57,16 @@ export class User extends Model {
         defaultValue: false,
     })
     email_confirmed: boolean;
+
+    @HasOne(() => Professional, {
+        foreignKey: 'user_id',
+        as: 'professional',
+    })
+    professional?: Professional;
+
+    @HasOne(() => Client, {
+        foreignKey: 'user_id',
+        as: 'client',
+    })
+    client?: Client;
 }

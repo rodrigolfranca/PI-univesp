@@ -1,0 +1,39 @@
+services:
+    postgres-service:
+        image: postgres:17.9-alpine3.22
+        env_file:
+            - .env.dev
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - '${DB_PORT}:5432'
+        volumes:
+            - postgres-service-data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+            start_period: 5s
+        restart: unless-stopped
+
+    pi-backend:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev-full
+        env_file:
+            - .env.dev
+        depends_on:
+            postgres-service:
+                condition: service_healthy
+        ports:
+            - '${PORT}:${PORT}'
+        volumes:
+            - .:/app
+            - /app/node_modules
+        restart: unless-stopped
+
+volumes:
+    postgres-service-data:

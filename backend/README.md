@@ -2,9 +2,11 @@
 
 ## Description
 
-This API serves as the backend for our Integration Project App. It is a platform where clients can book appointments with an aesthetic professional. The professional, in turn, can manage their single schedule, employees, as well as the required documents for each service and the related Standard Operating Procedures (here named POPs).
+This API is the backend for our Integration Project App. It is a platform where clients can book appointments with an aesthetic professional. The professional, in turn, can manage their single schedule, employees, as well as the required documents for each service and the related Standard Operating Procedures (here named POPs).
 
 This API coordinates users, clients, professionals, schedules, document templates, sessions, procedures, and POP workflows.
+
+---
 
 ## Prerequisites
 
@@ -13,54 +15,107 @@ This API coordinates users, clients, professionals, schedules, document template
 - **Docker** and **Docker Compose**
 - **Git** (For version control and repository cloning)
 
-## Installation
+---
 
-1. **Clone the repository:**
+## Setup
 
-    ```bash
-    git clone <repository-url>
-    cd PI-univesp/backend
-    ```
-
-2. **Install dependencies:**
-
-    ```bash
-    npm ci
-    ```
-
-3. **Set up environment variables:**
-   Copy `.env.example` to `.env.dev` and fill in the values according to your needs.
-
-4. **Start Docker for database usage:**
-
-    ```bash
-    docker compose --env-file=.env.dev up postgres-service -d
-    ```
-
-5. **Run the application in development mode:**
-    ```bash
-    npm run start:dev
-    ```
-
-## Running the Application
-
-### Local Development
+1. Clone the repository:
 
 ```bash
-# build tsc
-$ npm run build
-
-# development
-$ npm run start:dev
-
-# production
-$ npm run start
+git clone <repository-url>
+cd PI-univesp/backend
 ```
 
-> **On Windows, add `:w` at the end of the command.**<br>
-> Example: `npm run start:dev:w`
+2. Set up environment variables:
 
-## Main Scripts
+```bash
+cp .env.example .env.dev
+```
 
-- `npm run start` Starts the application in production mode
-- `npm run start:dev` Starts the application in development mode
+Fill in the values in `.env.dev` according to your needs.
+
+---
+
+## Development Modes
+
+This project supports two development modes:
+
+---
+
+### 1. Hybrid Mode
+
+In this mode, only PostgreSQL runs inside a Docker container:
+
+- NestJS runs locally on your machine
+- PostgreSQL runs in Docker
+- Faster hot reload and easier debugging
+- Environment variables are loaded via `.env.dev`
+
+#### Install dependencies:
+
+```bash
+npm ci
+```
+
+#### Start Docker for database usage:
+
+```bash
+docker compose -f docker-compose.dev-hybrid.yml --env-file=.env.dev up postgres-service -d
+```
+
+#### Run the application in development mode:
+
+```bash
+npm run start:dev
+```
+
+---
+
+### 2. Full Docker Mode
+
+In this mode, everything runs inside containers:
+
+- NestJS runs inside a Docker container
+- PostgreSQL runs in a separate container
+- Hot reload enabled via volume mounting
+- Backend waits for PostgreSQL healthcheck before starting
+- Environment variables are loaded via `.env.dev`
+
+#### Build and run Docker environment:
+
+```bash
+docker compose -f docker-compose.dev-full.yml --env-file .env.dev up --build -d
+```
+
+#### Backend Logs:
+```bash
+docker compose -f docker-compose.dev-full.yml --env-file .env.dev logs -f pi-backend
+```
+
+#### Database Logs:
+```bash
+docker compose -f docker-compose.dev-full.yml --env-file .env.dev logs -f postgres-service
+```
+
+#### Stop Environment
+
+```bash
+docker compose -f docker-compose.dev-full.yml --env-file .env.dev down
+```
+
+#### Reset environment (clean database)
+
+```bash
+docker compose -f docker-compose.dev-full.yml --env-file .env.dev down -v
+```
+
+---
+
+## Access
+
+The application ports are defined in `.env.dev`.
+
+Default values:
+
+- Backend: http://localhost:3000
+- PostgreSQL: localhost:5432
