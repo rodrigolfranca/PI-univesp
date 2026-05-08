@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Redis } from 'ioredis';
 import { CryptoService } from 'src/common/crypto/crypto.service';
@@ -20,7 +20,7 @@ export class AuthService {
         private readonly cryptoService: CryptoService,
         private readonly jwtService: JwtService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
-    ) {}
+    ) { }
 
     async requestCode(requestCodeDTO: LoginRequestCodeDTO) {
         try {
@@ -28,7 +28,8 @@ export class AuthService {
             const user = await this.userService.findByPhoneNumber(phone_number);
 
             if (!user) {
-                throw new NotFoundException('User not found');
+                this.logger.warn(`User with phone number ${phone_number} not found.`);
+                return { message: 'If the phone number is registered, a code was sent' };
             }
 
             const code = this.cryptoService.generateCode();
@@ -38,7 +39,7 @@ export class AuthService {
 
             this.logger.log(`Code for ${phone_number}: ${code}`); // For development purposes, log the code
 
-            return { message: 'Code sent successfully' };
+            return { message: 'If the phone number is registered, a code was sent' };
         } catch (e) {
             this.logger.error(`Failed to request code: ${e}`);
             Utils.handleError(e);
@@ -51,7 +52,9 @@ export class AuthService {
             const user = await this.userService.findByPhoneNumber(phone_number);
 
             if (!user) {
-                throw new NotFoundException('User not found');
+                throw new UnauthorizedException(
+                    'Invalid or expired verification code',
+                );
             }
 
             const storedCode = await this.redis.get(
@@ -59,7 +62,7 @@ export class AuthService {
             );
 
             if (!storedCode || storedCode !== verification_code) {
-                throw new NotFoundException(
+                throw new UnauthorizedException(
                     'Invalid or expired verification code',
                 );
             }
@@ -79,7 +82,8 @@ export class AuthService {
             const user = await this.userService.findByEmail(email);
 
             if (!user) {
-                throw new NotFoundException('User not found');
+                this.logger.warn(`User with email ${email} not found.`);
+                return { message: 'If the email is registered, a recovery code was sent' };
             }
 
             const code = this.cryptoService.generateCode();
@@ -89,7 +93,7 @@ export class AuthService {
 
             this.logger.log(`Recovery code for ${email}: ${code}`); // For development purposes, log the code
 
-            return { message: 'Recovery code sent successfully' };
+            return { message: 'If the email is registered, a recovery code was sent' };
         } catch (e) {
             this.logger.error(`Failed to request recovery code: ${e}`);
             Utils.handleError(e);
@@ -103,13 +107,16 @@ export class AuthService {
             const user = await this.userService.findByEmail(email);
 
             if (!user) {
-                throw new NotFoundException('User not found');
+                this.logger.warn(`User with email ${email} not found.`);
+                throw new UnauthorizedException(
+                    'Invalid or expired verification code',
+                );
             }
 
             const storedCode = await this.redis.get(`recovery_code:${email}`);
 
             if (!storedCode || storedCode !== verification_code) {
-                throw new NotFoundException(
+                throw new UnauthorizedException(
                     'Invalid or expired verification code',
                 );
             }

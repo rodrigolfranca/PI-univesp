@@ -26,7 +26,7 @@ import { UserUpdateDTO } from './validation/users-update.DTO';
 @ApiSchema({ name: 'Users', description: 'Endpoints relacionados a usuários' })
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
+    constructor(private readonly usersService: UsersService) { }
 
     @Post('client')
     @ApiOperation({ summary: 'Cria um novo cliente' })

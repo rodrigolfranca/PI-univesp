@@ -10,7 +10,7 @@ import { Utils } from 'src/common/utils/utils';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
-    constructor() {}
+    constructor() { }
 
     logger = new Logger(AdminGuard.name);
 
@@ -19,6 +19,8 @@ export class AdminGuard implements CanActivate {
             const request = context
                 .switchToHttp()
                 .getRequest<RequestWithUser>();
+
+            console.log(request.user)
 
             if (
                 !request.user ||

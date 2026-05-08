@@ -24,52 +24,52 @@ export class User extends Model {
         type: DataType.STRING(150),
         allowNull: false,
     })
-    name: string;
+    declare name: string;
 
     @Column({
         type: DataType.STRING(11),
         allowNull: true,
     })
-    document: string | null;
+    declare document: string | null;
 
     @Column({
         type: DataType.STRING(11),
         allowNull: false,
     })
-    phone_number: string;
+    declare phone_number: string;
 
     @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
         defaultValue: false,
     })
-    phone_number_confirmed: boolean;
+    declare phone_number_confirmed: boolean;
 
     @Column({
         type: DataType.STRING(100),
         allowNull: false,
         unique: true,
     })
-    email: string;
+    declare email: string;
 
     @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
         defaultValue: false,
     })
-    email_confirmed: boolean;
+    declare email_confirmed: boolean;
 
     @HasOne(() => Professional, {
         foreignKey: 'user_id',
         as: 'professional',
     })
-    professional?: Professional;
+    declare professional?: Professional;
 
     @HasOne(() => Client, {
         foreignKey: 'user_id',
         as: 'client',
     })
-    client?: Client;
+    declare client?: Client;
 
     public toJSON(): UserWithType {
         const values: UserWithType = {
@@ -81,9 +81,12 @@ export class User extends Model {
             email_confirmed: this.email_confirmed,
         } as UserWithType;
         values.professional = this.professional
-            ? this.professional.toJSON()
+            ? {
+                id: this.professional.id,
+                is_admin: this.professional.is_admin,
+            }
             : undefined;
-        values.client = this.client ? this.client.toJSON() : undefined;
+        values.client = this.client ? { id: this.client.id } : undefined;
         return values;
     }
 }

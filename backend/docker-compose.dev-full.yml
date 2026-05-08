@@ -20,7 +20,7 @@ services:
         restart: unless-stopped
 
     redis-service:
-        image: redis:7.4-alpine3.22
+        image: redis:8.6.3-alpine
         env_file:
             - .env.dev
         command: redis-server

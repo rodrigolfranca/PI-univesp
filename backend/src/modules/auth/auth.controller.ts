@@ -12,7 +12,7 @@ import { RecoveryVerifyCodeDTO } from './validators/recovery-verify-code.DTO';
 })
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService) { }
 
     @Post('request-code')
     @ApiOperation({
@@ -30,7 +30,7 @@ export class AuthController {
         return await this.authService.verifyCode(loginVerifyCodeDTO);
     }
 
-    @Post('/recovery/request-code')
+    @Post('recovery/request-code')
     @ApiOperation({
         summary:
             "Request a account recovery code to be sent to the user's email",
@@ -43,7 +43,7 @@ export class AuthController {
         );
     }
 
-    @Post('/recovery/verify-code')
+    @Post('recovery/verify-code')
     @ApiOperation({
         summary:
             "Verify the account recovery code sent to the user's email and set new phone number",
