@@ -41,7 +41,11 @@ export const DatabaseProvider = {
             Schedule,
         ]);
 
-        await sequelize.sync();
+        await sequelize.sync(
+            {
+                alter: true,
+            }
+        );
         return sequelize;
     },
 };

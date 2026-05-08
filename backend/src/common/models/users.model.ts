@@ -18,14 +18,14 @@ export class User extends Model {
     declare id: number;
 
     @Column({
-        type: DataType.STRING(100),
+        type: DataType.STRING(150),
         allowNull: false,
     })
     name: string;
 
     @Column({
         type: DataType.STRING(11),
-        allowNull: false,
+        allowNull: true,
     })
     document: string;
 
@@ -34,6 +34,13 @@ export class User extends Model {
         allowNull: false,
     })
     phone_number: string;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    })
+    phone_number_confirmed: boolean;
 
     @Column({
         type: DataType.STRING(100),
