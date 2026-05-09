@@ -21,7 +21,7 @@ services:
         depends_on:
             - postgres-service
         ports:
-            - '${PORT}:3000'
+            - '${PORT}:${PORT}'
 
 volumes:
     postgres-service-data:
