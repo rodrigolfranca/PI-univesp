@@ -5,30 +5,30 @@ import { UpdateProcedureDto } from './dto/update-procedure.dto';
 
 @Controller('procedures')
 export class ProceduresController {
-  constructor(private readonly proceduresService: ProceduresService) {}
+    constructor(private readonly proceduresService: ProceduresService) {}
 
-  @Post()
-  create(@Body() createProcedureDto: CreateProcedureDto) {
-    return this.proceduresService.create(createProcedureDto);
-  }
+    @Post()
+    create(@Body() createProcedureDto: CreateProcedureDto) {
+        return this.proceduresService.create(createProcedureDto);
+    }
 
-  @Get()
-  findAll() {
-    return this.proceduresService.findAll();
-  }
+    @Get()
+    findAll() {
+        return this.proceduresService.findAll();
+    }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.proceduresService.findOne(+id);
-  }
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.proceduresService.findOne(+id);
+    }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProcedureDto: UpdateProcedureDto) {
-    return this.proceduresService.update(+id, updateProcedureDto);
-  }
+    @Patch(':id')
+    update(@Param('id') id: string, @Body() updateProcedureDto: UpdateProcedureDto) {
+        return this.proceduresService.update(+id, updateProcedureDto);
+    }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.proceduresService.remove(+id);
-  }
+    @Delete(':id')
+    remove(@Param('id') id: string) {
+        return this.proceduresService.remove(+id);
+    }
 }
