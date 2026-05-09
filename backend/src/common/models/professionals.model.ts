@@ -28,15 +28,15 @@ export class Professional extends Model {
         type: DataType.INTEGER,
         allowNull: false,
     })
-    user_id: number;
+    declare user_id: number;
 
     @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
         defaultValue: false,
     })
-    is_admin: boolean;
+    declare is_admin: boolean;
 
     @BelongsTo(() => User, 'user_id')
-    user: User;
+    declare user: User;
 }

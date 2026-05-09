@@ -28,20 +28,20 @@ export class Pop extends Model {
         type: DataType.INTEGER,
         allowNull: false,
     })
-    procedure_id: number;
+    declare procedure_id: number;
 
     @Column({
         type: DataType.BLOB,
         allowNull: false,
     })
-    base64: Buffer;
+    declare base64: Buffer;
 
     @Column({
         type: DataType.STRING,
         allowNull: false,
     })
-    name: string;
+    declare name: string;
 
     @BelongsTo(() => Procedure, 'procedure_id')
-    procedure: Procedure;
+    declare procedure: Procedure;
 }

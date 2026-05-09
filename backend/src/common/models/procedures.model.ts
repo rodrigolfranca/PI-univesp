@@ -21,47 +21,47 @@ export class Procedure extends Model {
         type: DataType.STRING,
         allowNull: false,
     })
-    name: string;
+    declare name: string;
 
     @Column({
         type: DataType.STRING,
         allowNull: false,
     })
-    description: string;
+    declare description: string;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
     })
-    duration_minutes: number;
+    declare duration_minutes: number;
 
     @Column({
         type: DataType.FLOAT,
         allowNull: false,
     })
-    price: number;
+    declare price: number;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
     })
-    sessions: number;
+    declare sessions: number;
 
     @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
     })
-    triagem: boolean;
+    declare triagem: boolean;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
     })
-    triagem_minutes: number;
+    declare triagem_minutes: number;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: true,
     })
-    bloqueio_periodo: number | null;
+    declare bloqueio_periodo: number | null;
 }

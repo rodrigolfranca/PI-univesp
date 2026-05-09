@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+    IsNotEmpty,
+    IsNumber,
+    IsNumberString,
+    IsString,
+} from 'class-validator';
 
 export class EnvirontmentVariables {
     @IsNotEmpty()
@@ -28,6 +34,20 @@ export class EnvirontmentVariables {
     @IsNotEmpty()
     @IsString()
     DB_NAME: string;
+
+    @IsNotEmpty()
+    @IsString()
+    REDIS_HOST: string;
+
+    @IsNotEmpty()
+    @IsNumberString()
+    @Transform(({ value }) => parseInt(String(value), 10))
+    @IsNumber()
+    REDIS_PORT: number;
+
+    @IsNotEmpty()
+    @IsString()
+    JWT_SECRET: string;
 }
 
 export function validate(config: Record<string, unknown>) {
