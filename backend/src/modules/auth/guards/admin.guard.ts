@@ -10,7 +10,7 @@ import { Utils } from 'src/common/utils/utils';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
-    constructor() { }
+    constructor() {}
 
     logger = new Logger(AdminGuard.name);
 

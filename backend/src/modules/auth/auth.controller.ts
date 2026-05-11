@@ -12,7 +12,7 @@ import { RecoveryVerifyCodeDTO } from './validators/recovery-verify-code.DTO';
 })
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(private readonly authService: AuthService) {}
 
     @Post('request-code')
     @ApiOperation({

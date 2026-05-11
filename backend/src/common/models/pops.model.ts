@@ -42,6 +42,12 @@ export class Pop extends Model {
     })
     declare name: string;
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    declare mime_type: string | null;
+
     @BelongsTo(() => Procedure, 'procedure_id')
     declare procedure: Procedure;
 }
