@@ -1,58 +1,81 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PopsController } from './pops.controller';
 import { PopsService } from './pops.service';
+import { AuthGuard, AdminGuard } from 'src/modules/auth/guards';
 
 describe('PopsController', () => {
-  let controller: PopsController;
-  const mockService = {
-    createPop: jest.fn(),
-    list: jest.fn(),
-    getById: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  };
+    let controller: PopsController;
+    const mockService = {
+        createPop: jest.fn(),
+        list: jest.fn(),
+        getById: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+    };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [PopsController],
-      providers: [{ provide: PopsService, useValue: mockService }],
-    }).compile();
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [PopsController],
+            providers: [{ provide: PopsService, useValue: mockService }],
+        })
+            .overrideGuard(AuthGuard)
+            .useValue({ canActivate: () => true })
+            .overrideGuard(AdminGuard)
+            .useValue({ canActivate: () => true })
+            .compile();
 
-    controller = module.get<PopsController>(PopsController);
-  });
+        controller = module.get<PopsController>(PopsController);
+    });
 
-  afterEach(() => jest.restoreAllMocks());
+    afterEach(() => jest.restoreAllMocks());
 
-  it('create calls service.createPop', async () => {
-    const dto = { procedure_id: 1, name: 'a.pdf', base64: 'JVBERi0xLjQK' } as any;
-    mockService.createPop.mockResolvedValue({ id: 1 });
-    await expect(controller.create(dto)).resolves.toEqual({ id: 1 });
-    expect(mockService.createPop).toHaveBeenCalledWith(dto);
-  });
+    it('create calls service.createPop', async () => {
+        const dto = { procedure_id: 1, name: 'a.pdf' } as any;
+        const file = { buffer: Buffer.from('...') } as any;
+        mockService.createPop.mockResolvedValue({ id: 1 });
+        await expect(controller.create(dto, file)).resolves.toEqual({ id: 1 });
+        expect(mockService.createPop).toHaveBeenCalledWith(dto, file);
+    });
 
-  it('list calls service.list', async () => {
-    const query = { page: 1, limit: 10 } as any;
-    mockService.list.mockResolvedValue({ total: 0, pops: [], page: 1, limit: 10 });
-    await expect(controller.list(query)).resolves.toEqual({ total: 0, pops: [], page: 1, limit: 10 });
-    expect(mockService.list).toHaveBeenCalledWith(query);
-  });
+    it('list calls service.list', async () => {
+        const query = { page: 1, limit: 10 } as any;
+        mockService.list.mockResolvedValue({
+            total: 0,
+            pops: [],
+            page: 1,
+            limit: 10,
+        });
+        await expect(controller.list(query)).resolves.toEqual({
+            total: 0,
+            pops: [],
+            page: 1,
+            limit: 10,
+        });
+        expect(mockService.list).toHaveBeenCalledWith(query);
+    });
 
-  it('get calls service.getById', async () => {
-    mockService.getById.mockResolvedValue({ id: 3 });
-    await expect(controller.get(3)).resolves.toEqual({ id: 3 });
-    expect(mockService.getById).toHaveBeenCalledWith(3);
-  });
+    it('get calls service.getById', async () => {
+        mockService.getById.mockResolvedValue({ id: 3 });
+        await expect(controller.get(3)).resolves.toEqual({ id: 3 });
+        expect(mockService.getById).toHaveBeenCalledWith(3);
+    });
 
-  it('update calls service.update', async () => {
-    const dto = { name: 'updated.pdf' } as any;
-    mockService.update.mockResolvedValue({ id: 3, name: 'updated.pdf' });
-    await expect(controller.update(3, dto)).resolves.toEqual({ id: 3, name: 'updated.pdf' });
-    expect(mockService.update).toHaveBeenCalledWith(3, dto);
-  });
+    it('update calls service.update', async () => {
+        const dto = { name: 'updated.pdf' } as any;
+        const file = { buffer: Buffer.from('...') } as any;
+        mockService.update.mockResolvedValue({ id: 3, name: 'updated.pdf' });
+        await expect(controller.update(3, dto, file)).resolves.toEqual({
+            id: 3,
+            name: 'updated.pdf',
+        });
+        expect(mockService.update).toHaveBeenCalledWith(3, dto, file);
+    });
 
-  it('remove calls service.delete', async () => {
-    mockService.delete.mockResolvedValue({ message: 'POP deleted' });
-    await expect(controller.remove(3)).resolves.toEqual({ message: 'POP deleted' });
-    expect(mockService.delete).toHaveBeenCalledWith(3);
-  });
+    it('remove calls service.delete', async () => {
+        mockService.delete.mockResolvedValue({ message: 'POP deleted' });
+        await expect(controller.remove(3)).resolves.toEqual({
+            message: 'POP deleted',
+        });
+        expect(mockService.delete).toHaveBeenCalledWith(3);
+    });
 });

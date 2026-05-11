@@ -82,9 +82,9 @@ export class User extends Model {
         } as UserWithType;
         values.professional = this.professional
             ? {
-                id: this.professional.id,
-                is_admin: this.professional.is_admin,
-            }
+                  id: this.professional.id,
+                  is_admin: this.professional.is_admin,
+              }
             : undefined;
         values.client = this.client ? { id: this.client.id } : undefined;
         return values;

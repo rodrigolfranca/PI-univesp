@@ -16,7 +16,7 @@ import { PopsModule } from 'src/modules/pops/pops.module';
         DatabaseModule,
         UsersModule,
         PopsModule,
-        AuthModule
+        AuthModule,
     ],
 })
-export class CoreModule { }
+export class CoreModule {}

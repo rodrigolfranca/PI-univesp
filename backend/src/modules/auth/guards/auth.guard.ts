@@ -21,7 +21,7 @@ export class AuthGuard implements CanActivate {
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
-    ) { }
+    ) {}
 
     logger = new Logger(AuthGuard.name);
 

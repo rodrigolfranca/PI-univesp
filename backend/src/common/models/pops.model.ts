@@ -40,7 +40,7 @@ export class Pop extends Model {
         type: DataType.STRING,
         allowNull: false,
     })
-        declare name: string;
+    declare name: string;
 
     @Column({
         type: DataType.STRING,

@@ -57,6 +57,10 @@ pids
 .env.prod
 .env.staging
 .env.test
+.env.hybrid
+
+# files
+*.pdf
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
