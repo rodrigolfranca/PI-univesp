@@ -13,11 +13,8 @@ async function bootstrap() {
             transformOptions: { enableImplicitConversion: true },
         }),
     );
-    SwaggerModule.setup(
-        'documentation',
-        app,
-        SwaggerModule.createDocument(app, swaggerConfig),
-    );
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('documentation', app, document);
     await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

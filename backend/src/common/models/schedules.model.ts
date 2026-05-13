@@ -22,41 +22,41 @@ export class Schedule extends Model {
         type: DataType.INTEGER,
         allowNull: false,
     })
-    session_id: number;
+    declare session_id: number;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
     })
-    professional_id: number;
+    declare professional_id: number;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
     })
-    client_id: number;
+    declare client_id: number;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
     })
-    document_id: number;
+    declare document_id: number;
 
     @Column({
         type: DataType.DATE,
         allowNull: false,
     })
-    date: Date;
+    declare date: Date;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
     })
-    session: number;
+    declare session: number;
 
     @Column({
         type: DataType.ENUM(...Object.values(ScheduleStatus)),
         allowNull: false,
     })
-    status: string;
+    declare status: string;
 }

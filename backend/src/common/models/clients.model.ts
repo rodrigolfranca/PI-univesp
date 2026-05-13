@@ -28,8 +28,8 @@ export class Client extends Model {
         type: DataType.INTEGER,
         allowNull: false,
     })
-    user_id: number;
+    declare user_id: number;
 
     @BelongsTo(() => User, 'user_id')
-    user: User;
+    declare user: User;
 }
