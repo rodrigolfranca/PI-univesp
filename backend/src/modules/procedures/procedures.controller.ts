@@ -1,34 +1,41 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { ApiOperation, ApiSchema } from '@nestjs/swagger';
 import { ProceduresService } from './procedures.service';
-import { CreateProcedureDto } from './dto/create-procedure.dto';
-import { UpdateProcedureDto } from './dto/update-procedure.dto';
+import { CreateProcedureDto } from './validation/create-procedure.dto';
+import { UpdateProcedureDto } from './validation/update-procedure.dto';
 
+@ApiSchema({ name: 'Procedures', description: 'Endpoints relacionados aos procedimentos' })
 @Controller('procedures')
 export class ProceduresController {
-    constructor(private readonly proceduresService: ProceduresService) {}
+    constructor(private readonly proceduresService: ProceduresService) { }
 
     @Post()
+    @ApiOperation({ summary: 'Cria um novo procedimento' })
     create(@Body() createProcedureDto: CreateProcedureDto) {
         return this.proceduresService.create(createProcedureDto);
     }
 
     @Get()
+    @ApiOperation({ summary: 'Lista todos os procedimentos' })
     findAll() {
         return this.proceduresService.findAll();
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
+    @ApiOperation({ summary: 'Obtém um procedimento' })
+    findOne(@Param('id', ParseIntPipe) id: string) {
         return this.proceduresService.findOne(+id);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateProcedureDto: UpdateProcedureDto) {
+    @ApiOperation({ summary: 'Atualiza um procedimento' })
+    update(@Param('id', ParseIntPipe) id: string, @Body() updateProcedureDto: UpdateProcedureDto) {
         return this.proceduresService.update(+id, updateProcedureDto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string) {
+    @ApiOperation({ summary: 'Remove um procedimento' })
+    remove(@Param('id', ParseIntPipe) id: string) {
         return this.proceduresService.remove(+id);
     }
 }

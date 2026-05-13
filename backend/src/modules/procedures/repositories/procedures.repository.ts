@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Procedure } from 'src/common/models';
-import { CreateProcedureDto } from '../dto/create-procedure.dto';
-import { UpdateProcedureDto } from '../dto/update-procedure.dto';
+import { CreateProcedureDto } from '../validation/create-procedure.dto';
+import { UpdateProcedureDto } from '../validation/update-procedure.dto';
 
 @Injectable()
 export class ProceduresRepository {

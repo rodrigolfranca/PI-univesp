@@ -1,10 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiSchema } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginRequestCodeDTO } from './validators/login-request-code.DTO';
-import { LoginVerifyCodeDTO } from './validators/login-verify-code.DTO';
-import { RecoveryRequestCodeDTO } from './validators/recovery-request-code.DTO';
-import { RecoveryVerifyCodeDTO } from './validators/recovery-verify-code.DTO';
+import { LoginRequestCodeDTO } from './validation/login-request-code.DTO';
+import { LoginVerifyCodeDTO } from './validation/login-verify-code.DTO';
+import { RecoveryRequestCodeDTO } from './validation/recovery-request-code.DTO';
+import { RecoveryVerifyCodeDTO } from './validation/recovery-verify-code.DTO';
 
 @ApiSchema({
     name: 'Auth',

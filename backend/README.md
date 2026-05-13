@@ -60,7 +60,7 @@ npm ci
 #### Start Docker for database usage:
 
 ```bash
-docker compose -f docker-compose.dev-hybrid.yml --env-file=.env.dev up postgres-service -d
+docker compose --env-file=.env.dev up postgres-service redis-service -d
 ```
 
 #### Run the application in development mode:
@@ -84,17 +84,22 @@ In this mode, everything runs inside containers:
 #### Build and run Docker environment:
 
 ```bash
-docker compose -f docker-compose.dev-full.yml --env-file .env.dev up --build -d
+docker compose --env-file .env.dev up --build -d
 ```
 
 #### Backend Logs:
 ```bash
-docker compose -f docker-compose.dev-full.yml --env-file .env.dev logs -f pi-backend
+docker compose --env-file .env.dev logs -f pi-backend
 ```
 
 #### Database Logs:
 ```bash
-docker compose -f docker-compose.dev-full.yml --env-file .env.dev logs -f postgres-service
+docker compose --env-file .env.dev logs -f postgres-service
+```
+
+#### Database Logs:
+```bash
+docker compose --env-file .env.dev logs -f redis-service
 ```
 
 #### Stop Environment
@@ -106,7 +111,7 @@ docker compose -f docker-compose.dev-full.yml --env-file .env.dev down
 #### Reset environment (clean database)
 
 ```bash
-docker compose -f docker-compose.dev-full.yml --env-file .env.dev down -v
+docker compose --env-file .env.dev down -v
 ```
 
 ---

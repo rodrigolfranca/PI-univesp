@@ -17,7 +17,6 @@ services:
             timeout: 3s
             retries: 5
             start_period: 5s
-        restart: unless-stopped
 
     redis-service:
         image: redis:8.6.3-alpine
@@ -34,7 +33,6 @@ services:
             timeout: 3s
             retries: 5
             start_period: 5s
-        restart: unless-stopped
 
     pi-backend:
         build:
@@ -52,7 +50,6 @@ services:
         volumes:
             - .:/app
             - /app/node_modules
-        restart: unless-stopped
 
 volumes:
     postgres-service-data:
