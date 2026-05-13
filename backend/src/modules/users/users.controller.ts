@@ -10,7 +10,7 @@ import {
     Query,
     UseGuards,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiSchema } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
 import {
     AdminGuard,
     AdminOrSelfGuard,
@@ -42,10 +42,7 @@ export class UsersController {
 
     @Get()
     @UseGuards(AuthGuard, AdminGuard)
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Token de autenticação no formato Bearer <token>',
-    })
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Lista todos os usuários' })
     async listUsers(@Query() usersListDTO: UsersListDTO): Promise<UsersList> {
         return await this.usersService.listUsers(usersListDTO);
@@ -53,21 +50,15 @@ export class UsersController {
 
     @Get(':id')
     @UseGuards(AuthGuard, ProfessionalOrSelfGuard)
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Obtém um usuário por ID' })
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Token de autenticação no formato Bearer <token>',
-    })
     async findById(@Param('id', ParseIntPipe) id: number) {
         return await this.usersService.findById(id);
     }
 
     @Patch(':id')
     @UseGuards(AuthGuard, AdminOrSelfGuard)
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Token de autenticação no formato Bearer <token>',
-    })
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Atualiza um usuário por ID' })
     async updateUser(
         @Param('id', ParseIntPipe) id: number,
@@ -78,10 +69,7 @@ export class UsersController {
 
     @Delete(':id')
     @UseGuards(AuthGuard, AdminOrSelfGuard)
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Token de autenticação no formato Bearer <token>',
-    })
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Exclui um usuário por ID' })
     async deleteUser(@Param('id', ParseIntPipe) id: number) {
         return await this.usersService.deleteUser(id);
