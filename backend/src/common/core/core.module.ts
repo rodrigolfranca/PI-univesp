@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ProceduresModule } from 'src/procedures/procedures.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { DatabaseModule } from '../database/database.module';
@@ -14,6 +15,7 @@ import { validate } from '../env.validation/env.validation';
         }),
         DatabaseModule,
         UsersModule,
+        ProceduresModule,
         AuthModule
     ],
 })
