@@ -12,7 +12,9 @@ export class ProceduresRepository {
     async findOne(id: number): Promise<Procedure> {
         const procedure = await Procedure.findByPk(id);
         if (!procedure) {
-            throw new NotFoundException(`Procedimento com id ${id} não encontrado`);
+            throw new NotFoundException(
+                `Procedimento com id ${id} não encontrado`,
+            );
         }
         return procedure;
     }

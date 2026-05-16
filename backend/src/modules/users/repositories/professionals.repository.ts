@@ -18,4 +18,14 @@ export class ProfessionalsRepository {
             professional,
         };
     }
+
+    async getById(id: number) {
+        return await Professional.findByPk(id, {
+            include: [{ model: User, as: 'user' }],
+        });
+    }
+
+    async findAll() {
+        return Professional.findAll({ include: [{ model: User, as: 'user' }] });
+    }
 }

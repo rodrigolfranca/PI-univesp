@@ -7,8 +7,10 @@ import {
     Procedure,
     Professional,
     Schedule,
+    ScheduleException,
     Session,
     User,
+    WorkSchedule,
 } from 'src/common/models';
 
 export const DatabaseProvider = {
@@ -40,6 +42,8 @@ export const DatabaseProvider = {
             Session,
             DocumentTemplates,
             Schedule,
+            WorkSchedule,
+            ScheduleException,
         ]);
 
         await sequelize.sync({

@@ -1,5 +1,12 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import {
+    BelongsTo,
+    Column,
+    DataType,
+    Model,
+    Table,
+} from 'sequelize-typescript';
 import { ScheduleStatus } from '../consts/schedule.status';
+import { Procedure } from './procedures.model';
 
 @Table({
     tableName: 'schedules',
@@ -22,7 +29,7 @@ export class Schedule extends Model {
         type: DataType.INTEGER,
         allowNull: false,
     })
-    declare session_id: number;
+    declare procedure_id: number;
 
     @Column({
         type: DataType.INTEGER,
@@ -43,10 +50,16 @@ export class Schedule extends Model {
     declare document_id: number;
 
     @Column({
-        type: DataType.DATE,
+        type: DataType.DATEONLY,
         allowNull: false,
     })
-    declare date: Date;
+    declare date: string;
+
+    @Column({
+        type: DataType.STRING(5),
+        allowNull: false,
+    })
+    declare start_time: string;
 
     @Column({
         type: DataType.INTEGER,
@@ -59,4 +72,7 @@ export class Schedule extends Model {
         allowNull: false,
     })
     declare status: string;
+
+    @BelongsTo(() => Procedure, 'procedure_id')
+    declare procedure: Procedure;
 }

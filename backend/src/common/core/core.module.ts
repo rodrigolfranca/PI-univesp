@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { ProceduresModule } from 'src/modules/procedures/procedures.module';
+import { SchedulesModule } from 'src/modules/schedules/schedules.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { DatabaseModule } from '../database/database.module';
 import { validate } from '../env.validation/env.validation';
@@ -16,7 +17,8 @@ import { validate } from '../env.validation/env.validation';
         DatabaseModule,
         UsersModule,
         ProceduresModule,
-        AuthModule
+        AuthModule,
+        SchedulesModule,
     ],
 })
-export class CoreModule { }
+export class CoreModule {}

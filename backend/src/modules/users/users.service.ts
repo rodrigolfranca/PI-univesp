@@ -219,4 +219,22 @@ export class UsersService {
             Utils.handleError(error);
         }
     }
+
+    async findProfessionalById(id: number) {
+        try {
+            return await this.professionalsRepository.getById(id);
+        } catch (error) {
+            this.logger.error(`Failed to find professional by ID: ${error}`);
+            Utils.handleError(error);
+        }
+    }
+
+    async findAllProfessionals() {
+        try {
+            return await this.professionalsRepository.findAll();
+        } catch (error) {
+            this.logger.error(`Failed to find all professionals: ${error}`);
+            Utils.handleError(error);
+        }
+    }
 }
