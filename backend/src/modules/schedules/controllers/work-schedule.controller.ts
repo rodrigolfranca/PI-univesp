@@ -21,7 +21,7 @@ import { WorkScheduleUpdateDto } from '../validation/work-schedule-update.DTO';
 export class WorkScheduleController {
     constructor(private readonly workSchedulesService: WorkSchedulesService) {}
 
-    @Post('work')
+    @Post()
     @ApiOperation({
         summary: 'Cria um horário de trabalho para um profissional',
     })
@@ -33,7 +33,7 @@ export class WorkScheduleController {
         return await this.workSchedulesService.create(workScheduleCreateDto);
     }
 
-    @Get('work/all')
+    @Get('all')
     @ApiOperation({
         summary: 'Retorna a agenda disponível para todos os profissionais',
     })
@@ -45,7 +45,7 @@ export class WorkScheduleController {
         return await this.workSchedulesService.getAll(workScheduleGetAllDto);
     }
 
-    @Patch('work/update/:id')
+    @Patch('update/:id')
     @ApiOperation({ summary: 'Atualiza um horário de trabalho existente' })
     @ApiBearerAuth('JWT-auth')
     @UseGuards(AuthGuard, AdminGuard)
@@ -59,7 +59,7 @@ export class WorkScheduleController {
         );
     }
 
-    @Delete('work/delete/:id')
+    @Delete('delete/:id')
     @ApiOperation({ summary: 'Exclui um horário de trabalho' })
     @ApiBearerAuth('JWT-auth')
     @UseGuards(AuthGuard, AdminGuard)
