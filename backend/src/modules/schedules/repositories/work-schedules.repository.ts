@@ -76,7 +76,6 @@ export class WorkScheduleRepository {
         return { message: 'Work schedule deleted successfully' };
     }
 
-    /** Returns all work schedules for a professional on a given day_of_week. */
     async findForProfessionalDay(
         professional_id: number,
         day_of_week: number,
@@ -86,10 +85,6 @@ export class WorkScheduleRepository {
         });
     }
 
-    /**
-     * Returns work schedules whose entire range covers [startMin, endMin].
-     * Used to confirm a professional has availability for a specific slot.
-     */
     async findCovering(
         professional_id: number,
         day_of_week: number,
