@@ -61,15 +61,12 @@ export class WorkSchedulesService {
             const todayDate = new Date(today + 'T00:00:00Z');
             const todayDay = todayDate.getUTCDay();
 
-            const getTargetDateStr = (day: number) => {
-                const diff = (day - todayDay + 7) % 7;
-                const d = new Date(todayDate);
-                d.setUTCDate(d.getUTCDate() + diff);
-                return d.toISOString().split('T')[0];
-            };
-
             if (dto.day_of_week !== undefined) {
-                const targetDateStr = getTargetDateStr(dto.day_of_week);
+                const targetDateStr = this.getTargetDateStr(
+                    dto.day_of_week,
+                    today,
+                    todayDay,
+                );
                 const effectiveDto = { ...dto, day_of_week: dto.day_of_week };
 
                 if (dto.professional_id) {
@@ -113,7 +110,11 @@ export class WorkSchedulesService {
                     this.usersService.findProfessionalById(dto.professional_id),
                     Promise.all(
                         allDays.map(async (day) => {
-                            const dateStr = getTargetDateStr(day);
+                            const dateStr = this.getTargetDateStr(
+                                day,
+                                today,
+                                todayDay,
+                            );
                             const slots =
                                 await this.computeSlotsForProfessional(
                                     dto.professional_id,
@@ -143,7 +144,11 @@ export class WorkSchedulesService {
                 (professionals ?? []).map(async (p) => {
                     const dayResults = await Promise.all(
                         allDays.map(async (day) => {
-                            const dateStr = getTargetDateStr(day);
+                            const dateStr = this.getTargetDateStr(
+                                day,
+                                today,
+                                todayDay,
+                            );
                             const slots =
                                 await this.computeSlotsForProfessional(
                                     p.id,
@@ -219,7 +224,8 @@ export class WorkSchedulesService {
                 available:
                     !this.isSlotOccupied(slot, bookedSchedules) &&
                     !this.isSlotBlocked(slot, blockedExceptions),
-            }));
+            }))
+            .filter((slot) => slot.available);
     }
 
     async update(id: number, dto: WorkScheduleUpdateDto) {
@@ -335,5 +341,12 @@ export class WorkSchedulesService {
 
     private minutesToTime(minutes: number) {
         return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    }
+
+    getTargetDateStr(day: number, todayDate: string, todayDay: number) {
+        const diff = (day - todayDay + 7) % 7;
+        const d = new Date(todayDate);
+        d.setUTCDate(d.getUTCDate() + diff);
+        return d.toISOString().split('T')[0];
     }
 }

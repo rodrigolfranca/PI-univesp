@@ -97,7 +97,7 @@ export class SchedulesService {
         professional_id: number,
         date: string,
     ): Promise<Schedule[]> {
-        return this.scheduleRepository.findSchedulesForDate(
+        return await this.scheduleRepository.findSchedulesForDate(
             professional_id,
             date,
         );
