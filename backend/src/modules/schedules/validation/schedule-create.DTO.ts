@@ -3,6 +3,7 @@ import {
     IsDateString,
     IsInt,
     IsNotEmpty,
+    IsOptional,
     IsPositive,
     Matches,
     Min,
@@ -25,7 +26,7 @@ export class ScheduleCreateDto {
     client_id: number;
 
     @ApiProperty({ description: 'ID do documento', example: 1 })
-    @IsNotEmpty()
+    @IsOptional()
     @IsPositive()
     document_id: number;
 

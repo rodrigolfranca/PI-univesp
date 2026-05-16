@@ -45,7 +45,7 @@ export class Schedule extends Model {
 
     @Column({
         type: DataType.INTEGER,
-        allowNull: false,
+        allowNull: true,
     })
     declare document_id: number;
 
