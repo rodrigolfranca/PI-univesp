@@ -7,6 +7,7 @@ import {
 import { Procedure, Schedule } from 'src/common/models';
 import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
 import { Utils } from 'src/common/utils/utils';
+import { GoogleCalendarService } from 'src/modules/google-calendar/google-calendar.service';
 import { UsersService } from 'src/modules/users/users.service';
 import { ScheduleExceptionsRepository } from '../repositories/schedule-exceptions.repository';
 import { ScheduleRepository } from '../repositories/schedules.repository';
@@ -22,6 +23,7 @@ export class SchedulesService {
         private readonly workScheduleRepository: WorkScheduleRepository,
         private readonly scheduleExceptionsRepository: ScheduleExceptionsRepository,
         private readonly usersService: UsersService,
+        private readonly googleCalendarService: GoogleCalendarService,
     ) {}
 
     logger = new Logger(SchedulesService.name);
@@ -35,9 +37,11 @@ export class SchedulesService {
                 dto.session,
                 dto.procedure_id,
             );
-            return await this.scheduleRepository.create(dto);
+            const schedule = await this.scheduleRepository.create(dto);
+            await this.googleCalendarService.syncSchedule(schedule.id);
+            return schedule;
         } catch (error) {
-            this.logger.error(`Failed to create schedule: ${error}`);
+            Utils.logError(this.logger, 'Failed to create schedule', error);
             Utils.handleError(error);
         }
     }
@@ -46,7 +50,7 @@ export class SchedulesService {
         try {
             return await this.scheduleRepository.findByFilters(dto);
         } catch (error) {
-            this.logger.error(`Failed to get schedules: ${error}`);
+            Utils.logError(this.logger, 'Failed to get schedules', error);
             Utils.handleError(error);
         }
     }
@@ -77,18 +81,25 @@ export class SchedulesService {
                 );
             }
 
-            return await this.scheduleRepository.update(id, dto);
+            const result = await this.scheduleRepository.update(id, dto);
+            await this.googleCalendarService.syncSchedule(id);
+            return result;
         } catch (error) {
-            this.logger.error(`Failed to update schedule: ${error}`);
+            Utils.logError(this.logger, 'Failed to update schedule', error);
             Utils.handleError(error);
         }
     }
 
     async delete(id: number) {
         try {
-            return await this.scheduleRepository.delete(id);
+            const existing = await this.scheduleRepository.findById(id);
+            const result = await this.scheduleRepository.delete(id);
+            await this.googleCalendarService.deleteScheduleEvent(
+                existing?.google_event_id ?? null,
+            );
+            return result;
         } catch (error) {
-            this.logger.error(`Failed to delete schedule: ${error}`);
+            Utils.logError(this.logger, 'Failed to delete schedule', error);
             Utils.handleError(error);
         }
     }

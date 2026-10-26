@@ -49,7 +49,11 @@ export class WorkSchedulesService {
             await dbTransaction.commit();
             return { message: 'Horário de trabalho criado com sucesso' };
         } catch (error) {
-            this.logger.error(`Failed to create work schedule: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to create work schedule',
+                error,
+            );
             await dbTransaction.rollback();
             Utils.handleError(error);
         }
@@ -171,7 +175,11 @@ export class WorkSchedulesService {
             );
             return Object.fromEntries(results.map((r) => [r.name, r.dates]));
         } catch (error) {
-            this.logger.error(`Failed to get all work schedules: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to get all work schedules',
+                error,
+            );
             Utils.handleError(error);
         }
     }
@@ -232,7 +240,11 @@ export class WorkSchedulesService {
         try {
             return await this.workSchedulesRepository.update(id, dto);
         } catch (error) {
-            this.logger.error(`Failed to update work schedule: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to update work schedule',
+                error,
+            );
             Utils.handleError(error);
         }
     }
@@ -241,7 +253,11 @@ export class WorkSchedulesService {
         try {
             return await this.workSchedulesRepository.delete(id);
         } catch (error) {
-            this.logger.error(`Failed to delete work schedule: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to delete work schedule',
+                error,
+            );
             Utils.handleError(error);
         }
     }

@@ -73,6 +73,12 @@ export class Schedule extends Model {
     })
     declare status: string;
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    declare google_event_id: string | null;
+
     @BelongsTo(() => Procedure, 'procedure_id')
     declare procedure: Procedure;
 }

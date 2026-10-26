@@ -34,7 +34,11 @@ export class ScheduleExceptionsService {
             );
             return await this.scheduleExceptionsRepository.create(dto);
         } catch (error) {
-            this.logger.error(`Failed to create schedule exception: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to create schedule exception',
+                error,
+            );
             Utils.handleError(error);
         }
     }
@@ -43,7 +47,11 @@ export class ScheduleExceptionsService {
         try {
             return await this.scheduleExceptionsRepository.findByFilters(dto);
         } catch (error) {
-            this.logger.error(`Failed to get schedule exceptions: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to get schedule exceptions',
+                error,
+            );
             Utils.handleError(error);
         }
     }
@@ -69,7 +77,11 @@ export class ScheduleExceptionsService {
 
             return await this.scheduleExceptionsRepository.update(id, dto);
         } catch (error) {
-            this.logger.error(`Failed to update schedule exception: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to update schedule exception',
+                error,
+            );
             Utils.handleError(error);
         }
     }
@@ -78,7 +90,11 @@ export class ScheduleExceptionsService {
         try {
             return await this.scheduleExceptionsRepository.delete(id);
         } catch (error) {
-            this.logger.error(`Failed to delete schedule exception: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to delete schedule exception',
+                error,
+            );
             Utils.handleError(error);
         }
     }

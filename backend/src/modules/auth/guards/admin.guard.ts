@@ -30,7 +30,7 @@ export class AdminGuard implements CanActivate {
 
             return true;
         } catch (e) {
-            this.logger.error(`Authentication failed: ${e}`);
+            Utils.logError(this.logger, 'Authentication failed', e);
             Utils.handleError(e);
         }
     }

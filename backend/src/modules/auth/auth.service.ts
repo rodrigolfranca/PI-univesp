@@ -53,7 +53,7 @@ export class AuthService {
                 message: 'If the phone number is registered, a code was sent',
             };
         } catch (e) {
-            this.logger.error(`Failed to request code: ${e}`);
+            Utils.logError(this.logger, 'Failed to request code', e);
             Utils.handleError(e);
         }
     }
@@ -83,7 +83,7 @@ export class AuthService {
 
             return this.signIn(user);
         } catch (e) {
-            this.logger.error(`Failed to verify code: ${e}`);
+            Utils.logError(this.logger, 'Failed to verify code', e);
             Utils.handleError(e);
         }
     }
@@ -112,7 +112,7 @@ export class AuthService {
                 message: 'If the email is registered, a recovery code was sent',
             };
         } catch (e) {
-            this.logger.error(`Failed to request recovery code: ${e}`);
+            Utils.logError(this.logger, 'Failed to request recovery code', e);
             Utils.handleError(e);
         }
     }
@@ -143,7 +143,7 @@ export class AuthService {
 
             return { message: 'Phone number updated successfully' };
         } catch (e) {
-            this.logger.error(`Failed to verify recovery code: ${e}`);
+            Utils.logError(this.logger, 'Failed to verify recovery code', e);
             Utils.handleError(e);
         }
     }

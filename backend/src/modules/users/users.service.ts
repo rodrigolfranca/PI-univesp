@@ -29,7 +29,7 @@ export class UsersService {
         try {
             return await this.usersRepository.create(userCreateDTO);
         } catch (error) {
-            this.logger.error(`Failed to create user: ${error}`);
+            Utils.logError(this.logger, 'Failed to create user', error);
             Utils.handleError(error);
         }
     }
@@ -63,7 +63,7 @@ export class UsersService {
             return client;
         } catch (error) {
             await dbTransaction.rollback();
-            this.logger.error(`Failed to create client: ${error}`);
+            Utils.logError(this.logger, 'Failed to create client', error);
             Utils.handleError(error);
         }
     }
@@ -98,7 +98,7 @@ export class UsersService {
             return professional;
         } catch (error) {
             await dbTransaction.rollback();
-            this.logger.error(`Failed to create professional: ${error}`);
+            Utils.logError(this.logger, 'Failed to create professional', error);
             Utils.handleError(error);
         }
     }
@@ -113,7 +113,7 @@ export class UsersService {
                 users: listUser.rows,
             };
         } catch (error) {
-            this.logger.error(`Failed to list users: ${error}`);
+            Utils.logError(this.logger, 'Failed to list users', error);
             Utils.handleError(error);
         }
     }
@@ -122,7 +122,7 @@ export class UsersService {
         try {
             return await this.usersRepository.getById(id);
         } catch (error) {
-            this.logger.error(`Failed to find user by ID: ${error}`);
+            Utils.logError(this.logger, 'Failed to find user by ID', error);
             Utils.handleError(error);
         }
     }
@@ -161,7 +161,7 @@ export class UsersService {
 
             return await this.usersRepository.update(id, userUpdateDTO);
         } catch (error) {
-            this.logger.error(`Failed to update user: ${error}`);
+            Utils.logError(this.logger, 'Failed to update user', error);
             Utils.handleError(error);
         }
     }
@@ -171,7 +171,7 @@ export class UsersService {
             await this.redis.del(`user:${id}`);
             return await this.usersRepository.delete(id);
         } catch (error) {
-            this.logger.error(`Failed to delete user: ${error}`);
+            Utils.logError(this.logger, 'Failed to delete user', error);
             Utils.handleError(error);
         }
     }
@@ -180,7 +180,11 @@ export class UsersService {
         try {
             return await this.usersRepository.findByPhoneNumber(phone_number);
         } catch (error) {
-            this.logger.error(`Failed to find user by phone number: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to find user by phone number',
+                error,
+            );
             Utils.handleError(error);
         }
     }
@@ -189,7 +193,7 @@ export class UsersService {
         try {
             return await this.usersRepository.findByEmail(email);
         } catch (error) {
-            this.logger.error(`Failed to find user by email: ${error}`);
+            Utils.logError(this.logger, 'Failed to find user by email', error);
             Utils.handleError(error);
         }
     }
@@ -215,7 +219,7 @@ export class UsersService {
                 phone_number,
             } as UserUpdateDTO);
         } catch (error) {
-            this.logger.error(`Failed to change phone number: ${error}`);
+            Utils.logError(this.logger, 'Failed to change phone number', error);
             Utils.handleError(error);
         }
     }
@@ -224,7 +228,11 @@ export class UsersService {
         try {
             return await this.professionalsRepository.getById(id);
         } catch (error) {
-            this.logger.error(`Failed to find professional by ID: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to find professional by ID',
+                error,
+            );
             Utils.handleError(error);
         }
     }
@@ -233,7 +241,11 @@ export class UsersService {
         try {
             return await this.professionalsRepository.findAll();
         } catch (error) {
-            this.logger.error(`Failed to find all professionals: ${error}`);
+            Utils.logError(
+                this.logger,
+                'Failed to find all professionals',
+                error,
+            );
             Utils.handleError(error);
         }
     }
