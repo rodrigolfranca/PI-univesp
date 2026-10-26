@@ -1,13 +1,25 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
 import { ProceduresService } from './procedures.service';
 import { CreateProcedureDto } from './validation/create-procedure.dto';
 import { UpdateProcedureDto } from './validation/update-procedure.dto';
 
-@ApiSchema({ name: 'Procedures', description: 'Endpoints relacionados aos procedimentos' })
+@ApiSchema({
+    name: 'Procedures',
+    description: 'Endpoints relacionados aos procedimentos',
+})
 @Controller('procedures')
 export class ProceduresController {
-    constructor(private readonly proceduresService: ProceduresService) { }
+    constructor(private readonly proceduresService: ProceduresService) {}
 
     @Post()
     @ApiBearerAuth('JWT-auth')
@@ -33,7 +45,10 @@ export class ProceduresController {
     @Patch(':id')
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Atualiza um procedimento' })
-    update(@Param('id', ParseIntPipe) id: string, @Body() updateProcedureDto: UpdateProcedureDto) {
+    update(
+        @Param('id', ParseIntPipe) id: string,
+        @Body() updateProcedureDto: UpdateProcedureDto,
+    ) {
         return this.proceduresService.update(+id, updateProcedureDto);
     }
 

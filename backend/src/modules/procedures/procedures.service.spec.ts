@@ -3,23 +3,23 @@ import { ProceduresService } from './procedures.service';
 import { ProceduresRepository } from './procedures.repository';
 
 describe('ProceduresService', () => {
-  let service: ProceduresService;
+    let service: ProceduresService;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ProceduresService,
-        {
-          provide: ProceduresRepository,
-          useValue: {},
-        },
-      ],
-    }).compile();
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [
+                ProceduresService,
+                {
+                    provide: ProceduresRepository,
+                    useValue: {},
+                },
+            ],
+        }).compile();
 
-    service = module.get<ProceduresService>(ProceduresService);
-  });
+        service = module.get<ProceduresService>(ProceduresService);
+    });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+    it('should be defined', () => {
+        expect(service).toBeDefined();
+    });
 });

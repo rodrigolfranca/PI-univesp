@@ -2,11 +2,19 @@ import {
     BelongsTo,
     Column,
     DataType,
+    DefaultScope,
     Model,
+    Scopes,
     Table,
 } from 'sequelize-typescript';
 import { User } from './users.model';
 
+@DefaultScope(() => ({
+    attributes: { exclude: ['google_refresh_token'] },
+}))
+@Scopes(() => ({
+    withGoogleToken: {},
+}))
 @Table({
     tableName: 'professionals',
     timestamps: true,
@@ -36,6 +44,19 @@ export class Professional extends Model {
         defaultValue: false,
     })
     declare is_admin: boolean;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+    })
+    declare google_refresh_token: string | null;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+        defaultValue: 'primary',
+    })
+    declare google_calendar_id: string;
 
     @BelongsTo(() => User, 'user_id')
     declare user: User;

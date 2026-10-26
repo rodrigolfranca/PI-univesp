@@ -1,13 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+    IsBoolean,
+    IsInt,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Min,
+} from 'class-validator';
 
 export class CreateProcedureDto {
-    @ApiProperty({ description: 'Nome do procedimento', example: 'Limpeza de pele' })
+    @ApiProperty({
+        description: 'Nome do procedimento',
+        example: 'Limpeza de pele',
+    })
     @IsNotEmpty()
     @IsString()
     name: string;
 
-    @ApiProperty({ description: 'Descrição do procedimento', example: 'Procedimento de limpeza profunda da pele' })
+    @ApiProperty({
+        description: 'Descrição do procedimento',
+        example: 'Procedimento de limpeza profunda da pele',
+    })
     @IsNotEmpty()
     @IsString()
     description: string;
@@ -18,7 +32,7 @@ export class CreateProcedureDto {
     @Min(1)
     duration_minutes: number;
 
-    @ApiProperty({ description: 'Preço do procedimento', example: 150.00 })
+    @ApiProperty({ description: 'Preço do procedimento', example: 150.0 })
     @IsNotEmpty()
     @IsNumber()
     @Min(0)
@@ -41,7 +55,12 @@ export class CreateProcedureDto {
     @Min(0)
     triagem_minutes: number;
 
-    @ApiProperty({ description: 'Período de bloqueio em dias após o procedimento', example: 30, required: false, nullable: true })
+    @ApiProperty({
+        description: 'Período de bloqueio em dias após o procedimento',
+        example: 30,
+        required: false,
+        nullable: true,
+    })
     @IsOptional()
     @IsInt()
     @Min(0)

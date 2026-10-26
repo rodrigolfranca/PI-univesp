@@ -5,7 +5,7 @@ import { UpdateProcedureDto } from './validation/update-procedure.dto';
 
 @Injectable()
 export class ProceduresService {
-    constructor(private readonly proceduresRepository: ProceduresRepository) { }
+    constructor(private readonly proceduresRepository: ProceduresRepository) {}
 
     findAll() {
         return this.proceduresRepository.findAll();
