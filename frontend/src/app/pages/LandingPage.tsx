@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import {
   Calendar, Sparkles, Heart, Star, Instagram, KeyRound, ChevronRight,
 } from "lucide-react";
-import defaultLogo from "../../imports/dayane_logo_white_ilustracao_transparente_limpa.png";
+import defaultLogo from "../../assets/brand/dayane-logo-white.png";
 import { useBrand } from "../context/BrandContext";
 import { useProcedures } from "../context/ProceduresContext";
 import { useGallery } from "../context/GalleryContext";

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router";
-import logo from "../../imports/dayane_logo_white_ilustracao_transparente_limpa.png";
+import logo from "../../assets/brand/dayane-logo-white.png";
 import { useAuth } from "../context/AuthContext";
 
 export function LoginPage() {

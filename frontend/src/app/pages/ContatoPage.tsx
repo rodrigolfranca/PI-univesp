@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import { MapPin, Phone, Mail, Clock, Instagram } from "lucide-react";
-import logo from "../../imports/dayane_logo_white_ilustracao_transparente_limpa.png";
+import logo from "../../assets/brand/dayane-logo-white.png";
 import { useBrand } from "../context/BrandContext";
 
 export function ContatoPage() {

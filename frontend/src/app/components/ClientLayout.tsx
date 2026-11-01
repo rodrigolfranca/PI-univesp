@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import { Calendar, Plus, Bell, UserCircle, LogOut } from "lucide-react";
-import defaultLogo from "../../imports/dayane_logo_ilustracao_transparente.png";
+import defaultLogo from "../../assets/brand/dayane-logo.png";
 import { useBrand } from "../context/BrandContext";
 import { useAuth } from "../context/AuthContext";
 

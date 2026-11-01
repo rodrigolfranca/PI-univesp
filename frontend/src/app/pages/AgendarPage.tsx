@@ -6,7 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useProcedures } from "../context/ProceduresContext";
 import { useBrand } from "../context/BrandContext";
-import defaultLogo from "../../imports/dayane_logo_white_ilustracao_transparente_limpa.png";
+import defaultLogo from "../../assets/brand/dayane-logo-white.png";
 
 const TIME_SLOTS = [
   "09:00", "10:00", "11:00", "12:00", "13:00",
