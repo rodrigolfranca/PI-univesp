@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "variant:create": "node scripts/create-variant.mjs",
+    "variants:validate": "node scripts/variants.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -86,5 +89,8 @@
     "overrides": {
       "vite": "6.3.5"
     }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

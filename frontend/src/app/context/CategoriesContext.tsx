@@ -1,18 +1,7 @@
+import { useSite, useStorageKey } from "../config/SiteContext";
+import type { Category } from "../config/types";
+export type { Category } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
-
-export type Category = {
-  id: number;
-  name: string;
-};
-
-const initialCategories: Category[] = [
-  { id: 1, name: "Facial" },
-  { id: 2, name: "Corporal" },
-  { id: 3, name: "Depilação" },
-  { id: 4, name: "Outra" },
-];
-
-const STORAGE_KEY = "categories_data";
 
 interface CategoriesContextValue {
   categories: Category[];
@@ -22,13 +11,20 @@ interface CategoriesContextValue {
 }
 
 const CategoriesContext = createContext<CategoriesContextValue>({
-  categories: initialCategories,
+  categories: [],
   addCategory: () => {},
   editCategory: () => {},
   deleteCategory: () => {},
 });
 
-export function CategoriesProvider({ children }: { children: React.ReactNode }) {
+export function CategoriesProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const site = useSite();
+  const STORAGE_KEY = useStorageKey("categories_data");
+  const initialCategories = site.catalog.categories;
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -44,7 +40,8 @@ export function CategoriesProvider({ children }: { children: React.ReactNode }) 
   }
 
   function addCategory(name: string) {
-    const newId = categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1;
+    const newId =
+      categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1;
     save([...categories, { id: newId, name }]);
   }
 
@@ -57,7 +54,9 @@ export function CategoriesProvider({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <CategoriesContext.Provider value={{ categories, addCategory, editCategory, deleteCategory }}>
+    <CategoriesContext.Provider
+      value={{ categories, addCategory, editCategory, deleteCategory }}
+    >
       {children}
     </CategoriesContext.Provider>
   );

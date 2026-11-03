@@ -1,0 +1,94 @@
+{
+  "identity": {
+    "name": "",
+    "tagline": "",
+    "description": "Agendamento e atendimento de serviços.",
+    "logo": {
+      "public": "",
+      "dashboard": "",
+      "presentation": "plain"
+    }
+  },
+  "theme": {
+    "preset": "cinza",
+    "palette": {}
+  },
+  "terms": {
+    "service": "serviço",
+    "services": "serviços",
+    "procedure": "serviço",
+    "procedures": "serviços",
+    "establishment": "empresa",
+    "professional": "profissional",
+    "professionals": "profissionais"
+  },
+  "content": {
+    "pageHeadings": {
+      "treatmentsTitle": "Nossos serviços",
+      "treatmentsIntro": "Conheça os serviços disponíveis.",
+      "aboutTitle": "Sobre nós",
+      "aboutIntro": "Conheça nosso trabalho.",
+      "contactTitle": "Entre em contato",
+      "contactIntro": "Fale com nossa equipe."
+    },
+    "homeAbout": {
+      "title": "",
+      "paragraphs": []
+    },
+    "about": {
+      "missionTitle": "",
+      "paragraphs": [],
+      "values": []
+    },
+    "treatments": [],
+    "hero": "Conheça nossos serviços e agende seu atendimento.",
+    "authTagline": "Acesse sua conta para acompanhar seus agendamentos.",
+    "features": [],
+    "experience": {
+      "value": "",
+      "label": ""
+    },
+    "catalogTitle": "Serviços disponíveis",
+    "catalogIntro": "Escolha o serviço de que você precisa.",
+    "contactTitle": "Como podemos ajudar?",
+    "contactIntro": "Entre em contato para saber mais.",
+    "contactPageTitle": "Agende seu atendimento",
+    "contactPageIntro": "Fale com nossa equipe para agendar.",
+    "footer": "Todos os direitos reservados.",
+    "owner": {
+      "name": "",
+      "role": "Responsável",
+      "phone": "",
+      "registeredAt": ""
+    },
+    "bookingConfirmation": "Seu agendamento foi enviado para confirmação."
+  },
+  "contact": {
+    "address": [],
+    "phone": "",
+    "email": "",
+    "hours": [],
+    "whatsapp": "",
+    "instagram": ""
+  },
+  "catalog": {
+    "categories": [],
+    "procedures": [],
+    "gallery": [],
+    "icon": "briefcase"
+  },
+  "agenda": {
+    "timeSlots": ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"],
+    "blockedSlots": []
+  },
+  "data": {
+    "clients": [],
+    "appointments": [],
+    "employees": [],
+    "notifications": [],
+    "clientNotifications": [],
+    "clientAppointments": [],
+    "clientDocuments": [],
+    "procedureDocuments": []
+  }
+}

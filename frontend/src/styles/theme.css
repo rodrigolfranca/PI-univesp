@@ -40,17 +40,17 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Wine color palette based on #751e22 */
-  --wine-50: #fdf4f4;
-  --wine-100: #fbe8e9;
-  --wine-200: #f6d5d7;
-  --wine-300: #ebb3b7;
-  --wine-400: #dc8891;
-  --wine-500: #c8606d;
-  --wine-600: #751e22;
-  --wine-700: #631a1d;
-  --wine-800: #4f1518;
-  --wine-900: #3b1012;
+  /* Neutral brand palette; overridden by the selected variant */
+  --brand-50: #f8f9fa;
+  --brand-100: #f1f3f5;
+  --brand-200: #dee2e6;
+  --brand-300: #ced4da;
+  --brand-400: #868e96;
+  --brand-500: #495057;
+  --brand-600: #374151;
+  --brand-700: #2c3440;
+  --brand-800: #1f2633;
+  --brand-900: #141a24;
 }
 
 .dark {
@@ -131,16 +131,16 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* Wine color tokens */
-  --color-wine-50: var(--wine-50);
-  --color-wine-100: var(--wine-100);
-  --color-wine-200: var(--wine-200);
-  --color-wine-300: var(--wine-300);
-  --color-wine-400: var(--wine-400);
-  --color-wine-500: var(--wine-500);
-  --color-wine-600: var(--wine-600);
-  --color-wine-700: var(--wine-700);
-  --color-wine-800: var(--wine-800);
-  --color-wine-900: var(--wine-900);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
 }
 
 @layer base {

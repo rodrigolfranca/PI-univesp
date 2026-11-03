@@ -1,23 +1,28 @@
 import { ArrowLeft, Lock, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
-
 export function ChangePasswordPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   return (
     <div className="p-4 md:p-8">
-      <Link to="/settings" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 md:mb-6 transition-colors text-sm md:text-base">
+      <Link
+        to="/settings"
+        className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 md:mb-6 transition-colors text-sm md:text-base"
+      >
         <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
         Voltar para Configurações
       </Link>
 
       <div className="max-w-2xl">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Trocar Senha</h1>
-          <p className="text-gray-500 mt-1 text-sm md:text-base">Atualize sua senha de acesso</p>
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
+            Trocar Senha
+          </h1>
+          <p className="text-gray-500 mt-1 text-sm md:text-base">
+            Atualize sua senha de acesso
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-8">
@@ -41,7 +46,7 @@ export function ChangePasswordPage() {
               <div className="relative">
                 <input
                   type={showCurrentPassword ? "text" : "password"}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wine-500 focus:border-transparent pr-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent pr-12"
                   placeholder="Digite sua senha atual"
                 />
                 <button
@@ -49,7 +54,11 @@ export function ChangePasswordPage() {
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showCurrentPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -61,7 +70,7 @@ export function ChangePasswordPage() {
               <div className="relative">
                 <input
                   type={showNewPassword ? "text" : "password"}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wine-500 focus:border-transparent pr-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent pr-12"
                   placeholder="Digite sua nova senha"
                 />
                 <button
@@ -69,7 +78,11 @@ export function ChangePasswordPage() {
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showNewPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -81,7 +94,7 @@ export function ChangePasswordPage() {
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wine-500 focus:border-transparent pr-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent pr-12"
                   placeholder="Confirme sua nova senha"
                 />
                 <button
@@ -89,7 +102,11 @@ export function ChangePasswordPage() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -103,7 +120,7 @@ export function ChangePasswordPage() {
               </Link>
               <button
                 type="submit"
-                className="flex-1 px-4 md:px-6 py-3 bg-wine-600 text-white rounded-lg hover:bg-wine-700 transition-colors"
+                className="flex-1 px-4 md:px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
               >
                 Atualizar Senha
               </button>

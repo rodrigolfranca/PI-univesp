@@ -1,0 +1,534 @@
+{
+  "identity": {
+    "name": "Dayane Di Giovanni",
+    "tagline": "Estética e Bem estar",
+    "description": "Estética e bem-estar com tratamentos faciais e corporais, agendamento e atendimento personalizado.",
+    "logo": {
+      "public": "/variants/dayane/dayane-logo-white.png",
+      "dashboard": "/variants/dayane/dayane-logo.png",
+      "presentation": "framed"
+    }
+  },
+  "theme": {
+    "preset": "wine"
+  },
+  "terms": {
+    "service": "tratamento",
+    "services": "tratamentos",
+    "procedure": "procedimento",
+    "procedures": "procedimentos",
+    "establishment": "clínica",
+    "professional": "profissional",
+    "professionals": "profissionais"
+  },
+  "content": {
+    "pageHeadings": {
+      "treatmentsTitle": "Nossos Tratamentos",
+      "treatmentsIntro": "Descubra nossos tratamentos especializados para realçar sua beleza natural",
+      "aboutTitle": "Sobre Nós",
+      "aboutIntro": "Conheça nossa história e nosso compromisso com a sua beleza",
+      "contactTitle": "Entre em Contato",
+      "contactIntro": "Estamos prontos para atender você e realizar seus sonhos de beleza"
+    },
+    "homeAbout": {
+      "title": "Cuidado e beleza com quem entende de você",
+      "paragraphs": [
+        "Somos uma clínica de estética especializada em tratamentos faciais e corporais, fundada com a missão de oferecer bem-estar real e resultados visíveis. Cada sessão é cuidadosamente planejada para a necessidade individual de cada cliente.",
+        "Com anos de experiência e formação continuada, nossa equipe une técnica de ponta a um atendimento humano e acolhedor. Aqui, você não é mais um número — você é o centro da nossa atenção.",
+        "Localizada em um espaço pensado para o seu conforto, a clínica oferece um ambiente tranquilo onde você pode relaxar enquanto cuida da sua saúde e beleza."
+      ]
+    },
+    "about": {
+      "missionTitle": "Nossa Missão",
+      "paragraphs": [
+        "Em nossa clínica, acreditamos que cada pessoa merece se sentir bonita e confiante. Nossa missão é proporcionar tratamentos de estética e bem-estar de alta qualidade, utilizando técnicas modernas e produtos cuidadosamente selecionados.",
+        "Com anos de experiência no mercado, nossa equipe está comprometida em oferecer um atendimento personalizado e acolhedor, sempre respeitando as necessidades individuais de cada cliente."
+      ],
+      "values": [
+        {
+          "title": "Excelência",
+          "description": "Compromisso com a qualidade em cada atendimento",
+          "icon": "award"
+        },
+        {
+          "title": "Profissionais",
+          "description": "Equipe qualificada e experiente",
+          "icon": "users"
+        },
+        {
+          "title": "Cuidado",
+          "description": "Atendimento personalizado e acolhedor",
+          "icon": "heart"
+        },
+        {
+          "title": "Resultados",
+          "description": "Satisfação garantida dos nossos clientes",
+          "icon": "star"
+        }
+      ]
+    },
+    "treatments": [
+      {
+        "title": "Limpeza de Pele",
+        "description": "Tratamento profundo para renovação e limpeza da pele",
+        "icon": "sparkles"
+      },
+      {
+        "title": "Hidratação Facial",
+        "description": "Hidratação profunda para pele radiante e saudável",
+        "icon": "droplet"
+      },
+      {
+        "title": "Peeling",
+        "description": "Renovação celular para uma pele mais jovem",
+        "icon": "zap"
+      },
+      {
+        "title": "Tratamentos Corporais",
+        "description": "Cuidados especiais para todo o corpo",
+        "icon": "activity"
+      }
+    ],
+    "hero": "Reserve experiências inesquecíveis de beleza e bem-estar com profissionais especializados",
+    "authTagline": "Reserve experiências inesquecíveis de beleza e bem-estar",
+    "features": [
+      {
+        "icon": "calendar",
+        "title": "Agendamento fácil",
+        "description": "Reserve seus horários de forma rápida e intuitiva"
+      },
+      {
+        "icon": "sparkles",
+        "title": "Profissionais qualificados",
+        "description": "Equipe especializada e apaixonada por beleza"
+      },
+      {
+        "icon": "heart",
+        "title": "Experiência única",
+        "description": "Atendimento personalizado e acolhedor"
+      },
+      {
+        "icon": "star",
+        "title": "Resultados incríveis",
+        "description": "Realce sua beleza natural com nossos tratamentos"
+      }
+    ],
+    "experience": {
+      "value": "10+",
+      "label": "anos de experiência"
+    },
+    "catalogIntro": "Descubra os procedimentos especializados que oferecemos para realçar sua beleza e promover seu bem-estar.",
+    "catalogTitle": "Tratamentos disponíveis",
+    "contactTitle": "Pronta para começar?",
+    "contactIntro": "Agende uma avaliação gratuita e descubra o tratamento ideal para você. Estamos aqui para te atender.",
+    "contactPageTitle": "Agende seu Horário",
+    "contactPageIntro": "Entre em contato conosco pelo WhatsApp e agende seu atendimento de forma rápida e fácil",
+    "footer": "Todos os direitos reservados.",
+    "owner": {
+      "name": "Dayane Di Giovanni",
+      "role": "Proprietária",
+      "phone": "+55 11 95368-9541",
+      "registeredAt": "01/01/2024"
+    },
+    "bookingConfirmation": "Seu agendamento será confirmado em até 24h por WhatsApp."
+  },
+  "contact": {
+    "address": [
+      "R. Viana do Castelo, 168",
+      "Vila California, São Paulo - SP",
+      "CEP 03213-070"
+    ],
+    "phone": "(11) 95368-9541",
+    "email": "contato@dayanedigiovanni.com.br",
+    "hours": [
+      "Segunda a Sexta: 9h às 19h",
+      "Sábado: 9h às 14h",
+      "Domingo: Fechado"
+    ],
+    "whatsapp": "5511953689541",
+    "instagram": "dayanedigiovanni"
+  },
+  "catalog": {
+    "categories": [
+      {
+        "id": 1,
+        "name": "Facial"
+      },
+      {
+        "id": 2,
+        "name": "Corporal"
+      },
+      {
+        "id": 3,
+        "name": "Depilação"
+      },
+      {
+        "id": 4,
+        "name": "Outra"
+      }
+    ],
+    "procedures": [
+      {
+        "id": 1,
+        "name": "Limpeza de Pele",
+        "duration": "60 min",
+        "price": "R$ 150,00",
+        "category": "Facial",
+        "status": "Ativo",
+        "description": "Tratamento profundo para remoção de impurezas, desobstrução dos poros e renovação da pele."
+      },
+      {
+        "id": 2,
+        "name": "Drenagem Linfática",
+        "duration": "90 min",
+        "price": "R$ 200,00",
+        "category": "Corporal",
+        "status": "Ativo",
+        "description": "Técnica manual para reduzir inchaço, melhorar a circulação e desintoxicar o organismo."
+      },
+      {
+        "id": 3,
+        "name": "Peeling Químico",
+        "duration": "45 min",
+        "price": "R$ 250,00",
+        "category": "Facial",
+        "status": "Ativo",
+        "description": "Esfoliação química para renovação celular, uniformização do tom e pele mais jovem e luminosa."
+      },
+      {
+        "id": 4,
+        "name": "Massagem Relaxante",
+        "duration": "60 min",
+        "price": "R$ 180,00",
+        "category": "Corporal",
+        "status": "Ativo",
+        "description": "Alívio de tensões musculares e promoção do bem-estar profundo com toque especializado."
+      },
+      {
+        "id": 5,
+        "name": "Depilação a Laser",
+        "duration": "30 min",
+        "price": "R$ 300,00",
+        "category": "Depilação",
+        "status": "Ativo",
+        "description": "Remoção definitiva de pelos com tecnologia a laser, segura e eficaz para todos os fototipos."
+      },
+      {
+        "id": 6,
+        "name": "Microagulhamento",
+        "duration": "75 min",
+        "price": "R$ 350,00",
+        "category": "Facial",
+        "status": "Inativo",
+        "description": "Estimulação da produção de colágeno com microagulhas para rejuvenescimento e firmeza da pele."
+      }
+    ],
+    "gallery": [],
+    "icon": "sparkles"
+  },
+  "agenda": {
+    "timeSlots": [
+      "09:00",
+      "10:00",
+      "11:00",
+      "12:00",
+      "13:00",
+      "14:00",
+      "15:00",
+      "16:00",
+      "17:00",
+      "18:00"
+    ],
+    "blockedSlots": [
+      "10:00",
+      "14:00"
+    ]
+  },
+  "data": {
+    "clients": [
+      {
+        "id": 1,
+        "name": "Ana Silva",
+        "phone": "(11) 98765-4321",
+        "email": "ana.silva@email.com",
+        "lastVisit": "10/05/2026",
+        "status": "Ativo"
+      },
+      {
+        "id": 2,
+        "name": "Maria Santos",
+        "phone": "(11) 97654-3210",
+        "email": "maria.santos@email.com",
+        "lastVisit": "08/05/2026",
+        "status": "Ativo"
+      },
+      {
+        "id": 3,
+        "name": "Juliana Costa",
+        "phone": "(11) 96543-2109",
+        "email": "juliana.costa@email.com",
+        "lastVisit": "05/05/2026",
+        "status": "Ativo"
+      },
+      {
+        "id": 4,
+        "name": "Patricia Lima",
+        "phone": "(11) 95432-1098",
+        "email": "patricia.lima@email.com",
+        "lastVisit": "02/05/2026",
+        "status": "Inativo"
+      },
+      {
+        "id": 5,
+        "name": "Fernanda Oliveira",
+        "phone": "(11) 94321-0987",
+        "email": "fernanda.oliveira@email.com",
+        "lastVisit": "01/05/2026",
+        "status": "Ativo"
+      }
+    ],
+    "appointments": [
+      {
+        "id": 1,
+        "client": "Ana Silva",
+        "procedure": "Limpeza de Pele",
+        "date": "14/05/2026",
+        "time": "09:00",
+        "status": "Confirmado",
+        "durationMin": 60
+      },
+      {
+        "id": 2,
+        "client": "Maria Santos",
+        "procedure": "Drenagem Linfática",
+        "date": "14/05/2026",
+        "time": "10:30",
+        "status": "Confirmado",
+        "durationMin": 90
+      },
+      {
+        "id": 3,
+        "client": "Juliana Costa",
+        "procedure": "Peeling Químico",
+        "date": "14/05/2026",
+        "time": "14:00",
+        "status": "Pendente",
+        "durationMin": 45
+      },
+      {
+        "id": 4,
+        "client": "Patricia Lima",
+        "procedure": "Massagem Relaxante",
+        "date": "15/05/2026",
+        "time": "09:00",
+        "status": "Confirmado",
+        "durationMin": 60
+      },
+      {
+        "id": 5,
+        "client": "Fernanda Oliveira",
+        "procedure": "Depilação a Laser",
+        "date": "15/05/2026",
+        "time": "11:00",
+        "status": "Confirmado",
+        "durationMin": 30
+      },
+      {
+        "id": 6,
+        "client": "Ana Silva",
+        "procedure": "Microagulhamento",
+        "date": "16/05/2026",
+        "time": "15:00",
+        "status": "Cancelado",
+        "durationMin": 60
+      }
+    ],
+    "employees": [
+      {
+        "id": 1,
+        "name": "Dra. Sofia Martins",
+        "role": "Administradora",
+        "email": "sofia.martins@estetica.com",
+        "phone": "(11) 99876-5432",
+        "status": "Ativo"
+      },
+      {
+        "id": 2,
+        "name": "Carla Mendes",
+        "role": "Esteticista",
+        "email": "carla.mendes@estetica.com",
+        "phone": "(11) 98765-4321",
+        "status": "Ativo"
+      },
+      {
+        "id": 3,
+        "name": "Beatriz Alves",
+        "role": "Recepcionista",
+        "email": "beatriz.alves@estetica.com",
+        "phone": "(11) 97654-3210",
+        "status": "Ativo"
+      },
+      {
+        "id": 4,
+        "name": "Laura Santos",
+        "role": "Esteticista",
+        "email": "laura.santos@estetica.com",
+        "phone": "(11) 96543-2109",
+        "status": "Ativo"
+      },
+      {
+        "id": 5,
+        "name": "Rodrigo Lima",
+        "role": "Auxiliar",
+        "email": "rodrigo.lima@estetica.com",
+        "phone": "(11) 95432-1098",
+        "status": "Férias"
+      }
+    ],
+    "notifications": [
+      {
+        "id": 1,
+        "type": "appointment",
+        "title": "Novo agendamento",
+        "message": "Ana Silva agendou Limpeza de Pele para 15/05 às 09:00",
+        "time": "Há 5 minutos",
+        "read": false
+      },
+      {
+        "id": 2,
+        "type": "reminder",
+        "title": "Lembrete de agendamento",
+        "message": "Maria Santos tem agendamento amanhã às 10:30",
+        "time": "Há 1 hora",
+        "read": false
+      },
+      {
+        "id": 4,
+        "type": "alert",
+        "title": "Cancelamento",
+        "message": "Patricia Lima cancelou agendamento de 16/05",
+        "time": "Há 3 horas",
+        "read": true
+      },
+      {
+        "id": 5,
+        "type": "appointment",
+        "title": "Agendamento confirmado",
+        "message": "Fernanda Oliveira confirmou presença para 14/05 às 14:00",
+        "time": "Há 5 horas",
+        "read": true
+      }
+    ],
+    "clientNotifications": [
+      {
+        "id": "1",
+        "type": "lembrete",
+        "title": "Lembrete de agendamento",
+        "body": "Sua Limpeza de Pele Profunda é amanhã às 10:00. Confirme sua presença.",
+        "time": "Hoje, 18:00",
+        "read": false
+      },
+      {
+        "id": "2",
+        "type": "confirmacao",
+        "title": "Agendamento confirmado",
+        "body": "Seu agendamento de Design de Sobrancelhas para 08/10 às 14:30 foi confirmado.",
+        "time": "Hoje, 09:15",
+        "read": false
+      },
+      {
+        "id": "3",
+        "type": "info",
+        "title": "Novo procedimento disponível",
+        "body": "Agora oferecemos Harmonização Facial. Agende sua avaliação gratuita.",
+        "time": "Ontem, 14:30",
+        "read": true
+      },
+      {
+        "id": "4",
+        "type": "confirmacao",
+        "title": "Agendamento concluído",
+        "body": "Obrigada pela visita! Seu Peeling Químico foi realizado em 20/09. Esperamos te ver em breve.",
+        "time": "20/09, 09:45",
+        "read": true
+      },
+      {
+        "id": "5",
+        "type": "cancelamento",
+        "title": "Agendamento cancelado",
+        "body": "Seu agendamento de Micropigmentação de Lábios em 14/08 foi cancelado. Entre em contato para remarcar.",
+        "time": "14/08, 08:00",
+        "read": true
+      }
+    ],
+    "clientAppointments": [
+      {
+        "id": "1",
+        "procedure": "Limpeza de Pele Profunda",
+        "date": "2026-10-15",
+        "time": "10:00",
+        "status": "confirmado"
+      },
+      {
+        "id": "2",
+        "procedure": "Design de Sobrancelhas",
+        "date": "2026-10-08",
+        "time": "14:30",
+        "status": "pendente"
+      },
+      {
+        "id": "3",
+        "procedure": "Peeling Químico",
+        "date": "2026-09-20",
+        "time": "09:00",
+        "status": "concluido"
+      },
+      {
+        "id": "4",
+        "procedure": "Hidratação Facial",
+        "date": "2026-09-05",
+        "time": "11:00",
+        "status": "concluido"
+      },
+      {
+        "id": "5",
+        "procedure": "Micropigmentação de Lábios",
+        "date": "2026-08-14",
+        "time": "15:00",
+        "status": "cancelado"
+      }
+    ],
+    "clientDocuments": [
+      {
+        "id": 1,
+        "name": "Anamnese.pdf",
+        "uploadDate": "10/05/2024",
+        "size": "1.2 MB",
+        "url": "#"
+      },
+      {
+        "id": 2,
+        "name": "Termo de Consentimento.pdf",
+        "uploadDate": "10/05/2024",
+        "size": "800 KB",
+        "url": "#"
+      }
+    ],
+    "procedureDocuments": [
+      {
+        "id": 1,
+        "name": "POP - Limpeza de Pele Profunda.pdf",
+        "uploadDate": "15/05/2024",
+        "size": "2.3 MB",
+        "url": "#"
+      },
+      {
+        "id": 2,
+        "name": "Checklist Pré-Procedimento.pdf",
+        "uploadDate": "10/05/2024",
+        "size": "1.1 MB",
+        "url": "#"
+      }
+    ]
+  }
+}

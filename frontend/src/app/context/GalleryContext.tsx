@@ -1,10 +1,7 @@
+import { useSite, useStorageKey } from "../config/SiteContext";
+import type { GalleryImage } from "../config/types";
+export type { GalleryImage } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
-
-export interface GalleryImage {
-  id: string;
-  url: string;
-  title?: string;
-}
 
 interface GalleryContextValue {
   images: GalleryImage[];
@@ -13,8 +10,6 @@ interface GalleryContextValue {
   updateTitle: (id: string, title: string) => void;
 }
 
-const STORAGE_KEY = "gallery_images";
-
 const GalleryContext = createContext<GalleryContextValue>({
   images: [],
   addImages: () => {},
@@ -22,17 +17,19 @@ const GalleryContext = createContext<GalleryContextValue>({
   updateTitle: () => {},
 });
 
-function save(next: GalleryImage[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-}
-
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
+  const site = useSite();
+  const STORAGE_KEY = useStorageKey("gallery_images");
+  function save(next: GalleryImage[]) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  }
+
   const [images, setImages] = useState<GalleryImage[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      return stored ? JSON.parse(stored) : site.catalog.gallery;
     } catch {
-      return [];
+      return site.catalog.gallery;
     }
   });
 
@@ -61,14 +58,18 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
   const updateTitle = (id: string, title: string) => {
     setImages((prev) => {
-      const next = prev.map((img) => (img.id === id ? { ...img, title: title || undefined } : img));
+      const next = prev.map((img) =>
+        img.id === id ? { ...img, title: title || undefined } : img,
+      );
       save(next);
       return next;
     });
   };
 
   return (
-    <GalleryContext.Provider value={{ images, addImages, removeImage, updateTitle }}>
+    <GalleryContext.Provider
+      value={{ images, addImages, removeImage, updateTitle }}
+    >
       {children}
     </GalleryContext.Provider>
   );

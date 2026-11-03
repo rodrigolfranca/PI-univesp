@@ -1,90 +1,63 @@
-import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
-
-export const COLOR_THEMES = [
-  { id: "wine", label: "Vinho", hex: "#751e22", vars: { 50: "#fdf2f3", 100: "#fbe8e9", 200: "#f5c4c6", 300: "#eda0a3", 400: "#e05a5f", 500: "#c8373c", 600: "#751e22", 700: "#631a1d", 800: "#4f1518", 900: "#3a0f12" } },
-  { id: "rosa", label: "Rosa", hex: "#9d2158", vars: { 50: "#fdf2f7", 100: "#fce7f1", 200: "#f9c4df", 300: "#f49fc8", 400: "#e8619f", 500: "#d43b7c", 600: "#9d2158", 700: "#831b4a", 800: "#67143a", 900: "#4d0f2b" } },
-  { id: "roxo", label: "Roxo", hex: "#5b2d8e", vars: { 50: "#f5f0fc", 100: "#ede3f9", 200: "#d5c2f3", 300: "#b89de9", 400: "#8e65d9", 500: "#7040c5", 600: "#5b2d8e", 700: "#4a2475", 800: "#3a1c5c", 900: "#2b1444" } },
-  { id: "azul", label: "Azul", hex: "#1a4f8a", vars: { 50: "#f0f5fc", 100: "#ddeaf9", 200: "#b3d0f3", 300: "#84b3ea", 400: "#4b87d9", 500: "#2765bf", 600: "#1a4f8a", 700: "#154072", 800: "#10325a", 900: "#0b2342" } },
-  { id: "dourado", label: "Dourado", hex: "#B9A36D", vars: { 50: "#fefefb", 100: "#f7f2e4", 200: "#ede0b8", 300: "#e7d8a0", 400: "#d4c07a", 500: "#b9a36d", 600: "#857244", 700: "#6b5c36", 800: "#443516", 900: "#040201" } },
-  { id: "cinza", label: "Cinza", hex: "#374151", vars: { 50: "#f8f9fa", 100: "#f1f3f5", 200: "#dee2e6", 300: "#ced4da", 400: "#868e96", 500: "#495057", 600: "#374151", 700: "#2c3440", 800: "#1f2633", 900: "#141a24" } },
-] as const;
-
-export type ColorThemeId = typeof COLOR_THEMES[number]["id"];
-
-interface BrandConfig {
-  name: string;
-  logoUrl: string | null;
-  colorThemeId: ColorThemeId;
-  aboutTitle: string;
-  aboutParagraph1: string;
-  aboutParagraph2: string;
-  aboutParagraph3: string;
-  whatsappNumber: string;
-  instagramHandle: string;
-}
-
+import { createContext, useContext, useLayoutEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useSite, useStorageKey } from "../config/SiteContext";
+import { migrateBrand } from "../config/schema.mjs";
+import themes from "../config/themes.json";
+import type { BrandConfig, Theme } from "../config/types";
+export const COLOR_THEMES = themes;
+export type { BrandConfig } from "../config/types";
 interface BrandContextValue extends BrandConfig {
   updateBrand: (updates: Partial<BrandConfig>) => void;
 }
-
-const defaultConfig: BrandConfig = {
-  name: "Dayane Di Giovanni",
-  logoUrl: null,
-  colorThemeId: "wine",
-  aboutTitle: "Cuidado e beleza com quem entende de você",
-  aboutParagraph1: "Somos uma clínica de estética especializada em tratamentos faciais e corporais, fundada com a missão de oferecer bem-estar real e resultados visíveis. Cada sessão é cuidadosamente planejada para a necessidade individual de cada cliente.",
-  aboutParagraph2: "Com anos de experiência e formação continuada, nossa equipe une técnica de ponta a um atendimento humano e acolhedor. Aqui, você não é mais um número — você é o centro da nossa atenção.",
-  aboutParagraph3: "Localizada em um espaço pensado para o seu conforto, a clínica oferece um ambiente tranquilo onde você pode relaxar enquanto cuida da sua saúde e beleza.",
-  whatsappNumber: "5511953689541",
-  instagramHandle: "dayanedigiovanni",
-};
-
-const BrandContext = createContext<BrandContextValue>({
-  ...defaultConfig,
-  updateBrand: () => {},
-});
-
-function applyColorTheme(themeId: ColorThemeId) {
-  const theme = COLOR_THEMES.find((t) => t.id === themeId);
-  if (!theme) return;
-  const root = document.documentElement;
-  Object.entries(theme.vars).forEach(([shade, hex]) => {
-    root.style.setProperty(`--wine-${shade}`, hex as string);
-  });
-  root.style.setProperty("--primary", theme.vars[600]);
+const BrandContext = createContext<BrandContextValue | null>(null);
+export function applyColorTheme(theme: Theme) {
+  const palette = Object.keys(theme.palette).length
+    ? theme.palette
+    : themes.find((t) => t.id === theme.preset)!.vars;
+  for (const [shade, color] of Object.entries(palette))
+    document.documentElement.style.setProperty(`--brand-${shade}`, color);
+  document.documentElement.style.setProperty("--primary", palette["600"]);
+  document.documentElement.style.setProperty("--ring", palette["400"]);
 }
-
-export function BrandProvider({ children }: { children: React.ReactNode }) {
+export function BrandProvider({ children }: { children: ReactNode }) {
+  const site = useSite(),
+    key = useStorageKey("brand_config");
   const [config, setConfig] = useState<BrandConfig>(() => {
+    const initial: BrandConfig = {
+      name: site.identity.name,
+      logoUrl: null,
+      theme: site.theme,
+      aboutTitle: site.content.homeAbout.title,
+      aboutParagraphs: site.content.homeAbout.paragraphs,
+      whatsappNumber: site.contact.whatsapp,
+      instagramHandle: site.contact.instagram,
+    };
     try {
-      const stored = localStorage.getItem("brand_config");
-      const loaded = stored ? { ...defaultConfig, ...JSON.parse(stored) } : defaultConfig;
-      applyColorTheme(loaded.colorThemeId);
-      return loaded;
+      return migrateBrand(
+        JSON.parse(localStorage.getItem(key) ?? "null"),
+        initial,
+      );
     } catch {
-      return defaultConfig;
+      return initial;
     }
   });
-
   useLayoutEffect(() => {
-    applyColorTheme(config.colorThemeId);
-  }, [config.colorThemeId]);
-
-  const updateBrand = (updates: Partial<BrandConfig>) => {
-    setConfig((prev) => {
-      const next = { ...prev, ...updates };
-      localStorage.setItem("brand_config", JSON.stringify(next));
-      return next;
-    });
-  };
-
+    applyColorTheme(config.theme);
+    document.title = config.name;
+  }, [config.theme, config.name]);
+  function updateBrand(updates: Partial<BrandConfig>) {
+    const next = { ...config, ...updates };
+    localStorage.setItem(key, JSON.stringify(next));
+    setConfig(next);
+  }
   return (
     <BrandContext.Provider value={{ ...config, updateBrand }}>
       {children}
     </BrandContext.Provider>
   );
 }
-
 export function useBrand() {
-  return useContext(BrandContext);
+  const value = useContext(BrandContext);
+  if (!value) throw new Error("BrandProvider ausente");
+  return value;
 }

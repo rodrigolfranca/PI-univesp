@@ -1,3 +1,4 @@
+import { useStorageKey } from "../config/SiteContext";
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 export type UserRole = "employee" | "client";
@@ -16,8 +17,6 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const SESSION_KEY = "auth_user";
-
 // Número reservado para acesso de gestão/funcionários
 const EMPLOYEE_PHONE = "11999999999";
 
@@ -26,6 +25,7 @@ function normalizePhone(phone: string): string {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const SESSION_KEY = useStorageKey("auth_user");
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const stored = sessionStorage.getItem(SESSION_KEY);

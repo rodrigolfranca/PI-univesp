@@ -1,13 +1,13 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import { Calendar, Plus, Bell, UserCircle, LogOut } from "lucide-react";
-import defaultLogo from "../../assets/brand/dayane-logo.png";
+import { BrandLogo } from "./BrandLogo";
 import { useBrand } from "../context/BrandContext";
 import { useAuth } from "../context/AuthContext";
 
 export function ClientLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { name, logoUrl } = useBrand();
+  const { name } = useBrand();
   const { user, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
@@ -29,13 +29,11 @@ export function ClientLayout() {
       <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
         <div className="flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-3">
-            <img
-              src={logoUrl ?? defaultLogo}
-              alt={name}
-              className="w-10 h-10 object-contain"
-            />
+            <BrandLogo size="dashboard" />
             <div>
-              <h1 className="text-base font-semibold text-wine-700 leading-tight">{name}</h1>
+              <h1 className="text-base font-semibold text-brand-700 leading-tight">
+                {name}
+              </h1>
               {user?.phone && (
                 <p className="text-xs text-gray-400">{user.phone}</p>
               )}
@@ -51,7 +49,9 @@ export function ClientLayout() {
                   key={item.path}
                   to={item.path}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    active ? "bg-wine-100 text-wine-600" : "text-gray-600 hover:bg-gray-100"
+                    active
+                      ? "bg-brand-100 text-brand-600"
+                      : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -85,10 +85,12 @@ export function ClientLayout() {
                 key={item.path}
                 to={item.path}
                 className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-                  active ? "text-wine-600" : "text-gray-500"
+                  active ? "text-brand-600" : "text-gray-500"
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? "stroke-[2.5]" : "stroke-2"}`} />
+                <Icon
+                  className={`w-5 h-5 ${active ? "stroke-[2.5]" : "stroke-2"}`}
+                />
                 <span className="text-xs font-medium">{item.label}</span>
               </Link>
             );

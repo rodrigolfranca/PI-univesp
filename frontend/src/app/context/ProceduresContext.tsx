@@ -1,73 +1,7 @@
+import { useSite, useStorageKey } from "../config/SiteContext";
+import type { Procedure } from "../config/types";
+export type { Procedure } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
-
-export type Procedure = {
-  id: number;
-  name: string;
-  category: string;
-  duration: string;
-  price: string;
-  status: string;
-  description: string;
-};
-
-const initialProcedures: Procedure[] = [
-  {
-    id: 1,
-    name: "Limpeza de Pele",
-    duration: "60 min",
-    price: "R$ 150,00",
-    category: "Facial",
-    status: "Ativo",
-    description: "Tratamento profundo para remoção de impurezas, desobstrução dos poros e renovação da pele.",
-  },
-  {
-    id: 2,
-    name: "Drenagem Linfática",
-    duration: "90 min",
-    price: "R$ 200,00",
-    category: "Corporal",
-    status: "Ativo",
-    description: "Técnica manual para reduzir inchaço, melhorar a circulação e desintoxicar o organismo.",
-  },
-  {
-    id: 3,
-    name: "Peeling Químico",
-    duration: "45 min",
-    price: "R$ 250,00",
-    category: "Facial",
-    status: "Ativo",
-    description: "Esfoliação química para renovação celular, uniformização do tom e pele mais jovem e luminosa.",
-  },
-  {
-    id: 4,
-    name: "Massagem Relaxante",
-    duration: "60 min",
-    price: "R$ 180,00",
-    category: "Corporal",
-    status: "Ativo",
-    description: "Alívio de tensões musculares e promoção do bem-estar profundo com toque especializado.",
-  },
-  {
-    id: 5,
-    name: "Depilação a Laser",
-    duration: "30 min",
-    price: "R$ 300,00",
-    category: "Depilação",
-    status: "Ativo",
-    description: "Remoção definitiva de pelos com tecnologia a laser, segura e eficaz para todos os fototipos.",
-  },
-  {
-    id: 6,
-    name: "Microagulhamento",
-    duration: "75 min",
-    price: "R$ 350,00",
-    category: "Facial",
-    status: "Inativo",
-    description: "Estimulação da produção de colágeno com microagulhas para rejuvenescimento e firmeza da pele.",
-  },
-];
-
-const STORAGE_KEY = "procedures_data";
 
 interface ProceduresContextValue {
   procedures: Procedure[];
@@ -77,13 +11,20 @@ interface ProceduresContextValue {
 }
 
 const ProceduresContext = createContext<ProceduresContextValue>({
-  procedures: initialProcedures,
+  procedures: [],
   addProcedure: () => {},
   editProcedure: () => {},
   deleteProcedure: () => {},
 });
 
-export function ProceduresProvider({ children }: { children: React.ReactNode }) {
+export function ProceduresProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const site = useSite();
+  const STORAGE_KEY = useStorageKey("procedures_data");
+  const initialProcedures = site.catalog.procedures;
   const [procedures, setProcedures] = useState<Procedure[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -99,7 +40,8 @@ export function ProceduresProvider({ children }: { children: React.ReactNode }) 
   }
 
   function addProcedure(data: Omit<Procedure, "id">) {
-    const newId = procedures.length > 0 ? Math.max(...procedures.map((p) => p.id)) + 1 : 1;
+    const newId =
+      procedures.length > 0 ? Math.max(...procedures.map((p) => p.id)) + 1 : 1;
     save([...procedures, { id: newId, ...data }]);
   }
 
@@ -112,7 +54,9 @@ export function ProceduresProvider({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <ProceduresContext.Provider value={{ procedures, addProcedure, editProcedure, deleteProcedure }}>
+    <ProceduresContext.Provider
+      value={{ procedures, addProcedure, editProcedure, deleteProcedure }}
+    >
       {children}
     </ProceduresContext.Provider>
   );

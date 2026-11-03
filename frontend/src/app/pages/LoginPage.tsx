@@ -1,27 +1,24 @@
+import { useSite } from "../config/SiteContext";
 import React, { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router";
-import logo from "../../assets/brand/dayane-logo-white.png";
+import { BrandLogo } from "../components/BrandLogo";
 import { useAuth } from "../context/AuthContext";
-
 export function LoginPage() {
+  const site = useSite();
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const treatmentId = searchParams.get("treatmentId");
   const { login } = useAuth();
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-
     const role = login(phone);
-
     if (!role) {
       setError("Informe seu número de telefone para continuar.");
       return;
     }
-
     if (role === "employee") {
       navigate("/app/appointments");
     } else {
@@ -32,25 +29,22 @@ export function LoginPage() {
       }
     }
   };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wine-50 via-white to-wine-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Logo */}
           <div className="flex justify-center">
-            <div className="w-24 h-24 bg-gradient-to-br from-wine-600 to-wine-800 rounded-full p-4 shadow-2xl">
-              <img src={logo} alt="Dayane" className="w-full h-full object-cover rounded-full" />
-            </div>
+            <BrandLogo size="auth" />
           </div>
 
           {/* Tagline */}
           <p className="text-center text-gray-600 text-sm">
-            Reserve experiências inesquecíveis<br />de beleza e bem-estar
+            {site.content.authTagline}
           </p>
 
           {/* Title */}
-          <h1 className="text-3xl font-bold text-wine-800 text-center">
+          <h1 className="text-3xl font-bold text-brand-800 text-center">
             Entre na sua conta
           </h1>
 
@@ -62,7 +56,10 @@ export function LoginPage() {
 
           {/* Phone Input */}
           <div className="space-y-2">
-            <label htmlFor="phone" className="block text-sm font-bold text-gray-700">
+            <label
+              htmlFor="phone"
+              className="block text-sm font-bold text-gray-700"
+            >
               Telefone
             </label>
             <input
@@ -71,14 +68,14 @@ export function LoginPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="(11) 94002-8922"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wine-600 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
             />
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-wine-700 text-white py-3 rounded-lg hover:bg-wine-600 transition-colors font-medium shadow-lg"
+            className="w-full bg-brand-700 text-white py-3 rounded-lg hover:bg-brand-600 transition-colors font-medium shadow-lg"
           >
             Entrar
           </button>
@@ -87,8 +84,10 @@ export function LoginPage() {
           <p className="text-center text-sm text-gray-600 pt-8">
             Não tem uma conta?{" "}
             <Link
-              to={treatmentId ? `/signup?treatmentId=${treatmentId}` : "/signup"}
-              className="text-wine-700 underline font-medium hover:text-wine-600"
+              to={
+                treatmentId ? `/signup?treatmentId=${treatmentId}` : "/signup"
+              }
+              className="text-brand-700 underline font-medium hover:text-brand-600"
             >
               Cadastre-se
             </Link>
@@ -96,7 +95,7 @@ export function LoginPage() {
 
           {/* Back to Home */}
           <p className="text-center pt-4">
-            <Link to="/" className="text-sm text-gray-600 hover:text-wine-700">
+            <Link to="/" className="text-sm text-gray-600 hover:text-brand-700">
               ← Voltar para Home
             </Link>
           </p>
