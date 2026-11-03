@@ -1,5 +1,4 @@
-import { useTerminology } from "../config/SiteContext";
-import { useSite } from "../config/SiteContext";
+import { useTerminology, useSite } from "../config/SiteContext";
 import {
   ArrowLeft,
   Plus,
@@ -10,9 +9,11 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { Link } from "react-router";
+
 export function EmployeesPage() {
   const copy = useTerminology();
   const employees = useSite().data.employees;
+
   return (
     <div className="p-4 md:p-8">
       <Link
@@ -24,9 +25,7 @@ export function EmployeesPage() {
       </Link>
 
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-          Funcionários
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Funcionários</h1>
         <p className="text-gray-500 mt-1 text-sm md:text-base">
           {copy("Gerencie a equipe da clínica")}
         </p>
@@ -51,13 +50,9 @@ export function EmployeesPage() {
         </div>
 
         <div className="divide-y divide-gray-200 md:divide-y-0">
-          {/* Mobile View */}
           <div className="md:hidden">
             {employees.map((employee) => (
-              <div
-                key={employee.id}
-                className="p-4 hover:bg-gray-50 transition-colors"
-              >
+              <div key={employee.id} className="p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
                     <span className="font-semibold text-white text-sm">
@@ -69,9 +64,7 @@ export function EmployeesPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="font-semibold text-gray-900">
-                        {employee.name}
-                      </h3>
+                      <h3 className="font-semibold text-gray-900">{employee.name}</h3>
                       <span
                         className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${employee.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
                       >
@@ -97,17 +90,12 @@ export function EmployeesPage() {
             ))}
           </div>
 
-          {/* Desktop View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Nome
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Cargo
-                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Nome</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Cargo</th>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
                     Contato
                   </th>
@@ -121,10 +109,7 @@ export function EmployeesPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {employees.map((employee) => (
-                  <tr
-                    key={employee.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
+                  <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
@@ -135,9 +120,7 @@ export function EmployeesPage() {
                               .join("")}
                           </span>
                         </div>
-                        <span className="font-medium text-gray-900">
-                          {employee.name}
-                        </span>
+                        <span className="font-medium text-gray-900">{employee.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -177,7 +160,6 @@ export function EmployeesPage() {
         </div>
       </div>
 
-      {/* Floating Action Button */}
       <button className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-40">
         <Plus className="w-6 h-6" />
       </button>

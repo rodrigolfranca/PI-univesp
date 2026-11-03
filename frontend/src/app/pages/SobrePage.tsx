@@ -1,36 +1,31 @@
-import { useTerminology } from "../config/SiteContext";
+import { useTerminology, useSite } from "../config/SiteContext";
 import { SiteIcon } from "../components/SiteIcon";
-import { useSite } from "../config/SiteContext";
 import { whatsappLink, instagramLink } from "../config/links";
 import { BrandLogo } from "../components/BrandLogo";
-import React from "react";
 import { Link } from "react-router";
 import { Instagram } from "lucide-react";
 import { useBrand } from "../context/BrandContext";
+
 export function SobrePage() {
   const copy = useTerminology();
   const site = useSite();
   const { name, whatsappNumber, instagramHandle } = useBrand();
   const whatsappUrl = whatsappLink(whatsappNumber);
   const instagramUrl = instagramLink(instagramHandle);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100">
-      {/* Header */}
       <header className="bg-white/95 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <BrandLogo size="header" />
               <div>
                 <h1 className="text-xl font-bold text-brand-700">{name}</h1>
-                <p className="text-xs text-brand-600">
-                  {site.identity.tagline}
-                </p>
+                <p className="text-xs text-brand-600">{site.identity.tagline}</p>
               </div>
             </Link>
 
-            {/* Navigation */}
             <nav className="hidden md:flex items-center gap-8">
               <Link
                 to="/"
@@ -58,7 +53,6 @@ export function SobrePage() {
               </Link>
             </nav>
 
-            {/* Social Links */}
             <div className="flex items-center gap-4">
               {whatsappUrl && (
                 <a
@@ -89,23 +83,16 @@ export function SobrePage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-16">
-        {/* Title Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-brand-800 mb-4">
             {site.content.pageHeadings.aboutTitle}
           </h1>
-          <p className="text-lg text-gray-600">
-            {site.content.pageHeadings.aboutIntro}
-          </p>
+          <p className="text-lg text-gray-600">{site.content.pageHeadings.aboutIntro}</p>
         </div>
 
-        {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-          {/* Mission Text */}
-          {(site.content.about.missionTitle ||
-            site.content.about.paragraphs.length > 0) && (
+          {(site.content.about.missionTitle || site.content.about.paragraphs.length > 0) && (
             <div className="space-y-6">
               <h2 className="text-3xl font-bold text-brand-800">
                 {site.content.about.missionTitle}
@@ -118,7 +105,6 @@ export function SobrePage() {
             </div>
           )}
 
-          {/* Values Grid */}
           <div className="grid grid-cols-2 gap-4">
             {site.content.about.values.map((value) => {
               return (
@@ -127,14 +113,9 @@ export function SobrePage() {
                   className="bg-white rounded-2xl p-6 shadow-lg border border-brand-100"
                 >
                   <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mb-4">
-                    <SiteIcon
-                      name={value.icon}
-                      className="w-6 h-6 text-brand-700"
-                    />
+                    <SiteIcon name={value.icon} className="w-6 h-6 text-brand-700" />
                   </div>
-                  <h3 className="font-bold text-brand-800 mb-2">
-                    {value.title}
-                  </h3>
+                  <h3 className="font-bold text-brand-800 mb-2">{value.title}</h3>
                   <p className="text-sm text-gray-600">{value.description}</p>
                 </div>
               );
@@ -143,13 +124,11 @@ export function SobrePage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-brand-200 py-8">
         <div className="max-w-6xl mx-auto px-6">
           <p className="text-center text-sm text-gray-500">
             © {new Date().getFullYear()} {name}
-            {site.identity.tagline && <> - {site.identity.tagline}</>}.{" "}
-            {site.content.footer}
+            {site.identity.tagline && <> - {site.identity.tagline}</>}. {site.content.footer}
           </p>
         </div>
       </footer>

@@ -22,10 +22,10 @@ import {
 } from "../components/ui/alert-dialog";
 import { useCategories } from "../context/CategoriesContext";
 import { useProcedures } from "../context/ProceduresContext";
+
 export function CategoriesPage() {
   const copy = useTerminology();
-  const { categories, addCategory, editCategory, deleteCategory } =
-    useCategories();
+  const { categories, addCategory, editCategory, deleteCategory } = useCategories();
   const { procedures } = useProcedures();
   const [addOpen, setAddOpen] = useState(false);
   const [addName, setAddName] = useState("");
@@ -36,55 +36,58 @@ export function CategoriesPage() {
   const [editError, setEditError] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
   function procedureCount(categoryName: string) {
     return procedures.filter((p) => p.category === categoryName).length;
   }
+
   function handleAdd() {
     const trimmed = addName.trim();
     if (!trimmed) {
       setAddError("Nome é obrigatório");
       return;
     }
-    if (
-      categories.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())
-    ) {
+
+    if (categories.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) {
       setAddError("Já existe uma categoria com este nome");
       return;
     }
+
     addCategory(trimmed);
     toast.success(`Categoria "${trimmed}" criada`);
     setAddName("");
     setAddError("");
     setAddOpen(false);
   }
+
   function openEdit(id: number, name: string) {
     setEditId(id);
     setEditName(name);
     setEditError("");
     setEditOpen(true);
   }
+
   function handleEdit() {
     const trimmed = editName.trim();
     if (!trimmed) {
       setEditError("Nome é obrigatório");
       return;
     }
-    if (
-      categories.some(
-        (c) =>
-          c.id !== editId && c.name.toLowerCase() === trimmed.toLowerCase(),
-      )
-    ) {
+
+    if (categories.some((c) => c.id !== editId && c.name.toLowerCase() === trimmed.toLowerCase())) {
       setEditError("Já existe uma categoria com este nome");
       return;
     }
+
     editCategory(editId!, trimmed);
     toast.success("Categoria atualizada");
     setEditOpen(false);
   }
+
   function openDelete(id: number) {
     const cat = categories.find((c) => c.id === id);
     if (!cat) return;
+
     const count = procedureCount(cat.name);
     if (count > 0) {
       toast.error(
@@ -99,22 +102,21 @@ export function CategoriesPage() {
       );
       return;
     }
+
     setDeleteId(id);
     setDeleteOpen(true);
   }
+
   function handleDelete() {
     deleteCategory(deleteId!);
     toast.success("Categoria removida");
     setDeleteOpen(false);
   }
+
   return (
     <div className="p-4 md:p-8">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-4">
-        <Link
-          to="/app/settings"
-          className="hover:text-brand-600 transition-colors"
-        >
+        <Link to="/app/settings" className="hover:text-brand-600 transition-colors">
           Configurações
         </Link>
         <ChevronRight className="w-4 h-4" />
@@ -131,7 +133,6 @@ export function CategoriesPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        {/* Header row */}
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <span className="text-sm text-gray-500">
             {categories.length} categori{categories.length === 1 ? "a" : "as"}
@@ -149,19 +150,17 @@ export function CategoriesPage() {
           </button>
         </div>
 
-        {/* Mobile: cards */}
         <div className="md:hidden divide-y divide-gray-100">
           {categories.map((cat) => {
             const count = procedureCount(cat.name);
+
             return (
               <div key={cat.id} className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
                   <Tag className="w-5 h-5 text-brand-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
-                    {cat.name}
-                  </p>
+                  <p className="font-medium text-gray-900 truncate">{cat.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {count}
                     {copy(" procedimento")}
@@ -194,7 +193,6 @@ export function CategoriesPage() {
           )}
         </div>
 
-        {/* Desktop: table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -211,19 +209,15 @@ export function CategoriesPage() {
             <tbody className="divide-y divide-gray-100">
               {categories.map((cat) => {
                 const count = procedureCount(cat.name);
+
                 return (
-                  <tr
-                    key={cat.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
+                  <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
                           <Tag className="w-4 h-4 text-brand-600" />
                         </div>
-                        <span className="font-medium text-gray-900">
-                          {cat.name}
-                        </span>
+                        <span className="font-medium text-gray-900">{cat.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -258,10 +252,7 @@ export function CategoriesPage() {
               })}
               {categories.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-12 text-center text-gray-400 text-sm"
-                  >
+                  <td colSpan={3} className="px-6 py-12 text-center text-gray-400 text-sm">
                     Nenhuma categoria cadastrada.
                   </td>
                 </tr>
@@ -271,7 +262,6 @@ export function CategoriesPage() {
         </div>
       </div>
 
-      {/* FAB (mobile) */}
       <button
         onClick={() => {
           setAddName("");
@@ -283,11 +273,7 @@ export function CategoriesPage() {
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* Dialog: Adicionar */}
-      <Dialog
-        open={addOpen}
-        onOpenChange={(open) => !open && setAddOpen(false)}
-      >
+      <Dialog open={addOpen} onOpenChange={(open) => !open && setAddOpen(false)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-gray-900">
@@ -310,9 +296,7 @@ export function CategoriesPage() {
               autoFocus
               className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${addError ? "border-red-400" : "border-gray-300"}`}
             />
-            {addError && (
-              <p className="mt-1 text-xs text-red-500">{addError}</p>
-            )}
+            {addError && <p className="mt-1 text-xs text-red-500">{addError}</p>}
           </div>
           <DialogFooter>
             <button
@@ -333,11 +317,7 @@ export function CategoriesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Editar */}
-      <Dialog
-        open={editOpen}
-        onOpenChange={(open) => !open && setEditOpen(false)}
-      >
+      <Dialog open={editOpen} onOpenChange={(open) => !open && setEditOpen(false)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-gray-900">
@@ -359,9 +339,7 @@ export function CategoriesPage() {
               autoFocus
               className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${editError ? "border-red-400" : "border-gray-300"}`}
             />
-            {editError && (
-              <p className="mt-1 text-xs text-red-500">{editError}</p>
-            )}
+            {editError && <p className="mt-1 text-xs text-red-500">{editError}</p>}
           </div>
           <DialogFooter>
             <button
@@ -382,14 +360,11 @@ export function CategoriesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* AlertDialog: Excluir */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

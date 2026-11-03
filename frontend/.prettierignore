@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+public/
+src/assets/
+guidelines/
+plans/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock

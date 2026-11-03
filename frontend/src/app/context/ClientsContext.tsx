@@ -1,7 +1,8 @@
 import { useSite, useStorageKey } from "../config/SiteContext";
 import type { Client } from "../config/types";
-export type { Client } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
+
+export type { Client } from "../config/types";
 
 interface ClientsContextValue {
   clients: Client[];
@@ -36,8 +37,7 @@ export function ClientsProvider({ children }: { children: React.ReactNode }) {
   }
 
   function addClient(data: Omit<Client, "id">) {
-    const newId =
-      clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1;
+    const newId = clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1;
     save([...clients, { id: newId, ...data }]);
   }
 
@@ -50,9 +50,7 @@ export function ClientsProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ClientsContext.Provider
-      value={{ clients, addClient, editClient, deleteClient }}
-    >
+    <ClientsContext.Provider value={{ clients, addClient, editClient, deleteClient }}>
       {children}
     </ClientsContext.Provider>
   );

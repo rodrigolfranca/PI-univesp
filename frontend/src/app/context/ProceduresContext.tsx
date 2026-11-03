@@ -1,7 +1,8 @@
 import { useSite, useStorageKey } from "../config/SiteContext";
 import type { Procedure } from "../config/types";
-export type { Procedure } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
+
+export type { Procedure } from "../config/types";
 
 interface ProceduresContextValue {
   procedures: Procedure[];
@@ -17,11 +18,7 @@ const ProceduresContext = createContext<ProceduresContextValue>({
   deleteProcedure: () => {},
 });
 
-export function ProceduresProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function ProceduresProvider({ children }: { children: React.ReactNode }) {
   const site = useSite();
   const STORAGE_KEY = useStorageKey("procedures_data");
   const initialProcedures = site.catalog.procedures;
@@ -40,8 +37,7 @@ export function ProceduresProvider({
   }
 
   function addProcedure(data: Omit<Procedure, "id">) {
-    const newId =
-      procedures.length > 0 ? Math.max(...procedures.map((p) => p.id)) + 1 : 1;
+    const newId = procedures.length > 0 ? Math.max(...procedures.map((p) => p.id)) + 1 : 1;
     save([...procedures, { id: newId, ...data }]);
   }
 

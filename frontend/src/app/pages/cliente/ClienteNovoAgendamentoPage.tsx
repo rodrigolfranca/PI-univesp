@@ -1,16 +1,9 @@
-import { useTerminology } from "../../config/SiteContext";
+import { useTerminology, useSite } from "../../config/SiteContext";
 import { SiteIcon } from "../../components/SiteIcon";
-import { useSite } from "../../config/SiteContext";
 import { demoOccupiedSlots } from "../../config/agenda";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Calendar,
-  CheckCircle,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Calendar, CheckCircle } from "lucide-react";
 import {
   format,
   addMonths,
@@ -25,8 +18,11 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useProcedures } from "../../context/ProceduresContext";
+
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
 type Step = "procedure" | "datetime" | "confirm" | "done";
+
 export function ClienteNovoAgendamentoPage() {
   const copy = useTerminology();
   const site = useSite();
@@ -35,9 +31,7 @@ export function ClienteNovoAgendamentoPage() {
   const { procedures } = useProcedures();
   const active = procedures.filter((p) => p.status === "Ativo");
   const [step, setStep] = useState<Step>("procedure");
-  const [selectedProcedureId, setSelectedProcedureId] = useState<number | null>(
-    null,
-  );
+  const [selectedProcedureId, setSelectedProcedureId] = useState<number | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -50,19 +44,21 @@ export function ClienteNovoAgendamentoPage() {
     end: monthEnd,
   });
   const startPadding = getDay(monthStart);
-  const occupiedToday = selectedDate
-    ? demoOccupiedSlots(agenda, selectedDate)
-    : [];
+  const occupiedToday = selectedDate ? demoOccupiedSlots(agenda, selectedDate) : [];
+
   function handleDateSelect(date: Date) {
     if (isBefore(date, today)) return;
+
     setSelectedDate(date);
     setSelectedTime(null);
   }
+
   function handleBack() {
     if (step === "procedure") navigate("/cliente/agendamentos");
     else if (step === "datetime") setStep("procedure");
     else if (step === "confirm") setStep("datetime");
   }
+
   if (step === "done") {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-6">
@@ -78,14 +74,9 @@ export function ClienteNovoAgendamentoPage() {
                 {" "}
                 para{" "}
                 <span className="font-medium text-gray-700">
-                  {format(selectedDate, "dd/MM/yyyy", {
-                    locale: ptBR,
-                  })}
+                  {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
                 </span>{" "}
-                às{" "}
-                <span className="font-medium text-gray-700">
-                  {selectedTime}
-                </span>
+                às <span className="font-medium text-gray-700">{selectedTime}</span>
               </>
             )}{" "}
             foi enviado para confirmação.
@@ -100,14 +91,11 @@ export function ClienteNovoAgendamentoPage() {
       </div>
     );
   }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={handleBack}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
+        <button onClick={handleBack} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div>
@@ -120,7 +108,6 @@ export function ClienteNovoAgendamentoPage() {
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="flex gap-2 mb-8">
         {(["procedure", "datetime", "confirm"] as Step[]).map((s, i) => (
           <div
@@ -130,7 +117,6 @@ export function ClienteNovoAgendamentoPage() {
         ))}
       </div>
 
-      {/* Step: choose procedure */}
       {step === "procedure" && (
         <div className="space-y-3">
           {active.length === 0 && (
@@ -149,16 +135,11 @@ export function ClienteNovoAgendamentoPage() {
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <SiteIcon
-                    name={site.catalog.icon}
-                    className="w-5 h-5 text-brand-700"
-                  />
+                  <SiteIcon name={site.catalog.icon} className="w-5 h-5 text-brand-700" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900">{proc.name}</p>
-                  {proc.duration && (
-                    <p className="text-sm text-gray-400">{proc.duration}</p>
-                  )}
+                  {proc.duration && <p className="text-sm text-gray-400">{proc.duration}</p>}
                 </div>
                 {proc.price && (
                   <span className="text-sm font-semibold text-brand-700 flex-shrink-0">
@@ -171,11 +152,9 @@ export function ClienteNovoAgendamentoPage() {
         </div>
       )}
 
-      {/* Step: choose date + time */}
       {step === "datetime" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {/* Calendar */}
             <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6">
               <div className="flex items-center justify-between mb-5">
                 <button
@@ -186,9 +165,7 @@ export function ClienteNovoAgendamentoPage() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <h2 className="text-base font-bold text-brand-800 capitalize">
-                  {format(currentMonth, "MMMM yyyy", {
-                    locale: ptBR,
-                  })}
+                  {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
                 </h2>
                 <button
                   aria-label="Próximo mês"
@@ -199,30 +176,23 @@ export function ClienteNovoAgendamentoPage() {
                 </button>
               </div>
 
-              {/* Weekday headers */}
               <div className="grid grid-cols-7 mb-2">
                 {WEEKDAYS.map((wd) => (
-                  <div
-                    key={wd}
-                    className="text-center text-xs font-semibold text-[#9ca3af] py-1"
-                  >
+                  <div key={wd} className="text-center text-xs font-semibold text-[#9ca3af] py-1">
                     {wd}
                   </div>
                 ))}
               </div>
 
-              {/* Day grid */}
               <div className="grid grid-cols-7 gap-1">
-                {Array.from({
-                  length: startPadding,
-                }).map((_, i) => (
+                {Array.from({ length: startPadding }).map((_, i) => (
                   <div key={`pad-${i}`} />
                 ))}
                 {days.map((day) => {
                   const isPast = isBefore(day, today);
-                  const isSelected =
-                    selectedDate?.toDateString() === day.toDateString();
+                  const isSelected = selectedDate?.toDateString() === day.toDateString();
                   const isTodayDay = isToday(day);
+
                   return (
                     <button
                       key={day.toISOString()}
@@ -247,7 +217,6 @@ export function ClienteNovoAgendamentoPage() {
               </div>
             </div>
 
-            {/* Time slots */}
             {selectedDate && (
               <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6">
                 <h3 className="text-base font-bold text-brand-800 mb-1 flex items-center gap-2">
@@ -255,14 +224,13 @@ export function ClienteNovoAgendamentoPage() {
                   Horários disponíveis
                 </h3>
                 <p className="text-xs text-[#9ca3af] mb-4 capitalize">
-                  {format(selectedDate, "EEEE, dd 'de' MMMM", {
-                    locale: ptBR,
-                  })}
+                  {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                 </p>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {agenda.timeSlots.map((slot) => {
                     const occupied = occupiedToday.includes(slot);
                     const isChosen = selectedTime === slot;
+
                     return (
                       <button
                         key={slot}
@@ -287,7 +255,6 @@ export function ClienteNovoAgendamentoPage() {
             )}
           </div>
 
-          {/* Sidebar summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6 sticky top-20">
               <h3 className="text-base font-bold text-brand-800 mb-4 flex items-center gap-2">
@@ -299,23 +266,15 @@ export function ClienteNovoAgendamentoPage() {
                   <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">
                     {copy("Tratamento")}
                   </p>
-                  <p className="text-sm font-semibold text-brand-800 mt-0.5">
-                    {procedure?.name}
-                  </p>
+                  <p className="text-sm font-semibold text-brand-800 mt-0.5">{procedure?.name}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">
-                    Data
-                  </p>
+                  <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">Data</p>
                   <p className="text-sm font-semibold text-brand-800 mt-0.5">
                     {selectedDate ? (
-                      format(selectedDate, "dd/MM/yyyy", {
-                        locale: ptBR,
-                      })
+                      format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
                     ) : (
-                      <span className="text-[#d1d5db] font-normal">
-                        Selecione uma data
-                      </span>
+                      <span className="text-[#d1d5db] font-normal">Selecione uma data</span>
                     )}
                   </p>
                 </div>
@@ -325,9 +284,7 @@ export function ClienteNovoAgendamentoPage() {
                   </p>
                   <p className="text-sm font-semibold text-brand-800 mt-0.5">
                     {selectedTime ?? (
-                      <span className="text-[#d1d5db] font-normal">
-                        Selecione um horário
-                      </span>
+                      <span className="text-[#d1d5db] font-normal">Selecione um horário</span>
                     )}
                   </p>
                 </div>
@@ -336,9 +293,7 @@ export function ClienteNovoAgendamentoPage() {
                     <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">
                       Valor
                     </p>
-                    <p className="text-lg font-bold text-brand-700 mt-0.5">
-                      {procedure.price}
-                    </p>
+                    <p className="text-lg font-bold text-brand-700 mt-0.5">{procedure.price}</p>
                   </div>
                 )}
               </div>
@@ -369,33 +324,21 @@ export function ClienteNovoAgendamentoPage() {
         </div>
       )}
 
-      {/* Step: confirm */}
       {step === "confirm" && procedure && (
         <div className="max-w-md space-y-6">
           <div className="bg-white border border-brand-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-brand-800 text-lg">
-              Resumo do agendamento
-            </h2>
+            <h2 className="font-semibold text-brand-800 text-lg">Resumo do agendamento</h2>
             <div className="space-y-3 text-sm">
               <Row label={copy("Procedimento")} value={procedure.name} />
-              {procedure.duration && (
-                <Row label="Duração" value={procedure.duration} />
-              )}
+              {procedure.duration && <Row label="Duração" value={procedure.duration} />}
               {procedure.price && <Row label="Valor" value={procedure.price} />}
               {selectedDate && (
-                <Row
-                  label="Data"
-                  value={format(selectedDate, "dd/MM/yyyy", {
-                    locale: ptBR,
-                  })}
-                />
+                <Row label="Data" value={format(selectedDate, "dd/MM/yyyy", { locale: ptBR })} />
               )}
               {selectedTime && <Row label="Horário" value={selectedTime} />}
             </div>
           </div>
-          <p className="text-xs text-gray-400 text-center">
-            {site.content.bookingConfirmation}
-          </p>
+          <p className="text-xs text-gray-400 text-center">{site.content.bookingConfirmation}</p>
           <button
             onClick={() => setStep("done")}
             className="w-full bg-brand-700 text-white py-3 rounded-xl font-medium hover:bg-brand-600 transition-colors shadow-lg"
@@ -407,6 +350,7 @@ export function ClienteNovoAgendamentoPage() {
     </div>
   );
 }
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">

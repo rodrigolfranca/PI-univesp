@@ -31,12 +31,8 @@ export function ClientLayout() {
           <div className="flex items-center gap-3">
             <BrandLogo size="dashboard" />
             <div>
-              <h1 className="text-base font-semibold text-brand-700 leading-tight">
-                {name}
-              </h1>
-              {user?.phone && (
-                <p className="text-xs text-gray-400">{user.phone}</p>
-              )}
+              <h1 className="text-base font-semibold text-brand-700 leading-tight">{name}</h1>
+              {user?.phone && <p className="text-xs text-gray-400">{user.phone}</p>}
             </div>
           </div>
 
@@ -44,14 +40,13 @@ export function ClientLayout() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
+
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    active
-                      ? "bg-brand-100 text-brand-600"
-                      : "text-gray-600 hover:bg-gray-100"
+                    active ? "bg-brand-100 text-brand-600" : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -80,6 +75,7 @@ export function ClientLayout() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
+
             return (
               <Link
                 key={item.path}
@@ -88,9 +84,7 @@ export function ClientLayout() {
                   active ? "text-brand-600" : "text-gray-500"
                 }`}
               >
-                <Icon
-                  className={`w-5 h-5 ${active ? "stroke-[2.5]" : "stroke-2"}`}
-                />
+                <Icon className={`w-5 h-5 ${active ? "stroke-[2.5]" : "stroke-2"}`} />
                 <span className="text-xs font-medium">{item.label}</span>
               </Link>
             );

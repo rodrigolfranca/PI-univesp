@@ -1,36 +1,31 @@
-import { useTerminology } from "../config/SiteContext";
+import { useTerminology, useSite } from "../config/SiteContext";
 import { SiteIcon } from "../components/SiteIcon";
-import { useSite } from "../config/SiteContext";
 import { whatsappLink, instagramLink } from "../config/links";
 import { BrandLogo } from "../components/BrandLogo";
-import React from "react";
 import { Link } from "react-router";
 import { Instagram } from "lucide-react";
 import { useBrand } from "../context/BrandContext";
+
 export function TratamentosPage() {
   const copy = useTerminology();
   const site = useSite();
   const { name, whatsappNumber, instagramHandle } = useBrand();
   const whatsappUrl = whatsappLink(whatsappNumber);
   const instagramUrl = instagramLink(instagramHandle);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100">
-      {/* Header */}
       <header className="bg-white/95 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <BrandLogo size="header" />
               <div>
                 <h1 className="text-xl font-bold text-brand-700">{name}</h1>
-                <p className="text-xs text-brand-600">
-                  {site.identity.tagline}
-                </p>
+                <p className="text-xs text-brand-600">{site.identity.tagline}</p>
               </div>
             </Link>
 
-            {/* Navigation */}
             <nav className="hidden md:flex items-center gap-8">
               <Link
                 to="/"
@@ -58,7 +53,6 @@ export function TratamentosPage() {
               </Link>
             </nav>
 
-            {/* Social Links */}
             <div className="flex items-center gap-4">
               {whatsappUrl && (
                 <a
@@ -89,19 +83,14 @@ export function TratamentosPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-16">
-        {/* Title Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-brand-800 mb-4">
             {site.content.pageHeadings.treatmentsTitle}
           </h1>
-          <p className="text-lg text-gray-600">
-            {site.content.pageHeadings.treatmentsIntro}
-          </p>
+          <p className="text-lg text-gray-600">{site.content.pageHeadings.treatmentsIntro}</p>
         </div>
 
-        {/* Treatments Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {site.content.treatments.map((treatment) => {
             return (
@@ -111,31 +100,24 @@ export function TratamentosPage() {
               >
                 <div className="flex justify-center mb-6">
                   <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center">
-                    <SiteIcon
-                      name={treatment.icon}
-                      className="w-8 h-8 text-brand-700"
-                    />
+                    <SiteIcon name={treatment.icon} className="w-8 h-8 text-brand-700" />
                   </div>
                 </div>
                 <h2 className="text-xl font-bold text-brand-800 text-center mb-4">
                   {treatment.title}
                 </h2>
-                <p className="text-center text-gray-600">
-                  {treatment.description}
-                </p>
+                <p className="text-center text-gray-600">{treatment.description}</p>
               </div>
             );
           })}
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-brand-200 py-8 mt-16">
         <div className="max-w-6xl mx-auto px-6">
           <p className="text-center text-sm text-gray-500">
             © {new Date().getFullYear()} {name}
-            {site.identity.tagline && <> - {site.identity.tagline}</>}.{" "}
-            {site.content.footer}
+            {site.identity.tagline && <> - {site.identity.tagline}</>}. {site.content.footer}
           </p>
         </div>
       </footer>

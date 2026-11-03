@@ -1,13 +1,8 @@
 import { useSite } from "../../config/SiteContext";
-import {
-  Bell,
-  Calendar,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Info,
-} from "lucide-react";
+import { Bell, Calendar, CheckCircle, XCircle, Info } from "lucide-react";
+
 type NotifType = "lembrete" | "confirmacao" | "cancelamento" | "info";
+
 interface Notification {
   id: string;
   type: NotifType;
@@ -16,6 +11,7 @@ interface Notification {
   time: string;
   read: boolean;
 }
+
 const typeConfig: Record<
   NotifType,
   {
@@ -45,10 +41,12 @@ const typeConfig: Record<
     bg: "bg-blue-50",
   },
 };
+
 export function ClienteNotificacoesPage() {
   const MOCK_NOTIFICATIONS = useSite().data.clientNotifications;
   const unread = MOCK_NOTIFICATIONS.filter((n) => !n.read);
   const read = MOCK_NOTIFICATIONS.filter((n) => n.read);
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
       <div className="flex items-center justify-between">
@@ -95,9 +93,11 @@ export function ClienteNotificacoesPage() {
     </div>
   );
 }
+
 function NotifCard({ notification: n }: { notification: Notification }) {
   const cfg = typeConfig[n.type];
   const Icon = cfg.icon;
+
   return (
     <div
       className={`bg-white rounded-xl border shadow-sm p-4 flex gap-4 ${n.read ? "border-gray-100 opacity-75" : "border-brand-300"}`}
@@ -109,14 +109,10 @@ function NotifCard({ notification: n }: { notification: Notification }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <p
-            className={`font-medium text-sm ${n.read ? "text-gray-600" : "text-gray-900"}`}
-          >
+          <p className={`font-medium text-sm ${n.read ? "text-gray-600" : "text-gray-900"}`}>
             {n.title}
           </p>
-          {!n.read && (
-            <span className="w-2 h-2 rounded-full bg-brand-700 flex-shrink-0 mt-1" />
-          )}
+          {!n.read && <span className="w-2 h-2 rounded-full bg-brand-700 flex-shrink-0 mt-1" />}
         </div>
         <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{n.body}</p>
         <p className="text-xs text-gray-400 mt-1.5">{n.time}</p>

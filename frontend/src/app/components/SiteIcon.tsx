@@ -15,6 +15,7 @@ import {
   Phone,
 } from "lucide-react";
 import { iconNames } from "../config/schema.mjs";
+
 const icons = {
   briefcase: Briefcase,
   calendar: Calendar,
@@ -31,16 +32,12 @@ const icons = {
   scissors: Scissors,
   phone: Phone,
 };
-// Validation and rendering share the supported icon names.
-if (iconNames.some((name) => !(name in icons)))
-  throw new Error("Catálogo de ícones incompleto");
-export function SiteIcon({
-  name,
-  className,
-}: {
-  name: string;
-  className?: string;
-}) {
+
+// Mantém os ícones renderizados alinhados aos nomes aceitos na configuração.
+if (iconNames.some((name) => !(name in icons))) throw new Error("Catálogo de ícones incompleto");
+
+export function SiteIcon({ name, className }: { name: string; className?: string }) {
   const Icon = icons[name as keyof typeof icons] ?? Briefcase;
+
   return <Icon className={className} aria-hidden="true" />;
 }

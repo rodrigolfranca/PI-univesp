@@ -40,7 +40,7 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Neutral brand palette; overridden by the selected variant */
+  /* A variante selecionada substitui esta paleta neutra. */
   --brand-50: #f8f9fa;
   --brand-100: #f1f3f5;
   --brand-200: #dee2e6;
@@ -130,7 +130,6 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Wine color tokens */
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
   --color-brand-200: var(--brand-200);
@@ -152,10 +151,7 @@
     @apply bg-background text-foreground;
   }
 
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
+  /* Em @layer base, a tipografia pode ser sobrescrita pelas classes utilitárias. */
 
   html {
     font-size: var(--font-size);

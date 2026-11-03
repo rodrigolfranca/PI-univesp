@@ -1,13 +1,5 @@
 import { useTerminology } from "../config/SiteContext";
-import {
-  Search,
-  Plus,
-  Clock,
-  DollarSign,
-  Pencil,
-  Trash2,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Search, Plus, Clock, DollarSign, Pencil, Trash2, SlidersHorizontal } from "lucide-react";
 import React, { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
@@ -30,6 +22,7 @@ import {
 } from "../components/ui/alert-dialog";
 import { useProcedures } from "../context/ProceduresContext";
 import { useCategories } from "../context/CategoriesContext";
+
 type ProcedureForm = {
   name: string;
   category: string;
@@ -38,6 +31,7 @@ type ProcedureForm = {
   status: string;
   description: string;
 };
+
 const emptyForm: ProcedureForm = {
   name: "",
   category: "",
@@ -46,10 +40,10 @@ const emptyForm: ProcedureForm = {
   status: "Ativo",
   description: "",
 };
+
 export function ProceduresPage() {
   const copy = useTerminology();
-  const { procedures, addProcedure, editProcedure, deleteProcedure } =
-    useProcedures();
+  const { procedures, addProcedure, editProcedure, deleteProcedure } = useProcedures();
   const { categories } = useCategories();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -60,14 +54,15 @@ export function ProceduresPage() {
   const [form, setForm] = useState<ProcedureForm>(emptyForm);
   const [errors, setErrors] = useState<Partial<ProcedureForm>>({});
   const filteredProcedures = procedures.filter((p) => {
-    const matchesCategory =
-      !selectedCategory || p.category === selectedCategory;
+    const matchesCategory = !selectedCategory || p.category === selectedCategory;
     const matchesSearch =
       !searchQuery ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.category.toLowerCase().includes(searchQuery.toLowerCase());
+
     return matchesCategory && matchesSearch;
   });
+
   function handleField(field: keyof ProcedureForm, value: string) {
     setForm((prev) => ({
       ...prev,
@@ -79,25 +74,33 @@ export function ProceduresPage() {
         [field]: "",
       }));
   }
+
   function validate() {
     const newErrors: Partial<ProcedureForm> = {};
     if (!form.name.trim()) newErrors.name = "Nome é obrigatório";
+
     if (!form.category) newErrors.category = "Categoria é obrigatória";
+
     if (!form.duration.trim()) newErrors.duration = "Duração é obrigatória";
+
     if (!form.price.trim()) newErrors.price = "Preço é obrigatório";
+
     return newErrors;
   }
+
   function handleOpenCreate() {
     setEditingId(null);
     setForm(emptyForm);
     setErrors({});
     setModalOpen(true);
   }
+
   function handleOpenEdit(e: React.MouseEvent, id: number) {
     e.preventDefault();
     e.stopPropagation();
     const proc = procedures.find((p) => p.id === id);
     if (!proc) return;
+
     setEditingId(id);
     setForm({
       name: proc.name,
@@ -110,12 +113,14 @@ export function ProceduresPage() {
     setErrors({});
     setModalOpen(true);
   }
+
   function handleSubmit() {
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+
     const data = {
       name: form.name,
       duration: form.duration,
@@ -131,23 +136,28 @@ export function ProceduresPage() {
       addProcedure(data);
       toast.success(copy("Procedimento cadastrado com sucesso"));
     }
+
     setForm(emptyForm);
     setErrors({});
     setModalOpen(false);
     setEditingId(null);
   }
+
   function handleClose() {
     setForm(emptyForm);
     setErrors({});
     setModalOpen(false);
     setEditingId(null);
   }
+
   function handleConfirmDelete() {
     if (deleteId === null) return;
+
     deleteProcedure(deleteId);
     toast.success(copy("Procedimento excluído"));
     setDeleteId(null);
   }
+
   return (
     <div className="p-4 md:p-8">
       <div className="mb-6">
@@ -178,9 +188,7 @@ export function ProceduresPage() {
             >
               <SlidersHorizontal className="w-5 h-5" />
               <span className="hidden md:inline">Filtros</span>
-              {selectedCategory && (
-                <span className="w-2 h-2 bg-brand-600 rounded-full" />
-              )}
+              {selectedCategory && <span className="w-2 h-2 bg-brand-600 rounded-full" />}
             </button>
           </div>
 
@@ -188,9 +196,7 @@ export function ProceduresPage() {
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Categoria
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setSelectedCategory("")}
@@ -230,7 +236,6 @@ export function ProceduresPage() {
                     {procedure.category}
                   </span>
                 </div>
-                {/* Action buttons */}
                 <div className="flex items-center gap-1 ml-2">
                   <button
                     onClick={(e) => handleOpenEdit(e, procedure.id)}
@@ -282,15 +287,12 @@ export function ProceduresPage() {
 
           {filteredProcedures.length === 0 && (
             <div className="col-span-full py-16 text-center text-gray-400">
-              <p className="text-sm">
-                {copy("Nenhum procedimento encontrado")}
-              </p>
+              <p className="text-sm">{copy("Nenhum procedimento encontrado")}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Floating Action Button */}
       <button
         onClick={handleOpenCreate}
         className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-[60]"
@@ -298,7 +300,6 @@ export function ProceduresPage() {
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* Delete confirmation */}
       <AlertDialog
         open={deleteId !== null}
         onOpenChange={(open) => {
@@ -310,8 +311,8 @@ export function ProceduresPage() {
             <AlertDialogTitle>{copy("Excluir procedimento")}</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir{" "}
-              <strong>{procedures.find((p) => p.id === deleteId)?.name}</strong>
-              ? Esta ação não pode ser desfeita.
+              <strong>{procedures.find((p) => p.id === deleteId)?.name}</strong>? Esta ação não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -326,19 +327,15 @@ export function ProceduresPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal de Cadastro / Edição */}
       <Dialog open={modalOpen} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {editingId !== null
-                ? copy("Editar Procedimento")
-                : copy("Novo Procedimento")}
+              {editingId !== null ? copy("Editar Procedimento") : copy("Novo Procedimento")}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Nome */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {copy(" Nome do Procedimento ")}
@@ -351,12 +348,9 @@ export function ProceduresPage() {
                 placeholder="Ex: Atendimento"
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.name ? "border-red-400" : "border-gray-300"}`}
               />
-              {errors.name && (
-                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-              )}
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
             </div>
 
-            {/* Categoria */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Categoria <span className="text-brand-600">*</span>
@@ -373,12 +367,9 @@ export function ProceduresPage() {
                   </button>
                 ))}
               </div>
-              {errors.category && (
-                <p className="mt-1 text-xs text-red-500">{errors.category}</p>
-              )}
+              {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
             </div>
 
-            {/* Duração e Preço lado a lado */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -391,9 +382,7 @@ export function ProceduresPage() {
                   placeholder="Ex: 60 min"
                   className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.duration ? "border-red-400" : "border-gray-300"}`}
                 />
-                {errors.duration && (
-                  <p className="mt-1 text-xs text-red-500">{errors.duration}</p>
-                )}
+                {errors.duration && <p className="mt-1 text-xs text-red-500">{errors.duration}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -411,17 +400,12 @@ export function ProceduresPage() {
                     className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.price ? "border-red-400" : "border-gray-300"}`}
                   />
                 </div>
-                {errors.price && (
-                  <p className="mt-1 text-xs text-red-500">{errors.price}</p>
-                )}
+                {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
               </div>
             </div>
 
-            {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <div className="flex gap-2">
                 {["Ativo", "Inativo"].map((s) => (
                   <button
@@ -436,11 +420,9 @@ export function ProceduresPage() {
               </div>
             </div>
 
-            {/* Descrição */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Descrição{" "}
-                <span className="text-gray-400 font-normal">(opcional)</span>
+                Descrição <span className="text-gray-400 font-normal">(opcional)</span>
               </label>
               <textarea
                 value={form.description}
@@ -465,9 +447,7 @@ export function ProceduresPage() {
               onClick={handleSubmit}
               className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
             >
-              {editingId !== null
-                ? "Salvar Alterações"
-                : copy("Salvar Procedimento")}
+              {editingId !== null ? "Salvar Alterações" : copy("Salvar Procedimento")}
             </button>
           </DialogFooter>
         </DialogContent>

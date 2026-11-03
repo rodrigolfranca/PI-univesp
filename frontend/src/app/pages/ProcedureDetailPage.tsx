@@ -1,6 +1,5 @@
-import { useSite } from "../config/SiteContext";
-import { useTerminology } from "../config/SiteContext";
-import React, { useState } from "react";
+import { useSite, useTerminology } from "../config/SiteContext";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
@@ -23,6 +22,7 @@ import {
 } from "../components/ui/dialog";
 import { useProcedures } from "../context/ProceduresContext";
 import { useCategories } from "../context/CategoriesContext";
+
 interface POPDocument {
   id: number;
   name: string;
@@ -30,6 +30,7 @@ interface POPDocument {
   size: string;
   url: string;
 }
+
 type ProcedureForm = {
   name: string;
   category: string;
@@ -38,6 +39,7 @@ type ProcedureForm = {
   status: string;
   description: string;
 };
+
 export function ProcedureDetailPage() {
   const site = useSite();
   const copy = useTerminology();
@@ -57,9 +59,7 @@ export function ProcedureDetailPage() {
     description: "",
   });
   const [editErrors, setEditErrors] = useState<Partial<ProcedureForm>>({});
-  const [popDocuments, setPopDocuments] = useState<POPDocument[]>(
-    site.data.procedureDocuments,
-  );
+  const [popDocuments, setPopDocuments] = useState<POPDocument[]>(site.data.procedureDocuments);
   if (!procedure) {
     return (
       <div className="p-4 md:p-8">
@@ -74,6 +74,7 @@ export function ProcedureDetailPage() {
       </div>
     );
   }
+
   function openEdit() {
     setEditForm({
       name: procedure!.name,
@@ -86,6 +87,7 @@ export function ProcedureDetailPage() {
     setEditErrors({});
     setEditOpen(true);
   }
+
   function handleEditField(field: keyof ProcedureForm, value: string) {
     setEditForm((prev) => ({
       ...prev,
@@ -97,32 +99,38 @@ export function ProcedureDetailPage() {
         [field]: "",
       }));
   }
+
   function handleEditSubmit() {
     const newErrors: Partial<ProcedureForm> = {};
     if (!editForm.name.trim()) newErrors.name = "Nome é obrigatório";
+
     if (!editForm.category) newErrors.category = "Categoria é obrigatória";
+
     if (!editForm.duration.trim()) newErrors.duration = "Duração é obrigatória";
+
     if (!editForm.price.trim()) newErrors.price = "Preço é obrigatório";
+
     if (Object.keys(newErrors).length > 0) {
       setEditErrors(newErrors);
       return;
     }
+
     editProcedure(procedure!.id, {
       name: editForm.name,
       category: editForm.category,
       duration: editForm.duration,
-      price: editForm.price.startsWith("R$")
-        ? editForm.price
-        : `R$ ${editForm.price}`,
+      price: editForm.price.startsWith("R$") ? editForm.price : `R$ ${editForm.price}`,
       status: editForm.status,
       description: editForm.description,
     });
     toast.success(copy("Procedimento atualizado com sucesso"));
     setEditOpen(false);
   }
+
   const handleDeletePOP = (popId: number) => {
     setPopDocuments(popDocuments.filter((doc) => doc.id !== popId));
   };
+
   const handleAddPOP = () => {
     const newDoc: POPDocument = {
       id: Date.now(),
@@ -134,9 +142,9 @@ export function ProcedureDetailPage() {
     setPopDocuments([...popDocuments, newDoc]);
     setShowAddPOP(false);
   };
+
   return (
     <div className="p-4 md:p-8">
-      {/* Header */}
       <div className="mb-6">
         <button
           onClick={() => navigate("/app/procedures")}
@@ -145,18 +153,12 @@ export function ProcedureDetailPage() {
           <ArrowLeft className="w-5 h-5" />
           <span>{copy("Voltar para Procedimentos")}</span>
         </button>
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-          {procedure.name}
-        </h1>
-        <p className="text-gray-500 mt-1 text-sm md:text-base">
-          {procedure.category}
-        </p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{procedure.name}</h1>
+        <p className="text-gray-500 mt-1 text-sm md:text-base">{procedure.category}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Detalhes do Procedimento */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Informações Gerais */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
               Informações Gerais
@@ -164,9 +166,7 @@ export function ProcedureDetailPage() {
             <div className="space-y-4">
               {procedure.description && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                    Descrição
-                  </h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Descrição</h3>
                   <p className="text-gray-600">{procedure.description}</p>
                 </div>
               )}
@@ -185,9 +185,7 @@ export function ProcedureDetailPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                  Status
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">Status</h3>
                 <span
                   className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${procedure.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}
                 >
@@ -197,13 +195,10 @@ export function ProcedureDetailPage() {
             </div>
           </div>
 
-          {/* Documentos POP */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg md:text-xl font-semibold text-gray-900">
-                  Documentos POP
-                </h2>
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900">Documentos POP</h2>
                 <p className="text-sm text-gray-500 mt-1">
                   {copy("Procedimento Operacional Padrão")}
                 </p>
@@ -233,9 +228,7 @@ export function ProcedureDetailPage() {
                         <FileText className="w-5 h-5 text-brand-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {doc.name}
-                        </h3>
+                        <h3 className="font-medium text-gray-900 truncate">{doc.name}</h3>
                         <p className="text-sm text-gray-500">
                           {doc.uploadDate} • {doc.size}
                         </p>
@@ -262,12 +255,9 @@ export function ProcedureDetailPage() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
-              Ações Rápidas
-            </h2>
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
             <div className="space-y-3">
               <button
                 onClick={openEdit}
@@ -282,9 +272,7 @@ export function ProcedureDetailPage() {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Estatísticas
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Estatísticas</h2>
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-500">Agendamentos este mês</p>
@@ -292,23 +280,18 @@ export function ProcedureDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Documentos POP</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {popDocuments.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{popDocuments.length}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal Adicionar POP */}
       {showAddPOP && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Adicionar Documento POP
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">Adicionar Documento POP</h3>
               <button
                 onClick={() => setShowAddPOP(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -328,17 +311,13 @@ export function ProcedureDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Arquivo
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Arquivo</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-brand-600 transition-colors cursor-pointer">
                   <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600">
                     Clique para selecionar ou arraste o arquivo
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    PDF, DOC, DOCX até 10MB
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX até 10MB</p>
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
@@ -360,7 +339,6 @@ export function ProcedureDetailPage() {
         </div>
       )}
 
-      {/* Edit Modal */}
       <Dialog
         open={editOpen}
         onOpenChange={(open) => {
@@ -384,9 +362,7 @@ export function ProcedureDetailPage() {
                 onChange={(e) => handleEditField("name", e.target.value)}
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-50 ${editErrors.name ? "border-red-400" : "border-gray-300"}`}
               />
-              {editErrors.name && (
-                <p className="mt-1 text-xs text-red-500">{editErrors.name}</p>
-              )}
+              {editErrors.name && <p className="mt-1 text-xs text-red-500">{editErrors.name}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -405,9 +381,7 @@ export function ProcedureDetailPage() {
                 ))}
               </div>
               {editErrors.category && (
-                <p className="mt-1 text-xs text-red-500">
-                  {editErrors.category}
-                </p>
+                <p className="mt-1 text-xs text-red-500">{editErrors.category}</p>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -423,9 +397,7 @@ export function ProcedureDetailPage() {
                   className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-50 ${editErrors.duration ? "border-red-400" : "border-gray-300"}`}
                 />
                 {editErrors.duration && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {editErrors.duration}
-                  </p>
+                  <p className="mt-1 text-xs text-red-500">{editErrors.duration}</p>
                 )}
               </div>
               <div>
@@ -445,16 +417,12 @@ export function ProcedureDetailPage() {
                   />
                 </div>
                 {editErrors.price && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {editErrors.price}
-                  </p>
+                  <p className="mt-1 text-xs text-red-500">{editErrors.price}</p>
                 )}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <div className="flex gap-2">
                 {["Ativo", "Inativo"].map((s) => (
                   <button
@@ -470,8 +438,7 @@ export function ProcedureDetailPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Descrição{" "}
-                <span className="text-gray-400 font-normal">(opcional)</span>
+                Descrição <span className="text-gray-400 font-normal">(opcional)</span>
               </label>
               <textarea
                 value={editForm.description}

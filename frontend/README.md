@@ -42,11 +42,17 @@ A configuração mínima precisa apenas do nome. Os demais campos recebem padrõ
   "catalog": {
     "icon": "wrench",
     "categories": [{ "id": 1, "name": "Manutenção" }],
-    "procedures": [{
-      "id": 1, "name": "Revisão de equipamento", "category": "Manutenção",
-      "duration": "60 min", "price": "A consultar", "status": "Ativo",
-      "description": "Inspeção e manutenção preventiva."
-    }]
+    "procedures": [
+      {
+        "id": 1,
+        "name": "Revisão de equipamento",
+        "category": "Manutenção",
+        "duration": "60 min",
+        "price": "A consultar",
+        "status": "Ativo",
+        "description": "Inspeção e manutenção preventiva."
+      }
+    ]
   },
   "agenda": { "timeSlots": ["08:30", "13:30"], "blockedSlots": [] }
 }
@@ -84,3 +90,9 @@ Nos domínios registrados, as chaves de armazenamento existentes são preservada
 Na Vercel, use `frontend` como diretório raiz, `npm run build` e saída `dist`. Associe os domínios ao mesmo projeto e gere uma implantação após cadastrar variantes. `vercel.json` mantém o acesso direto e a recarga das rotas internas. Para previews, defina `VITE_CLIENTE` antes do build. A associação de domínios é feita na plataforma; nenhum domínio é criado pelo comando de cadastro.
 
 As configurações Dayane e Karina mantêm o conteúdo anterior. O contato, alguns textos e dados de demonstração herdados da Dayane continuam explicitamente na configuração da Karina, conforme solicitado. A pasta original `Karina Alexitsch` permanece como referência.
+
+## Convenções de código
+
+Use `npm run format` para formatar o frontend e `npm run format:check` para conferir o padrão sem alterar arquivos. O Prettier usa dois espaços, aspas duplas, ponto e vírgula, vírgulas finais e largura preferencial de 100 caracteres. Dependências, builds, assets e arquivos gerados ficam fora da formatação.
+
+Separe blocos de responsabilidade com linhas em branco, prefira nomes claros e mantenha comentários para explicar decisões e limitações. Rótulos que apenas repetem o JSX não são necessários. Preserve os contratos das variantes e as interfaces dos componentes ao fazer limpezas de legibilidade.

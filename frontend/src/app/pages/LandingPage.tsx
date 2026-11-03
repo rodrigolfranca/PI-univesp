@@ -1,6 +1,5 @@
-import { useTerminology } from "../config/SiteContext";
+import { useTerminology, useSite } from "../config/SiteContext";
 import { SiteIcon } from "../components/SiteIcon";
-import { useSite } from "../config/SiteContext";
 import { whatsappLink, instagramLink } from "../config/links";
 import { BrandLogo } from "../components/BrandLogo";
 import React from "react";
@@ -9,47 +8,38 @@ import { Instagram, KeyRound, ChevronRight } from "lucide-react";
 import { useBrand } from "../context/BrandContext";
 import { useProcedures } from "../context/ProceduresContext";
 import { useGallery } from "../context/GalleryContext";
+
 function scrollTo(id: string) {
   return (e: React.MouseEvent) => {
     e.preventDefault();
-    document.getElementById(id)?.scrollIntoView({
-      behavior: "smooth",
-    });
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 }
+
 export function LandingPage() {
   const copy = useTerminology();
   const site = useSite();
-  const { name, aboutTitle, aboutParagraphs, whatsappNumber, instagramHandle } =
-    useBrand();
+  const { name, aboutTitle, aboutParagraphs, whatsappNumber, instagramHandle } = useBrand();
   const whatsappUrl = whatsappLink(whatsappNumber);
   const instagramUrl = instagramLink(instagramHandle);
   const { procedures } = useProcedures();
   const activeProcedures = procedures.filter((p) => p.status === "Ativo");
   const navigate = useNavigate();
   const { images } = useGallery();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100">
-      {/* Header */}
       <header className="bg-white/95 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo */}
-            <a
-              href="#hero"
-              onClick={scrollTo("hero")}
-              className="flex items-center gap-3"
-            >
+            <a href="#hero" onClick={scrollTo("hero")} className="flex items-center gap-3">
               <BrandLogo size="header" />
               <div>
                 <h1 className="text-xl font-bold text-brand-700">{name}</h1>
-                <p className="text-xs text-brand-600">
-                  {site.identity.tagline}
-                </p>
+                <p className="text-xs text-brand-600">{site.identity.tagline}</p>
               </div>
             </a>
 
-            {/* Navigation */}
             <nav className="hidden md:flex items-center gap-8">
               <a
                 href="#hero"
@@ -94,7 +84,6 @@ export function LandingPage() {
               )}
             </nav>
 
-            {/* Social Links + Acesso Gestão */}
             <div className="flex items-center gap-3">
               {whatsappUrl && (
                 <a
@@ -133,7 +122,6 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section id="hero" className="max-w-6xl mx-auto px-6 py-20 text-center">
         <div className="flex justify-center mb-8">
           <BrandLogo size="hero" />
@@ -170,24 +158,16 @@ export function LandingPage() {
                 className="bg-white rounded-2xl p-6 shadow-lg border border-brand-100 hover:shadow-xl transition-all"
               >
                 <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <SiteIcon
-                    name={feature.icon}
-                    className="w-6 h-6 text-brand-700"
-                  />
+                  <SiteIcon name={feature.icon} className="w-6 h-6 text-brand-700" />
                 </div>
-                <h3 className="text-lg font-bold text-brand-800 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {feature.description}
-                </p>
+                <h3 className="text-lg font-bold text-brand-800 mb-2">{feature.title}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      {/* Sobre Section */}
       {(aboutTitle || aboutParagraphs.some(Boolean)) && (
         <section id="sobre" className="bg-brand-50 py-20">
           <div className="max-w-6xl mx-auto px-6">
@@ -202,10 +182,7 @@ export function LandingPage() {
                 {aboutParagraphs.map(
                   (paragraph, index) =>
                     paragraph && (
-                      <p
-                        key={index}
-                        className="text-gray-600 leading-relaxed mb-4"
-                      >
+                      <p key={index} className="text-gray-600 leading-relaxed mb-4">
                         {paragraph}
                       </p>
                     ),
@@ -234,19 +211,14 @@ export function LandingPage() {
         </section>
       )}
 
-      {/* Tratamentos Section */}
       <section id="tratamentos" className="py-20">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
             <span className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3 block">
               {copy("Nossos serviços")}
             </span>
-            <h2 className="text-4xl font-bold text-brand-800 mb-4">
-              {site.content.catalogTitle}
-            </h2>
-            <p className="text-lg text-gray-600 max-w-xl mx-auto">
-              {site.content.catalogIntro}
-            </p>
+            <h2 className="text-4xl font-bold text-brand-800 mb-4">{site.content.catalogTitle}</h2>
+            <p className="text-lg text-gray-600 max-w-xl mx-auto">{site.content.catalogIntro}</p>
           </div>
 
           {activeProcedures.length === 0 ? (
@@ -263,10 +235,7 @@ export function LandingPage() {
                   className="group bg-white rounded-2xl p-7 shadow-md border border-brand-100 hover:shadow-xl hover:border-brand-300 hover:-translate-y-1 transition-all text-left cursor-pointer w-full"
                 >
                   <div className="w-14 h-14 bg-brand-100 group-hover:bg-brand-200 rounded-xl flex items-center justify-center mb-5 transition-colors">
-                    <SiteIcon
-                      name={site.catalog.icon}
-                      className="w-7 h-7 text-brand-700"
-                    />
+                    <SiteIcon name={site.catalog.icon} className="w-7 h-7 text-brand-700" />
                   </div>
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-lg font-bold text-brand-800 leading-snug flex-1">
@@ -278,9 +247,7 @@ export function LandingPage() {
                     {procedure.category}
                   </span>
                   {procedure.description ? (
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {procedure.description}
-                    </p>
+                    <p className="text-sm text-gray-600 leading-relaxed">{procedure.description}</p>
                   ) : null}
                 </button>
               ))}
@@ -289,7 +256,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Galeria Section */}
       {images.length > 0 && (
         <section id="galeria" className="py-20 bg-white">
           <div className="max-w-6xl mx-auto px-6">
@@ -297,9 +263,7 @@ export function LandingPage() {
               <span className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3 block">
                 Galeria
               </span>
-              <h2 className="text-4xl font-bold text-brand-800 mb-4">
-                Nossa galeria
-              </h2>
+              <h2 className="text-4xl font-bold text-brand-800 mb-4">Nossa galeria</h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {images.map((img) => (
@@ -314,9 +278,7 @@ export function LandingPage() {
                   />
                   {img.title && (
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-white text-xs font-medium">
-                        {img.title}
-                      </p>
+                      <p className="text-white text-xs font-medium">{img.title}</p>
                     </div>
                   )}
                 </div>
@@ -326,19 +288,13 @@ export function LandingPage() {
         </section>
       )}
 
-      {/* Contato Section */}
       {(whatsappUrl || instagramUrl) && (
-        <section
-          id="contato"
-          className="bg-gradient-to-br from-brand-600 to-brand-800 py-20"
-        >
+        <section id="contato" className="bg-gradient-to-br from-brand-600 to-brand-800 py-20">
           <div className="max-w-6xl mx-auto px-6 text-center">
             <span className="text-sm font-semibold text-brand-300 uppercase tracking-widest mb-3 block">
               Entre em contato
             </span>
-            <h2 className="text-4xl font-bold text-white mb-4">
-              {site.content.contactTitle}
-            </h2>
+            <h2 className="text-4xl font-bold text-white mb-4">{site.content.contactTitle}</h2>
             <p className="text-brand-200 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
               {site.content.contactIntro}
             </p>
@@ -372,13 +328,11 @@ export function LandingPage() {
         </section>
       )}
 
-      {/* Footer */}
       <footer className="border-t border-brand-200 py-8 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <p className="text-center text-sm text-gray-500">
             © {new Date().getFullYear()} {name}
-            {site.identity.tagline && <> - {site.identity.tagline}</>}.{" "}
-            {site.content.footer}
+            {site.identity.tagline && <> - {site.identity.tagline}</>}. {site.content.footer}
           </p>
         </div>
       </footer>

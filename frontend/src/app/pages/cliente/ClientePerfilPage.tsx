@@ -1,37 +1,35 @@
 import { useNavigate } from "react-router";
 import { UserCircle, Phone, LogOut, ChevronRight, Shield } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+
 export function ClientePerfilPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
   function handleLogout() {
     logout();
     navigate("/login");
   }
+
   return (
     <div className="max-w-md mx-auto px-4 py-6 space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
 
-      {/* Avatar */}
       <div className="flex flex-col items-center gap-3 py-6">
         <div className="w-24 h-24 rounded-full bg-brand-100 flex items-center justify-center">
           <UserCircle className="w-16 h-16 text-brand-700" />
         </div>
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-900">
-            {user?.name ?? "Cliente"}
-          </p>
+          <p className="text-lg font-semibold text-gray-900">{user?.name ?? "Cliente"}</p>
           <p className="text-sm text-gray-400">Conta de cliente</p>
         </div>
       </div>
 
-      {/* Info */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
         <InfoRow icon={Phone} label="Telefone" value={user?.phone ?? "—"} />
         <InfoRow icon={Shield} label="Tipo de conta" value="Cliente" />
       </div>
 
-      {/* Actions */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
         <button
           onClick={handleLogout}
@@ -51,6 +49,7 @@ export function ClientePerfilPage() {
     </div>
   );
 }
+
 function InfoRow({
   icon: Icon,
   label,

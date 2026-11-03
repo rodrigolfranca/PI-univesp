@@ -1,14 +1,6 @@
 import { useTerminology } from "../config/SiteContext";
 import { useState } from "react";
-import {
-  Search,
-  Plus,
-  Phone,
-  Mail,
-  MoreVertical,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { Search, Plus, Phone, Mail, MoreVertical, SlidersHorizontal } from "lucide-react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import {
@@ -19,18 +11,21 @@ import {
   DialogFooter,
 } from "../components/ui/dialog";
 import { useClients } from "../context/ClientsContext";
+
 type ClientForm = {
   name: string;
   phone: string;
   email: string;
   status: string;
 };
+
 const emptyForm: ClientForm = {
   name: "",
   phone: "",
   email: "",
   status: "Ativo",
 };
+
 export function ClientsPage() {
   const copy = useTerminology();
   const { clients, addClient } = useClients();
@@ -45,6 +40,7 @@ export function ClientsPage() {
       c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.phone.includes(searchQuery),
   );
+
   function handleField(field: keyof ClientForm, value: string) {
     setForm((prev) => ({
       ...prev,
@@ -56,19 +52,25 @@ export function ClientsPage() {
         [field]: "",
       }));
   }
+
   function validate() {
     const newErrors: Partial<ClientForm> = {};
     if (!form.name.trim()) newErrors.name = "Nome é obrigatório";
+
     if (!form.phone.trim()) newErrors.phone = "Telefone é obrigatório";
+
     if (!form.email.trim()) newErrors.email = "E-mail é obrigatório";
+
     return newErrors;
   }
+
   function handleSubmit() {
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+
     const today = new Date().toLocaleDateString("pt-BR");
     addClient({
       name: form.name,
@@ -82,17 +84,17 @@ export function ClientsPage() {
     setErrors({});
     setModalOpen(false);
   }
+
   function handleClose() {
     setForm(emptyForm);
     setErrors({});
     setModalOpen(false);
   }
+
   return (
     <div className="p-4 md:p-8">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-          Clientes
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Clientes</h1>
         <p className="text-gray-500 mt-1 text-sm md:text-base">
           {copy("Gerencie todos os clientes da clínica")}
         </p>
@@ -119,7 +121,6 @@ export function ClientsPage() {
         </div>
 
         <div className="divide-y divide-gray-200 md:divide-y-0">
-          {/* Mobile View */}
           <div className="md:hidden">
             {filteredClients.map((client) => (
               <Link
@@ -129,15 +130,11 @@ export function ClientsPage() {
               >
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-                    <span className="font-semibold text-brand-600">
-                      {client.name.charAt(0)}
-                    </span>
+                    <span className="font-semibold text-brand-600">{client.name.charAt(0)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-gray-900">
-                        {client.name}
-                      </h3>
+                      <h3 className="font-semibold text-gray-900">{client.name}</h3>
                       <span
                         className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${client.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}
                       >
@@ -163,14 +160,11 @@ export function ClientsPage() {
             ))}
           </div>
 
-          {/* Desktop View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Nome
-                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Nome</th>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
                     Contato
                   </th>
@@ -187,23 +181,15 @@ export function ClientsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredClients.map((client) => (
-                  <tr
-                    key={client.id}
-                    className="hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
+                  <tr key={client.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-6 py-4">
-                      <Link
-                        to={`/app/clients/${client.id}`}
-                        className="flex items-center gap-3"
-                      >
+                      <Link to={`/app/clients/${client.id}`} className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
                           <span className="font-medium text-brand-600">
                             {client.name.charAt(0)}
                           </span>
                         </div>
-                        <span className="font-medium text-gray-900">
-                          {client.name}
-                        </span>
+                        <span className="font-medium text-gray-900">{client.name}</span>
                       </Link>
                     </td>
                     <td className="px-6 py-4">
@@ -262,7 +248,6 @@ export function ClientsPage() {
         </div>
       </div>
 
-      {/* Floating Action Button */}
       <button
         onClick={() => setModalOpen(true)}
         className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-[60]"
@@ -270,17 +255,13 @@ export function ClientsPage() {
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* Modal de Cadastro */}
       <Dialog open={modalOpen} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900">
-              Novo Cliente
-            </DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-gray-900">Novo Cliente</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Nome */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nome <span className="text-brand-600">*</span>
@@ -292,12 +273,9 @@ export function ClientsPage() {
                 placeholder="Ex: Ana Silva"
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.name ? "border-red-400" : "border-gray-300"}`}
               />
-              {errors.name && (
-                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-              )}
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
             </div>
 
-            {/* Telefone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Telefone <span className="text-brand-600">*</span>
@@ -309,12 +287,9 @@ export function ClientsPage() {
                 placeholder="Ex: (11) 98765-4321"
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.phone ? "border-red-400" : "border-gray-300"}`}
               />
-              {errors.phone && (
-                <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
-              )}
+              {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
             </div>
 
-            {/* E-mail */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 E-mail <span className="text-brand-600">*</span>
@@ -326,16 +301,11 @@ export function ClientsPage() {
                 placeholder="Ex: ana.silva@email.com"
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.email ? "border-red-400" : "border-gray-300"}`}
               />
-              {errors.email && (
-                <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-              )}
+              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
             </div>
 
-            {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <div className="flex gap-2">
                 {["Ativo", "Inativo"].map((s) => (
                   <button

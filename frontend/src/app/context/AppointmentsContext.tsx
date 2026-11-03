@@ -1,7 +1,8 @@
 import { useSite, useStorageKey } from "../config/SiteContext";
 import type { Appointment } from "../config/types";
-export type { Appointment } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
+
+export type { Appointment } from "../config/types";
 
 export type { AppStatus } from "../config/types";
 
@@ -17,11 +18,7 @@ const AppointmentsContext = createContext<AppointmentsContextValue>({
   cancelAppointment: () => {},
 });
 
-export function AppointmentsProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function AppointmentsProvider({ children }: { children: React.ReactNode }) {
   const site = useSite();
   const STORAGE_KEY = useStorageKey("appointments_data");
   const initialAppointments = site.data.appointments;
@@ -40,25 +37,16 @@ export function AppointmentsProvider({
   }
 
   function addAppointment(data: Omit<Appointment, "id">) {
-    const newId =
-      appointments.length > 0
-        ? Math.max(...appointments.map((a) => a.id)) + 1
-        : 1;
+    const newId = appointments.length > 0 ? Math.max(...appointments.map((a) => a.id)) + 1 : 1;
     save([...appointments, { id: newId, ...data }]);
   }
 
   function cancelAppointment(id: number) {
-    save(
-      appointments.map((a) =>
-        a.id === id ? { ...a, status: "Cancelado" } : a,
-      ),
-    );
+    save(appointments.map((a) => (a.id === id ? { ...a, status: "Cancelado" } : a)));
   }
 
   return (
-    <AppointmentsContext.Provider
-      value={{ appointments, addAppointment, cancelAppointment }}
-    >
+    <AppointmentsContext.Provider value={{ appointments, addAppointment, cancelAppointment }}>
       {children}
     </AppointmentsContext.Provider>
   );

@@ -1,7 +1,8 @@
 import { useSite, useStorageKey } from "../config/SiteContext";
 import type { GalleryImage } from "../config/types";
-export type { GalleryImage } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
+
+export type { GalleryImage } from "../config/types";
 
 interface GalleryContextValue {
   images: GalleryImage[];
@@ -20,6 +21,7 @@ const GalleryContext = createContext<GalleryContextValue>({
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const site = useSite();
   const STORAGE_KEY = useStorageKey("gallery_images");
+
   function save(next: GalleryImage[]) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }
@@ -41,6 +43,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         setImages((prev) => {
           const next = [...prev, { id: crypto.randomUUID(), url }];
           save(next);
+
           return next;
         });
       };
@@ -52,24 +55,22 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setImages((prev) => {
       const next = prev.filter((img) => img.id !== id);
       save(next);
+
       return next;
     });
   };
 
   const updateTitle = (id: string, title: string) => {
     setImages((prev) => {
-      const next = prev.map((img) =>
-        img.id === id ? { ...img, title: title || undefined } : img,
-      );
+      const next = prev.map((img) => (img.id === id ? { ...img, title: title || undefined } : img));
       save(next);
+
       return next;
     });
   };
 
   return (
-    <GalleryContext.Provider
-      value={{ images, addImages, removeImage, updateTitle }}
-    >
+    <GalleryContext.Provider value={{ images, addImages, removeImage, updateTitle }}>
       {children}
     </GalleryContext.Provider>
   );

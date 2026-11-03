@@ -1,14 +1,9 @@
 import { useSite } from "../config/SiteContext";
-import {
-  Bell,
-  Calendar,
-  User,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-} from "lucide-react";
+import { Bell, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react";
+
 export function NotificationsPage() {
   const notifications = useSite().data.notifications;
+
   const getIcon = (type: string) => {
     switch (type) {
       case "appointment":
@@ -38,13 +33,12 @@ export function NotificationsPage() {
         };
     }
   };
+
   return (
     <div className="p-4 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-            Notificações
-          </h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Notificações</h1>
           <p className="text-gray-500 mt-1 text-sm md:text-base">
             Acompanhe atualizações e alertas
           </p>
@@ -72,6 +66,7 @@ export function NotificationsPage() {
         <div className="divide-y divide-gray-200">
           {notifications.map((notification) => {
             const { icon: Icon, color } = getIcon(notification.type);
+
             return (
               <div
                 key={notification.id}
@@ -91,12 +86,8 @@ export function NotificationsPage() {
                         <span className="ml-2 w-2 h-2 bg-brand-600 rounded-full inline-block"></span>
                       )}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {notification.message}
-                    </p>
-                    <span className="text-xs text-gray-500">
-                      {notification.time}
-                    </span>
+                    <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
+                    <span className="text-xs text-gray-500">{notification.time}</span>
                   </div>
                 </div>
               </div>

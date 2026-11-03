@@ -1,10 +1,12 @@
 import { ArrowLeft, Lock, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
+
 export function ChangePasswordPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   return (
     <div className="p-4 md:p-8">
       <Link
@@ -17,12 +19,8 @@ export function ChangePasswordPage() {
 
       <div className="max-w-2xl">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-            Trocar Senha
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm md:text-base">
-            Atualize sua senha de acesso
-          </p>
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Trocar Senha</h1>
+          <p className="text-gray-500 mt-1 text-sm md:text-base">Atualize sua senha de acesso</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-8">
@@ -40,9 +38,7 @@ export function ChangePasswordPage() {
 
           <form className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Senha Atual
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Senha Atual</label>
               <div className="relative">
                 <input
                   type={showCurrentPassword ? "text" : "password"}
@@ -64,9 +60,7 @@ export function ChangePasswordPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nova Senha
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nova Senha</label>
               <div className="relative">
                 <input
                   type={showNewPassword ? "text" : "password"}
@@ -78,11 +72,7 @@ export function ChangePasswordPage() {
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showNewPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>

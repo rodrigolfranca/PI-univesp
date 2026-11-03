@@ -1,7 +1,8 @@
 import { useSite, useStorageKey } from "../config/SiteContext";
 import type { Category } from "../config/types";
-export type { Category } from "../config/types";
 import React, { createContext, useContext, useState } from "react";
+
+export type { Category } from "../config/types";
 
 interface CategoriesContextValue {
   categories: Category[];
@@ -17,11 +18,7 @@ const CategoriesContext = createContext<CategoriesContextValue>({
   deleteCategory: () => {},
 });
 
-export function CategoriesProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function CategoriesProvider({ children }: { children: React.ReactNode }) {
   const site = useSite();
   const STORAGE_KEY = useStorageKey("categories_data");
   const initialCategories = site.catalog.categories;
@@ -40,8 +37,7 @@ export function CategoriesProvider({
   }
 
   function addCategory(name: string) {
-    const newId =
-      categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1;
+    const newId = categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1;
     save([...categories, { id: newId, name }]);
   }
 
@@ -54,9 +50,7 @@ export function CategoriesProvider({
   }
 
   return (
-    <CategoriesContext.Provider
-      value={{ categories, addCategory, editCategory, deleteCategory }}
-    >
+    <CategoriesContext.Provider value={{ categories, addCategory, editCategory, deleteCategory }}>
       {children}
     </CategoriesContext.Provider>
   );

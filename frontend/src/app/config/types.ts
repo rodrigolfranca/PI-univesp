@@ -24,7 +24,9 @@ export interface Client {
   lastVisit: string;
   status: string;
 }
+
 export type AppStatus = "Confirmado" | "Pendente" | "Cancelado";
+
 export interface Appointment {
   id: number;
   client: string;

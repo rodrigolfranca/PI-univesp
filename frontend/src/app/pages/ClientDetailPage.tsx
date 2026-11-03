@@ -1,11 +1,10 @@
 import { useSite } from "../config/SiteContext";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
   Mail,
   Phone,
-  MapPin,
   Calendar,
   FileText,
   Upload,
@@ -27,6 +26,7 @@ import {
 } from "../components/ui/dialog";
 import { useClients } from "../context/ClientsContext";
 import { useAppointments } from "../context/AppointmentsContext";
+
 interface ClientDocument {
   id: number;
   name: string;
@@ -34,12 +34,14 @@ interface ClientDocument {
   size: string;
   url: string;
 }
+
 type ClientForm = {
   name: string;
   phone: string;
   email: string;
   status: string;
 };
+
 export function ClientDetailPage() {
   const site = useSite();
   const { id } = useParams();
@@ -56,12 +58,10 @@ export function ClientDetailPage() {
     status: "Ativo",
   });
   const [editErrors, setEditErrors] = useState<Partial<ClientForm>>({});
-  const [activeTab, setActiveTab] = useState<
-    "all" | "Confirmado" | "Pendente" | "Cancelado"
-  >("all");
-  const [documents, setDocuments] = useState<ClientDocument[]>(
-    site.data.clientDocuments,
+  const [activeTab, setActiveTab] = useState<"all" | "Confirmado" | "Pendente" | "Cancelado">(
+    "all",
   );
+  const [documents, setDocuments] = useState<ClientDocument[]>(site.data.clientDocuments);
   if (!client) {
     return (
       <div className="p-4 md:p-8">
@@ -76,13 +76,13 @@ export function ClientDetailPage() {
       </div>
     );
   }
-  const clientAppointments = appointments.filter(
-    (a) => a.client === client.name,
-  );
+
+  const clientAppointments = appointments.filter((a) => a.client === client.name);
   const filteredAppointments =
     activeTab === "all"
       ? clientAppointments
       : clientAppointments.filter((a) => a.status === activeTab);
+
   function openEdit() {
     setEditForm({
       name: client!.name,
@@ -93,6 +93,7 @@ export function ClientDetailPage() {
     setEditErrors({});
     setEditOpen(true);
   }
+
   function handleEditField(field: keyof ClientForm, value: string) {
     setEditForm((prev) => ({
       ...prev,
@@ -104,15 +105,20 @@ export function ClientDetailPage() {
         [field]: "",
       }));
   }
+
   function handleEditSubmit() {
     const newErrors: Partial<ClientForm> = {};
     if (!editForm.name.trim()) newErrors.name = "Nome é obrigatório";
+
     if (!editForm.phone.trim()) newErrors.phone = "Telefone é obrigatório";
+
     if (!editForm.email.trim()) newErrors.email = "E-mail é obrigatório";
+
     if (Object.keys(newErrors).length > 0) {
       setEditErrors(newErrors);
       return;
     }
+
     editClient(client!.id, {
       name: editForm.name,
       phone: editForm.phone,
@@ -122,9 +128,11 @@ export function ClientDetailPage() {
     toast.success("Cliente atualizado com sucesso");
     setEditOpen(false);
   }
+
   const handleDeleteDocument = (docId: number) => {
     setDocuments(documents.filter((doc) => doc.id !== docId));
   };
+
   const handleAddDocument = () => {
     const newDoc: ClientDocument = {
       id: Date.now(),
@@ -136,34 +144,40 @@ export function ClientDetailPage() {
     setDocuments([...documents, newDoc]);
     setShowAddDocument(false);
   };
+
   const getStatusIcon = (status: string) => {
-    if (status === "Confirmado")
-      return <CheckCircle className="w-5 h-5 text-green-600" />;
-    if (status === "Pendente")
-      return <Clock className="w-5 h-5 text-yellow-600" />;
+    if (status === "Confirmado") return <CheckCircle className="w-5 h-5 text-green-600" />;
+
+    if (status === "Pendente") return <Clock className="w-5 h-5 text-yellow-600" />;
+
     return <XCircle className="w-5 h-5 text-red-600" />;
   };
+
   const getStatusLabel = (status: string) => {
     if (status === "Confirmado") return "Confirmado";
+
     if (status === "Pendente") return "Pendente";
+
     return "Cancelado";
   };
+
   const getStatusColor = (status: string) => {
     if (status === "Confirmado") return "bg-green-100 text-green-700";
+
     if (status === "Pendente") return "bg-yellow-100 text-yellow-700";
+
     return "bg-red-100 text-red-700";
   };
+
   const tabCounts = {
     all: clientAppointments.length,
-    Confirmado: clientAppointments.filter((a) => a.status === "Confirmado")
-      .length,
+    Confirmado: clientAppointments.filter((a) => a.status === "Confirmado").length,
     Pendente: clientAppointments.filter((a) => a.status === "Pendente").length,
-    Cancelado: clientAppointments.filter((a) => a.status === "Cancelado")
-      .length,
+    Cancelado: clientAppointments.filter((a) => a.status === "Cancelado").length,
   };
+
   return (
     <div className="p-4 md:p-8">
-      {/* Header */}
       <div className="mb-6">
         <button
           onClick={() => navigate("/app/clients")}
@@ -172,18 +186,12 @@ export function ClientDetailPage() {
           <ArrowLeft className="w-5 h-5" />
           <span>Voltar para Clientes</span>
         </button>
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-          {client.name}
-        </h1>
-        <p className="text-gray-500 mt-1 text-sm md:text-base">
-          Última visita: {client.lastVisit}
-        </p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{client.name}</h1>
+        <p className="text-gray-500 mt-1 text-sm md:text-base">Última visita: {client.lastVisit}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Informações Pessoais */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
               Informações Pessoais
@@ -207,7 +215,6 @@ export function ClientDetailPage() {
             </div>
           </div>
 
-          {/* Histórico de Agendamentos */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
               Histórico de Agendamentos
@@ -243,13 +250,9 @@ export function ClientDetailPage() {
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0">
-                        {getStatusIcon(appt.status)}
-                      </div>
+                      <div className="flex-shrink-0">{getStatusIcon(appt.status)}</div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900">
-                          {appt.procedure}
-                        </h3>
+                        <h3 className="font-medium text-gray-900">{appt.procedure}</h3>
                         <p className="text-sm text-gray-500">
                           {appt.date} às {appt.time}
                         </p>
@@ -266,13 +269,10 @@ export function ClientDetailPage() {
             </div>
           </div>
 
-          {/* Documentos do Cliente */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg md:text-xl font-semibold text-gray-900">
-                  Documentos
-                </h2>
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900">Documentos</h2>
                 <p className="text-sm text-gray-500 mt-1">
                   Anamneses, termos e documentos do cliente
                 </p>
@@ -302,9 +302,7 @@ export function ClientDetailPage() {
                         <FileText className="w-5 h-5 text-brand-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {doc.name}
-                        </h3>
+                        <h3 className="font-medium text-gray-900 truncate">{doc.name}</h3>
                         <p className="text-sm text-gray-500">
                           {doc.uploadDate} • {doc.size}
                         </p>
@@ -331,12 +329,9 @@ export function ClientDetailPage() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
-              Ações Rápidas
-            </h2>
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
             <div className="space-y-3">
               <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium">
                 Novo Agendamento
@@ -358,35 +353,26 @@ export function ClientDetailPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-500">Total de Agendamentos</p>
-                <p className="text-2xl font-bold text-brand-600">
-                  {clientAppointments.length}
-                </p>
+                <p className="text-2xl font-bold text-brand-600">{clientAppointments.length}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Última Visita</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {client.lastVisit}
-                </p>
+                <p className="text-lg font-semibold text-gray-900">{client.lastVisit}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Documentos</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {documents.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{documents.length}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal Adicionar Documento */}
       {showAddDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Adicionar Documento
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">Adicionar Documento</h3>
               <button
                 onClick={() => setShowAddDocument(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -417,17 +403,13 @@ export function ClientDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Arquivo
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Arquivo</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-brand-600 transition-colors cursor-pointer">
                   <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600">
                     Clique para selecionar ou arraste o arquivo
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    PDF, DOC, DOCX, JPG até 10MB
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, JPG até 10MB</p>
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
@@ -449,7 +431,6 @@ export function ClientDetailPage() {
         </div>
       )}
 
-      {/* Edit Modal */}
       <Dialog
         open={editOpen}
         onOpenChange={(open) => {
@@ -473,9 +454,7 @@ export function ClientDetailPage() {
                 onChange={(e) => handleEditField("name", e.target.value)}
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-50 ${editErrors.name ? "border-red-400" : "border-gray-300"}`}
               />
-              {editErrors.name && (
-                <p className="mt-1 text-xs text-red-500">{editErrors.name}</p>
-              )}
+              {editErrors.name && <p className="mt-1 text-xs text-red-500">{editErrors.name}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -487,9 +466,7 @@ export function ClientDetailPage() {
                 onChange={(e) => handleEditField("phone", e.target.value)}
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-50 ${editErrors.phone ? "border-red-400" : "border-gray-300"}`}
               />
-              {editErrors.phone && (
-                <p className="mt-1 text-xs text-red-500">{editErrors.phone}</p>
-              )}
+              {editErrors.phone && <p className="mt-1 text-xs text-red-500">{editErrors.phone}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -501,14 +478,10 @@ export function ClientDetailPage() {
                 onChange={(e) => handleEditField("email", e.target.value)}
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-50 ${editErrors.email ? "border-red-400" : "border-gray-300"}`}
               />
-              {editErrors.email && (
-                <p className="mt-1 text-xs text-red-500">{editErrors.email}</p>
-              )}
+              {editErrors.email && <p className="mt-1 text-xs text-red-500">{editErrors.email}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <div className="flex gap-2">
                 {["Ativo", "Inativo"].map((s) => (
                   <button

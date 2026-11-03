@@ -133,18 +133,10 @@
     "bookingConfirmation": "Seu agendamento será confirmado em até 24h por WhatsApp."
   },
   "contact": {
-    "address": [
-      "R. Viana do Castelo, 168",
-      "Vila California, São Paulo - SP",
-      "CEP 03213-070"
-    ],
+    "address": ["R. Viana do Castelo, 168", "Vila California, São Paulo - SP", "CEP 03213-070"],
     "phone": "(11) 95368-9541",
     "email": "contato@dayanedigiovanni.com.br",
-    "hours": [
-      "Segunda a Sexta: 9h às 19h",
-      "Sábado: 9h às 14h",
-      "Domingo: Fechado"
-    ],
+    "hours": ["Segunda a Sexta: 9h às 19h", "Sábado: 9h às 14h", "Domingo: Fechado"],
     "whatsapp": "https://wa.me/message/JEG66EZFX7HEP1",
     "instagram": "karina_alexitsch"
   },
@@ -241,10 +233,7 @@
       "17:00",
       "18:00"
     ],
-    "blockedSlots": [
-      "10:00",
-      "14:00"
-    ]
+    "blockedSlots": ["10:00", "14:00"]
   },
   "data": {
     "clients": [
