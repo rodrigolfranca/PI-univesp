@@ -9,7 +9,8 @@
     "variant:create": "node scripts/create-variant.mjs",
     "variants:validate": "node scripts/variants.mjs",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -73,7 +74,11 @@
     "@vitejs/plugin-react": "4.7.0",
     "prettier": "3.6.2",
     "tailwindcss": "4.1.12",
-    "vite": "6.3.5"
+    "vite": "6.3.5",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.8",
+    "jsdom": "26.1.0",
+    "vitest": "3.2.7"
   },
   "peerDependencies": {
     "react": "18.3.1",

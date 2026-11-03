@@ -381,7 +381,7 @@ export function AppointmentsPage() {
   const { name: clinicName } = useBrand();
   const { appointments, addAppointment, cancelAppointment } = useAppointments();
   const { procedures } = useProcedures();
-  const { clients } = useClients();
+  const { clients, loading: clientsLoading, error: clientsError } = useClients();
   const [view, setView] = useState<ViewMode>("week");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -1016,16 +1016,33 @@ export function AppointmentsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Cliente *</label>
                 <select
                   value={selectedClient}
+                  disabled={clientsLoading || Boolean(clientsError) || clients.length === 0}
                   onChange={(e) => setSelectedClient(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
                 >
-                  <option value="">Selecione um cliente</option>
+                  <option value="">
+                    {clientsLoading ? "Carregando clientes..." : "Selecione um cliente"}
+                  </option>
                   {clients.map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}
                     </option>
                   ))}
                 </select>
+                {clientsError && (
+                  <p role="alert" className="mt-2 text-sm text-red-700">
+                    {clientsError}
+                  </p>
+                )}
+                {!clientsLoading && !clientsError && clients.length === 0 && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    A seleção requer uma conta administrativa com clientes cadastrados.
+                  </p>
+                )}
+                {/* TODO(integracao): persistir agendamentos na API usando o ID do cliente; a agenda continua demonstrativa. */}
+                <p className="mt-2 text-sm text-amber-800">
+                  Agendamento demonstrativo: será salvo apenas neste navegador.
+                </p>
               </div>
 
               <div>

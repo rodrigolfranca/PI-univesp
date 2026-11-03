@@ -1,12 +1,5 @@
-import { Navigate, Outlet } from "react-router";
-import { useAuth } from "../context/AuthContext";
+import { AuthGuard } from "./AuthGuard";
 
 export function ClienteGuard() {
-  const { user } = useAuth();
-
-  if (!user || user.role !== "client") {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Outlet />;
+  return <AuthGuard role="client" />;
 }

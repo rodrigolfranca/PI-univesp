@@ -3,3 +3,5 @@ dist/
 coverage/
 guidelines/
 plans/
+.env.local
+.env.*.local
