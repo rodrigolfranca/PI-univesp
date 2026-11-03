@@ -21,7 +21,7 @@ export class AuthGuard implements CanActivate {
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
-    ) { }
+    ) {}
 
     logger = new Logger(AuthGuard.name);
 
@@ -62,7 +62,7 @@ export class AuthGuard implements CanActivate {
             (request as unknown as RequestWithUser).user = user;
             return true;
         } catch (e) {
-            this.logger.error(`Authentication failed: ${e}`);
+            Utils.logError(this.logger, 'Authentication failed', e);
             Utils.handleError(e);
         }
     }
@@ -72,7 +72,7 @@ export class AuthGuard implements CanActivate {
             const payload = this.jwtService.verify<JwtPayload>(token);
             return payload;
         } catch (e) {
-            this.logger.error(`Token verification failed: ${e}`);
+            Utils.logError(this.logger, 'Token verification failed', e);
             throw new UnauthorizedException('Invalid or no token');
         }
     }

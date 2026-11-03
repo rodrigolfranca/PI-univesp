@@ -8,3 +8,9 @@ export { Session } from './sessions.model';
 
 export { DocumentTemplates } from './documents.model';
 export { Schedule } from './schedules.model';
+
+export {
+    ScheduleException,
+    ScheduleExceptionType,
+} from './schedule-exceptions.model';
+export { WorkSchedule } from './work-schedules.model';
