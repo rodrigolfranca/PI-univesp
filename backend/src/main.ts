@@ -2,10 +2,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 import { CoreModule } from './common/core/core.module';
+import { requestLogger } from './common/middlewares/request-logger.middleware';
 import { swaggerConfig } from './common/swagger/config';
 
 async function bootstrap() {
     const app = await NestFactory.create(CoreModule);
+    app.use(requestLogger);
     app.useGlobalPipes(
         new ValidationPipe({
             transform: true,
