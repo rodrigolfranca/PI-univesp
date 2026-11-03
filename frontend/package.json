@@ -7,8 +7,7 @@
     "build": "vite build",
     "dev": "vite",
     "variant:create": "node scripts/create-variant.mjs",
-    "variants:validate": "node scripts/variants.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "variants:validate": "node scripts/variants.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

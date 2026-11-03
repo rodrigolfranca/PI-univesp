@@ -84,7 +84,3 @@ Nos domínios registrados, as chaves de armazenamento existentes são preservada
 Na Vercel, use `frontend` como diretório raiz, `npm run build` e saída `dist`. Associe os domínios ao mesmo projeto e gere uma implantação após cadastrar variantes. `vercel.json` mantém o acesso direto e a recarga das rotas internas. Para previews, defina `VITE_CLIENTE` antes do build. A associação de domínios é feita na plataforma; nenhum domínio é criado pelo comando de cadastro.
 
 As configurações Dayane e Karina mantêm o conteúdo anterior. O contato, alguns textos e dados de demonstração herdados da Dayane continuam explicitamente na configuração da Karina, conforme solicitado. A pasta original `Karina Alexitsch` permanece como referência.
-
-## Verificação
-
-`npm test` verifica padrões neutros, criação e descoberta de variantes, aliases, validações, assets, paletas e compatibilidade do armazenamento. `npm run build` também valida todas as configurações. As fixtures em `tests/fixtures` ficam fora do registro e não são publicadas.
