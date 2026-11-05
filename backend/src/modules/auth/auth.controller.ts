@@ -1,5 +1,6 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiSchema } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginRequestCodeDTO } from './validation/login-request-code.DTO';
 import { LoginVerifyCodeDTO } from './validation/login-verify-code.DTO';
@@ -11,6 +12,7 @@ import { RecoveryVerifyCodeDTO } from './validation/recovery-verify-code.DTO';
     description: 'Endpoints relacionados à autenticação',
 })
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
