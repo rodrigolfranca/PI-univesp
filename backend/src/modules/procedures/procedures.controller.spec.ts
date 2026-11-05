@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProceduresController } from './procedures.controller';
 import { ProceduresService } from './procedures.service';
 import { ProceduresRepository } from './repositories/procedures.repository';
+import { AdminGuard, AuthGuard } from 'src/modules/auth/guards';
 
 describe('ProceduresController', () => {
     let controller: ProceduresController;
@@ -18,7 +19,12 @@ describe('ProceduresController', () => {
                     useValue: proceduresRepositoryMock,
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(AuthGuard)
+            .useValue({ canActivate: () => true })
+            .overrideGuard(AdminGuard)
+            .useValue({ canActivate: () => true })
+            .compile();
 
         controller = module.get<ProceduresController>(ProceduresController);
     });

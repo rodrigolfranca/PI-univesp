@@ -21,11 +21,13 @@ export class ProfessionalsRepository {
 
     async getById(id: number) {
         return await Professional.findByPk(id, {
-            include: [{ model: User, as: 'user' }],
+            include: [{ model: User, as: 'user', required: true }],
         });
     }
 
     async findAll() {
-        return Professional.findAll({ include: [{ model: User, as: 'user' }] });
+        return Professional.findAll({
+            include: [{ model: User, as: 'user', required: true }],
+        });
     }
 }
