@@ -158,15 +158,11 @@ export class SchedulesService {
         ]);
 
         const coveringOpen = exceptions
-            .filter(
-                (e) =>
-                    e.type === ScheduleExceptionType.OPEN &&
-                    e.start_time &&
-                    e.end_time,
-            )
+            .filter((e) => e.type === ScheduleExceptionType.OPEN)
             .some((e) => {
-                const eStart = this.timeToMinutes(e.start_time!);
-                const eEnd = this.timeToMinutes(e.end_time!);
+                if (!e.start_time || !e.end_time) return true;
+                const eStart = this.timeToMinutes(e.start_time);
+                const eEnd = this.timeToMinutes(e.end_time);
                 return eStart <= startMin && eEnd >= endMin;
             });
 

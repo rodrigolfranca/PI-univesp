@@ -22,7 +22,11 @@ export class ScheduleRepository {
         date: string,
     ): Promise<Schedule[]> {
         return Schedule.findAll({
-            where: { professional_id, date },
+            where: {
+                professional_id,
+                date,
+                status: { [Op.ne]: ScheduleStatus.CANCELED },
+            },
             include: [{ model: Procedure, as: 'procedure' }],
         });
     }
@@ -58,6 +62,7 @@ export class ScheduleRepository {
         const where: WhereOptions = {
             professional_id,
             date,
+            status: { [Op.ne]: ScheduleStatus.CANCELED },
             ...(excludeId !== undefined ? { id: { [Op.ne]: excludeId } } : {}),
         };
 
