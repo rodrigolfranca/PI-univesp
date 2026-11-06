@@ -80,7 +80,7 @@ export class PopsService {
     }
 
     async getFileBuffer(id: number): Promise<Pop> {
-        const pop = await this.popsRepository.getById(id);
+        const pop = await this.popsRepository.getByIdWithContent(id);
         if (!pop) throw new NotFoundException('POP not found');
         return pop;
     }

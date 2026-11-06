@@ -36,6 +36,7 @@ export class PopsRepository {
 
         return Pop.findAndCountAll({
             where,
+            attributes: { exclude: ['content'] },
             limit,
             offset,
             order: [['created_at', 'DESC']],
@@ -43,6 +44,12 @@ export class PopsRepository {
     }
 
     async getById(id: number) {
+        return Pop.findByPk(id, {
+            attributes: { exclude: ['content'] },
+        });
+    }
+
+    async getByIdWithContent(id: number) {
         return Pop.findByPk(id);
     }
 
