@@ -93,6 +93,13 @@ export class PopsService {
         const pop = await this.popsRepository.getById(id);
         if (!pop) throw new NotFoundException('POP not found');
 
+        if (dto.procedure_id !== undefined) {
+            const procedure = await Procedure.findByPk(dto.procedure_id);
+            if (!procedure) {
+                throw new BadRequestException('Procedure not found');
+            }
+        }
+
         const updatePayload: Partial<{
             name: string;
             procedure_id: number;
