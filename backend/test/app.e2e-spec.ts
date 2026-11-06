@@ -1,29 +1,42 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { closeE2EApp, createE2EApp } from './utils/create-e2e-app';
 
-describe('AppController (e2e)', () => {
+describe('API (e2e)', () => {
     let app: INestApplication<App>;
 
-    beforeEach(async () => {
-        const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [AppModule],
-        }).compile();
-
-        app = moduleFixture.createNestApplication();
-        await app.init();
+    beforeAll(async () => {
+        app = (await createE2EApp()) as INestApplication<App>;
     });
 
-    it('/ (GET)', () => {
+    afterAll(async () => {
+        await closeE2EApp(app);
+    });
+
+    it('GET /documentation-json expõe o OpenAPI', () => {
         return request(app.getHttpServer())
-            .get('/')
+            .get('/documentation-json')
             .expect(200)
-            .expect('Hello World!');
+            .expect((res) => {
+                const body = res.body as { openapi?: string };
+                expect(body.openapi).toBeDefined();
+            });
     });
 
-    afterEach(async () => {
-        await app.close();
+    it('POST /auth/request-code valida telefone', () => {
+        return request(app.getHttpServer())
+            .post('/auth/request-code')
+            .send({ phone_number: 'invalido' })
+            .expect(400);
+    });
+
+    it('GET /procedures responde sem autenticação', () => {
+        return request(app.getHttpServer())
+            .get('/procedures')
+            .expect(200)
+            .expect((res) => {
+                expect(Array.isArray(res.body)).toBe(true);
+            });
     });
 });
