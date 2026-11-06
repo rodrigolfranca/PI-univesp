@@ -11,7 +11,7 @@ import { RedisModule } from '../../common/redis/redis.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { AuthGuard } from './guards';
+import { AdminGuard, AuthGuard } from './guards';
 
 const authThrottleTracker: ThrottlerGetTrackerFunction = (req) => {
     const request = req as {
@@ -21,7 +21,7 @@ const authThrottleTracker: ThrottlerGetTrackerFunction = (req) => {
     };
     const ip = request.ip ?? request.socket?.remoteAddress ?? 'unknown';
     const identity =
-        request.body?.phone_number ?? request.body?.email ?? 'anonymous';
+        request.body?.email ?? request.body?.phone_number ?? 'anonymous';
 
     return `${ip}:${identity}`;
 };
@@ -57,7 +57,7 @@ const authThrottleTracker: ThrottlerGetTrackerFunction = (req) => {
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, AuthGuard, ThrottlerGuard],
-    exports: [AuthService, AuthGuard],
+    providers: [AuthService, AuthGuard, AdminGuard, ThrottlerGuard],
+    exports: [AuthService, AuthGuard, AdminGuard],
 })
 export class AuthModule {}
