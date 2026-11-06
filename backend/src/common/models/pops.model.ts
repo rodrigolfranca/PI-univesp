@@ -33,8 +33,9 @@ export class Pop extends Model {
     @Column({
         type: DataType.BLOB,
         allowNull: false,
+        field: 'base64',
     })
-    declare base64: Buffer;
+    declare content: Buffer;
 
     @Column({
         type: DataType.STRING,
