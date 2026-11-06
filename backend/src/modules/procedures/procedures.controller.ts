@@ -7,8 +7,10 @@ import {
     ParseIntPipe,
     Patch,
     Post,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
+import { AdminGuard, AuthGuard } from 'src/modules/auth/guards';
 import { ProceduresService } from './procedures.service';
 import { CreateProcedureDto } from './validation/create-procedure.dto';
 import { UpdateProcedureDto } from './validation/update-procedure.dto';
@@ -22,6 +24,7 @@ export class ProceduresController {
     constructor(private readonly proceduresService: ProceduresService) {}
 
     @Post()
+    @UseGuards(AuthGuard, AdminGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Cria um novo procedimento' })
     create(@Body() createProcedureDto: CreateProcedureDto) {
@@ -43,6 +46,7 @@ export class ProceduresController {
     }
 
     @Patch(':id')
+    @UseGuards(AuthGuard, AdminGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Atualiza um procedimento' })
     update(
@@ -53,6 +57,7 @@ export class ProceduresController {
     }
 
     @Delete(':id')
+    @UseGuards(AuthGuard, AdminGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Remove um procedimento' })
     remove(@Param('id', ParseIntPipe) id: string) {

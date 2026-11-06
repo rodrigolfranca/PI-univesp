@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    NotFoundException,
     Param,
     ParseIntPipe,
     Patch,
@@ -35,6 +36,8 @@ export class UsersController {
     }
 
     @Post('professional')
+    @UseGuards(AuthGuard, AdminGuard)
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Cria um novo profissional' })
     async createProfessional(@Body() userCreateDTO: UsersCreateDTO) {
         return await this.usersService.createProfessional(userCreateDTO);
@@ -53,7 +56,11 @@ export class UsersController {
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Obtém um usuário por ID' })
     async findById(@Param('id', ParseIntPipe) id: number) {
-        return await this.usersService.findById(id);
+        const user = await this.usersService.findById(id);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        return user;
     }
 
     @Patch(':id')

@@ -71,6 +71,14 @@ export class EnvirontmentVariables {
     @IsOptional()
     @IsString()
     GOOGLE_CALENDAR_TIMEZONE: string;
+
+    @IsOptional()
+    @IsNumber()
+    AUTH_THROTTLE_TTL_MS?: number;
+
+    @IsOptional()
+    @IsNumber()
+    AUTH_THROTTLE_LIMIT?: number;
 }
 
 export function validate(config: Record<string, unknown>) {
