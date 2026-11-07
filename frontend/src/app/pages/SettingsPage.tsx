@@ -1,4 +1,6 @@
-import { useTerminology, useSite } from "../config/SiteContext";
+import { useTerminology } from "../config/SiteContext";
+import { UserProfile } from "../components/UserProfile";
+import { useAuth } from "../context/AuthContext";
 import type { Theme } from "../config/types";
 import React, { useRef, useState } from "react";
 import { Link } from "react-router";
@@ -7,7 +9,6 @@ import {
   Lock,
   LogOut,
   Phone,
-  Edit,
   Palette,
   Upload,
   Check,
@@ -23,7 +24,7 @@ import { useGallery } from "../context/GalleryContext";
 
 export function SettingsPage() {
   const copy = useTerminology();
-  const site = useSite();
+  const { logout } = useAuth();
   const {
     name,
     logoUrl,
@@ -109,65 +110,7 @@ export function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Perfil do Usuário</h2>
-              <button className="flex items-center gap-2 px-3 py-2 md:px-4 text-brand-600 border border-brand-600 rounded-lg hover:bg-brand-50 transition-colors text-sm">
-                <Edit className="w-4 h-4" />
-                <span className="hidden md:inline">Editar</span>
-              </button>
-            </div>
-
-            <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-2xl md:text-3xl font-semibold">
-                  {(site.content.owner.name || name)
-                    .split(/\s+/)
-                    .slice(0, 2)
-                    .map((part) => part[0])
-                    .join("")}
-                </span>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <h3 className="text-xl md:text-2xl font-semibold text-gray-900 mb-1">
-                  {site.content.owner.name || name}
-                </h3>
-                <p className="text-sm md:text-base text-gray-600 mb-4">{site.content.owner.role}</p>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-600 text-sm md:text-base">
-                    <Phone className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                    <span>{site.content.owner.phone}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-4">Informações Adicionais</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Cargo</p>
-                  <p className="font-medium text-gray-900">{site.content.owner.role}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Data de Cadastro</p>
-                  <p className="font-medium text-gray-900">{site.content.owner.registeredAt}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Status</p>
-                  <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    Ativo
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Permissões</p>
-                  <p className="font-medium text-gray-900">Acesso Total</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <UserProfile />
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -522,6 +465,7 @@ export function SettingsPage() {
 
               <Link
                 to="/login"
+                onClick={logout}
                 className="w-full flex items-center gap-3 p-3 md:p-4 rounded-lg border border-red-200 hover:bg-red-50 transition-colors"
               >
                 <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">

@@ -50,6 +50,7 @@ function formatDate(dateStr: string) {
 }
 
 export function ClienteAgendamentosPage() {
+  // TODO(integracao): buscar agendamentos do cliente autenticado; os exemplos não pertencem à conta real.
   const MOCK_APPOINTMENTS = useSite().data.clientAppointments;
   const { user } = useAuth();
   const upcoming = MOCK_APPOINTMENTS.filter(
@@ -61,6 +62,9 @@ export function ClienteAgendamentosPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+      <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+        Dados de demonstração. Esta seção ainda não foi integrada à sua conta.
+      </p>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Meus Agendamentos</h1>

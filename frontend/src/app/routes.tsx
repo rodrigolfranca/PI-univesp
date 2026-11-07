@@ -16,6 +16,7 @@ import { ProcedureDetailPage } from "./pages/ProcedureDetailPage";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
 import { EmployeesPage } from "./pages/EmployeesPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
           { path: "notifications", Component: NotificationsPage },
           { path: "settings", Component: SettingsPage },
           { path: "employees", Component: EmployeesPage },
+          { path: "employees/:id", Component: EmployeeDetailPage },
           { path: "change-password", Component: ChangePasswordPage },
           { path: "categories", Component: CategoriesPage },
         ],
