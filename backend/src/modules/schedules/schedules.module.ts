@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { RedisModule } from 'src/common/redis/redis.module';
+import { AuthModule } from '../auth/auth.module';
 import { GoogleCalendarModule } from '../google-calendar/google-calendar.module';
 import { UsersModule } from '../users/users.module';
 import { ScheduleExceptionsController } from './controllers/schedule-exceptions.controller';
@@ -13,7 +14,7 @@ import { SchedulesService } from './services/schedules.service';
 import { WorkSchedulesService } from './services/work-schedules.service';
 
 @Module({
-    imports: [UsersModule, RedisModule, GoogleCalendarModule],
+    imports: [AuthModule, UsersModule, RedisModule, GoogleCalendarModule],
     controllers: [
         WorkScheduleController,
         ScheduleController,
