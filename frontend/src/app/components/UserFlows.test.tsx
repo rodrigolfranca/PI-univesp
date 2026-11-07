@@ -283,11 +283,16 @@ describe("gestão e perfil", () => {
     expect(fetchMock.mock.calls.some(([url]) => url.includes("page="))).toBe(false);
   });
 
-  it("mostra usuário inexistente quando o backend retorna null", async () => {
+  it("mostra usuário inexistente quando o backend retorna 404", async () => {
     restoreAs(professional);
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => jsonResponse(url.endsWith("/51") ? professional : null)),
+      vi.fn(async (url: string) =>
+        jsonResponse(
+          url.endsWith("/51") ? professional : { message: "User not found" },
+          url.endsWith("/51") ? 200 : 404,
+        ),
+      ),
     );
     renderFlow("/app/clients/404");
     expect(await screen.findByText("Usuário não encontrado.")).toBeTruthy();

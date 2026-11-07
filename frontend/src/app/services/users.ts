@@ -57,10 +57,14 @@ export function validateUser(fields: UserFields): Partial<Record<keyof UserField
 }
 
 export async function getUser(id: number, token: string, signal?: AbortSignal): Promise<ApiUser> {
-  const user = await apiRequest<ApiUser | null>(`/users/${id}`, { token, signal });
-  // O backend atual responde 200/null quando o ID não existe.
-  if (!user) throw new ApiError("Usuário não encontrado.", 404);
-  return user;
+  try {
+    return await apiRequest<ApiUser>(`/users/${id}`, { token, signal });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      throw new ApiError("Usuário não encontrado.", 404);
+    }
+    throw error;
+  }
 }
 
 export async function listAllUsers(token: string, signal?: AbortSignal): Promise<ApiUser[]> {

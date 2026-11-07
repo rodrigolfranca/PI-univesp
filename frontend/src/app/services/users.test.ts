@@ -83,9 +83,15 @@ describe("contrato de usuários", () => {
     expect(result.professional?.id).toBe(8);
   });
 
-  it("trata o retorno null como usuário inexistente", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(null)));
-    await expect(getUser(42, "token")).rejects.toMatchObject({ status: 404 });
+  it("propaga o 404 do backend como usuário inexistente", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse({ message: "User not found" }, 404)),
+    );
+    await expect(getUser(42, "token")).rejects.toMatchObject({
+      status: 404,
+      message: "Usuário não encontrado.",
+    });
   });
 
   it("exclui pelo ID de usuário e propaga erros sem fallback", async () => {
