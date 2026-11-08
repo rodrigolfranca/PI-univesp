@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useSite } from "../config/SiteContext";
@@ -74,21 +75,19 @@ export function LoginPage() {
       setError("Informe um e-mail válido.");
       return;
     }
-    if (action === "verify") {
-      if (!/^\d{11}$/.test(normalizePhone(recoveryPhone))) {
-        setError("Informe o DDD e o telefone com 11 dígitos.");
-        return;
-      }
-      if (!/^\d{6}$/.test(recoveryCode)) {
-        setError("Informe o código de seis dígitos.");
-        return;
-      }
+    if (!/^\d{11}$/.test(normalizePhone(recoveryPhone))) {
+      setError("Informe o DDD e o novo telefone com 11 dígitos.");
+      return;
+    }
+    if (action === "verify" && !/^\d{6}$/.test(recoveryCode)) {
+      setError("Informe o código de seis dígitos.");
+      return;
     }
     submitting.current = true;
     setPending(true);
     try {
       if (action === "request") {
-        await requestRecoveryCode(recoveryEmail.trim());
+        await requestRecoveryCode(recoveryEmail.trim(), recoveryPhone);
         setRecoveryStep("verify");
         setRecoveryCode("");
         setNotice(
@@ -104,6 +103,7 @@ export function LoginPage() {
         setRecoveryEmail("");
         setRecoveryPhone("");
         setRecoveryCode("");
+        toast.success("Telefone atualizado. Solicite um novo código para entrar.");
         setNotice("Telefone atualizado. Solicite um novo código para entrar.");
       }
     } catch (cause) {
@@ -201,23 +201,24 @@ export function LoginPage() {
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
                 />
               </div>
+              <div>
+                <label htmlFor="recovery-phone" className="mb-1 block font-medium">
+                  Novo telefone
+                </label>
+                <input
+                  id="recovery-phone"
+                  type="tel"
+                  autoComplete="tel-national"
+                  value={recoveryPhone}
+                  readOnly={recoveryStep === "verify"}
+                  disabled={pending}
+                  onChange={(event) => setRecoveryPhone(event.currentTarget.value)}
+                  placeholder="(11) 94002-8922"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
               {recoveryStep === "verify" && (
                 <>
-                  <div>
-                    <label htmlFor="recovery-phone" className="mb-1 block font-medium">
-                      Novo telefone
-                    </label>
-                    <input
-                      id="recovery-phone"
-                      type="tel"
-                      autoComplete="tel-national"
-                      value={recoveryPhone}
-                      disabled={pending}
-                      onChange={(event) => setRecoveryPhone(event.currentTarget.value)}
-                      placeholder="(11) 94002-8922"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
-                    />
-                  </div>
                   <div>
                     <label htmlFor="recovery-code" className="mb-1 block font-medium">
                       Código de recuperação
@@ -235,7 +236,7 @@ export function LoginPage() {
                       className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
                     />
                     <p className="mt-2 text-sm text-amber-800">
-                      O envio por e-mail está pendente. Obtenha o código no log do backend.
+                      O envio ainda é por log. Obtenha o código no terminal do backend.
                     </p>
                   </div>
                 </>
