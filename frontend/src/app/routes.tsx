@@ -5,6 +5,7 @@ import { EmployeeGuard } from "./components/EmployeeGuard";
 import { ClienteGuard } from "./components/ClienteGuard";
 import { LandingPage } from "./pages/LandingPage";
 import { TratamentosPage } from "./pages/TratamentosPage";
+import { PublicProcedureDetailPage } from "./pages/PublicProcedureDetailPage";
 import { SobrePage } from "./pages/SobrePage";
 import { ContatoPage } from "./pages/ContatoPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -35,6 +36,10 @@ export const router = createBrowserRouter([
   {
     path: "/tratamentos",
     Component: TratamentosPage,
+  },
+  {
+    path: "/tratamentos/:id",
+    Component: PublicProcedureDetailPage,
   },
   {
     path: "/sobre",

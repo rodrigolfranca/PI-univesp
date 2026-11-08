@@ -3,7 +3,7 @@ import { SiteIcon } from "../components/SiteIcon";
 import { whatsappLink, instagramLink } from "../config/links";
 import { BrandLogo } from "../components/BrandLogo";
 import React from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { Instagram, KeyRound, ChevronRight } from "lucide-react";
 import { useBrand } from "../context/BrandContext";
 import { useProcedures } from "../context/ProceduresContext";
@@ -24,7 +24,6 @@ export function LandingPage() {
   const instagramUrl = instagramLink(instagramHandle);
   const { procedures } = useProcedures();
   const activeProcedures = procedures.filter((p) => p.status === "Ativo");
-  const navigate = useNavigate();
   const { images } = useGallery();
 
   return (
@@ -228,28 +227,40 @@ export function LandingPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {activeProcedures.map((procedure) => (
-                <button
+                <div
                   key={procedure.id}
-                  type="button"
-                  onClick={() => navigate(`/login?treatmentId=${procedure.id}`)}
-                  className="group bg-white rounded-2xl p-7 shadow-md border border-brand-100 hover:shadow-xl hover:border-brand-300 hover:-translate-y-1 transition-all text-left cursor-pointer w-full"
+                  className="group flex w-full flex-col rounded-2xl border border-brand-100 bg-white p-7 text-left shadow-md transition-all hover:-translate-y-1 hover:border-brand-300 hover:shadow-xl"
                 >
-                  <div className="w-14 h-14 bg-brand-100 group-hover:bg-brand-200 rounded-xl flex items-center justify-center mb-5 transition-colors">
-                    <SiteIcon name={site.catalog.icon} className="w-7 h-7 text-brand-700" />
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-brand-100 transition-colors group-hover:bg-brand-200">
+                    <SiteIcon name={site.catalog.icon} className="h-7 w-7 text-brand-700" />
                   </div>
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-bold text-brand-800 leading-snug flex-1">
+                  <div className="mb-2 flex items-start justify-between">
+                    <h3 className="flex-1 text-lg font-bold leading-snug text-brand-800">
                       {procedure.name}
                     </h3>
-                    <ChevronRight className="w-4 h-4 text-brand-500 opacity-0 group-hover:opacity-100 transition-opacity mt-1 ml-1 flex-shrink-0" />
+                    <ChevronRight className="ml-1 mt-1 h-4 w-4 flex-shrink-0 text-brand-500 opacity-0 transition-opacity group-hover:opacity-100" />
                   </div>
-                  <span className="inline-block text-xs font-medium text-brand-600 bg-brand-100 px-2 py-0.5 rounded mb-3">
+                  <span className="mb-3 inline-block w-fit rounded bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-600">
                     {procedure.category}
                   </span>
                   {procedure.description ? (
-                    <p className="text-sm text-gray-600 leading-relaxed">{procedure.description}</p>
+                    <p className="text-sm leading-relaxed text-gray-600">{procedure.description}</p>
                   ) : null}
-                </button>
+                  <div className="mt-5 flex gap-2">
+                    <Link
+                      to={`/tratamentos/${procedure.id}`}
+                      className="flex-1 rounded-lg border border-brand-300 px-3 py-2 text-center text-sm font-medium text-brand-700 hover:bg-brand-50"
+                    >
+                      Ver detalhes
+                    </Link>
+                    <Link
+                      to={`/login?treatmentId=${procedure.id}`}
+                      className="flex-1 rounded-lg bg-brand-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-brand-600"
+                    >
+                      Agendar agora
+                    </Link>
+                  </div>
+                </div>
               ))}
             </div>
           )}

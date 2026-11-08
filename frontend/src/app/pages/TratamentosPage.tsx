@@ -5,6 +5,7 @@ import { BrandLogo } from "../components/BrandLogo";
 import { Link } from "react-router";
 import { Instagram } from "lucide-react";
 import { useBrand } from "../context/BrandContext";
+import { useProcedures } from "../context/ProceduresContext";
 
 export function TratamentosPage() {
   const copy = useTerminology();
@@ -12,6 +13,8 @@ export function TratamentosPage() {
   const { name, whatsappNumber, instagramHandle } = useBrand();
   const whatsappUrl = whatsappLink(whatsappNumber);
   const instagramUrl = instagramLink(instagramHandle);
+  const { procedures } = useProcedures();
+  const activeProcedures = procedures.filter((procedure) => procedure.status === "Ativo");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100">
@@ -91,26 +94,38 @@ export function TratamentosPage() {
           <p className="text-lg text-gray-600">{site.content.pageHeadings.treatmentsIntro}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {site.content.treatments.map((treatment) => {
-            return (
-              <div
-                key={treatment.title}
+        {activeProcedures.length === 0 ? (
+          <p className="text-center text-gray-500 py-12">
+            Nenhum tratamento disponível no momento.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {activeProcedures.map((procedure) => (
+              <Link
+                key={procedure.id}
+                to={`/tratamentos/${procedure.id}`}
                 className="bg-white rounded-2xl p-8 shadow-lg border border-brand-100 hover:shadow-xl transition-all"
               >
                 <div className="flex justify-center mb-6">
                   <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center">
-                    <SiteIcon name={treatment.icon} className="w-8 h-8 text-brand-700" />
+                    <SiteIcon name={site.catalog.icon} className="w-8 h-8 text-brand-700" />
                   </div>
                 </div>
+                <span className="block text-center text-xs font-medium text-brand-600 bg-brand-100 px-2 py-0.5 rounded mb-3">
+                  {procedure.category}
+                </span>
                 <h2 className="text-xl font-bold text-brand-800 text-center mb-4">
-                  {treatment.title}
+                  {procedure.name}
                 </h2>
-                <p className="text-center text-gray-600">{treatment.description}</p>
-              </div>
-            );
-          })}
-        </div>
+                <p className="text-center text-gray-600">{procedure.description}</p>
+                <div className="mt-4 flex justify-center gap-4 text-sm text-gray-500">
+                  <span>{procedure.duration}</span>
+                  <span className="font-semibold text-brand-700">{procedure.price}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </main>
 
       <footer className="border-t border-brand-200 py-8 mt-16">
