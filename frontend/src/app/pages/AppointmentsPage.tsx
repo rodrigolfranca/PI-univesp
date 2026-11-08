@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useBrand } from "../context/BrandContext";
+import { useAuth } from "../context/AuthContext";
 import { useAppointments } from "../context/AppointmentsContext";
+import { useGoogleCalendar } from "../context/GoogleCalendarContext";
+import type { AppointmentInput } from "../context/AppointmentsContext";
+import { errorMessage } from "../services/api";
 import type { Appointment, AppStatus } from "../config/types";
 import { useAppointmentNavigation } from "../hooks/useAppointmentNavigation";
 import { filterAppointments, makeGCalUrl } from "../utils/appointments/appointment";
@@ -17,7 +21,22 @@ import { CancelAppointmentDialog } from "../components/appointments/CancelAppoin
 
 export function AppointmentsPage() {
   const { name: clinicName } = useBrand();
-  const { appointments, addAppointment, cancelAppointment } = useAppointments();
+  const { user } = useAuth();
+  const {
+    appointments,
+    loading,
+    error,
+    reload,
+    addAppointment,
+    cancelAppointment,
+    setAppointmentStatus,
+  } = useAppointments();
+  const {
+    status: googleStatus,
+    loading: googleLoading,
+    connect: connectGoogleCalendar,
+  } = useGoogleCalendar();
+  const gcalConnected = googleStatus?.connected === true;
   const navigation = useAppointmentNavigation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -27,38 +46,68 @@ export function AppointmentsPage() {
   const today = toDDMMYYYY(new Date());
   const filteredAppointments = filterAppointments(appointments, searchQuery, selectedStatus);
 
-  function handleConfirmCancel() {
+  async function handleConfirmCancel() {
     if (!appointmentToCancel) return;
-    cancelAppointment(appointmentToCancel.id);
-    setAppointmentToCancel(null);
+    try {
+      await cancelAppointment(appointmentToCancel.id);
+      setAppointmentToCancel(null);
+      toast.success("Agendamento cancelado");
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
   }
 
-  function handleCreateAppointment(appointment: Omit<Appointment, "id">) {
-    addAppointment(appointment);
-    setShowAddModal(false);
-    toast.success("Agendamento criado", {
-      description: `${appointment.client} — ${appointment.procedure} em ${appointment.date} às ${appointment.time}`,
-      action: {
-        label: "Adicionar ao Google Agenda",
-        onClick: () => handleAddToGCal({ ...appointment, id: Date.now() }),
-      },
-    });
+  async function handleCreateAppointment(appointment: AppointmentInput) {
+    try {
+      await addAppointment(appointment);
+      setShowAddModal(false);
+      toast.success("Agendamento criado");
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
+  }
+
+  async function handleStatus(appointment: Appointment, status: "completed" | "absent") {
+    try {
+      await setAppointmentStatus(appointment.id, status);
+      toast.success(status === "completed" ? "Agendamento concluído" : "Ausência registrada");
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
   }
 
   function handleAddToGCal(appointment: Appointment) {
     window.open(makeGCalUrl(appointment, clinicName), "_blank");
   }
 
-  function handleConnectGCal() {
-    toast.info("Conexão com Google Agenda", {
-      description:
-        "Configure suas credenciais OAuth nas Configurações para sincronização automática.",
-      duration: 5000,
-    });
+  async function handleConnectGCal() {
+    if (gcalConnected) {
+      toast.info("Google Agenda já está conectado.");
+      return;
+    }
+    try {
+      await connectGoogleCalendar("/app/appointments");
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
+  }
+
+  function handleSync() {
+    if (!user?.isAdmin || gcalConnected) {
+      reload();
+      toast.success("Agendamentos atualizados");
+      return;
+    }
+    void handleConnectGCal();
   }
 
   return (
     <div className="flex flex-col h-full">
+      {error && (
+        <p role="alert" className="mx-4 mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 md:mx-8">
+          {error}
+        </p>
+      )}
       <AppointmentsHeader
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -68,7 +117,10 @@ export function AppointmentsPage() {
         setSelectedStatus={setSelectedStatus}
         view={navigation.view}
         setView={navigation.setView}
-        onConnectGCal={handleConnectGCal}
+        onConnectGCal={() => void handleConnectGCal()}
+        gcalConnected={gcalConnected}
+        gcalLoading={googleLoading}
+        gcalAvailable={Boolean(user?.isAdmin)}
       />
 
       {(navigation.view === "day" || navigation.view === "week") && (
@@ -78,7 +130,7 @@ export function AppointmentsPage() {
             onPrevious={navigation.previous}
             onNext={navigation.next}
             onToday={navigation.goToToday}
-            onSync={handleConnectGCal}
+            onSync={handleSync}
             alignRight={navigation.view === "day"}
           />
           <AppointmentTimeGrid
@@ -87,6 +139,9 @@ export function AppointmentsPage() {
             today={today}
             onCancel={setAppointmentToCancel}
             onGCal={handleAddToGCal}
+            onStatus={(appointment, status) => void handleStatus(appointment, status)}
+            gcalConnected={gcalConnected}
+            canManage={Boolean(user?.isAdmin)}
             labels={navigation.view === "day" ? [navigation.dayName] : undefined}
           />
         </div>
@@ -99,7 +154,7 @@ export function AppointmentsPage() {
             onPrevious={navigation.previous}
             onNext={navigation.next}
             onToday={navigation.goToToday}
-            onSync={handleConnectGCal}
+            onSync={handleSync}
           />
           <AppointmentsMonthView
             date={navigation.monthViewDate}
@@ -115,28 +170,38 @@ export function AppointmentsPage() {
           appointments={filteredAppointments}
           onCancel={setAppointmentToCancel}
           onGCal={handleAddToGCal}
+          onStatus={(appointment, status) => void handleStatus(appointment, status)}
+          gcalConnected={gcalConnected}
+          canManage={Boolean(user?.isAdmin)}
         />
       )}
 
-      <button
-        aria-label="Novo agendamento"
-        onClick={() => setShowAddModal(true)}
-        className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-[60]"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {user?.isAdmin && (
+        <button
+          aria-label="Novo agendamento"
+          onClick={() => setShowAddModal(true)}
+          className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-[60]"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
       <CancelAppointmentDialog
         appointment={appointmentToCancel}
         onClose={() => setAppointmentToCancel(null)}
-        onConfirm={handleConfirmCancel}
+        onConfirm={() => void handleConfirmCancel()}
       />
       {/* Manter montado preserva o rascunho ao fechar o modal. */}
-      <CreateAppointmentModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onCreate={handleCreateAppointment}
-        today={today}
-      />
+      {user?.isAdmin && (
+        <CreateAppointmentModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onCreate={handleCreateAppointment}
+          today={today}
+        />
+      )}
+      {loading && (
+        <p className="px-4 pb-4 text-sm text-gray-500 md:px-8">Carregando agendamentos...</p>
+      )}
     </div>
   );
 }

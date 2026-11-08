@@ -3,12 +3,24 @@ import { JwtService } from '@nestjs/jwt';
 import { Redis } from 'ioredis';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { Professional, User } from 'src/common/models';
+import {
+    Client,
+    Procedure,
+    Professional,
+    Schedule,
+    User,
+    WorkSchedule,
+} from 'src/common/models';
 import { closeE2EApp, createE2EApp } from './utils/create-e2e-app';
 
 type TestUser = {
     user: User;
     professional: Professional;
+};
+
+type TestClient = {
+    user: User;
+    client: Client;
 };
 
 describe('API (e2e)', () => {
@@ -18,7 +30,25 @@ describe('API (e2e)', () => {
     let professional: TestUser;
     let adminToken: string;
     let professionalToken: string;
+    let testClient: TestClient;
+    let clientToken: string;
     const createdUsers: TestUser[] = [];
+    const createdClients: TestClient[] = [];
+    const createdProcedureIds: number[] = [];
+
+    async function createTestClient(): Promise<TestClient> {
+        const suffix = String(Date.now()).slice(-8);
+        const user = await User.create({
+            name: 'E2E Client',
+            phone_number: `11${suffix}`,
+            phone_number_confirmed: true,
+            email: `e2e-client-${suffix}@example.com`,
+        });
+        const client = await Client.create({ user_id: user.id });
+        const result = { user, client };
+        createdClients.push(result);
+        return result;
+    }
 
     async function createTestUser(is_admin: boolean): Promise<TestUser> {
         const suffix = String(Date.now()).slice(-8);
@@ -52,16 +82,39 @@ describe('API (e2e)', () => {
             keyType: 'access',
             id: professional.user.id,
         });
+        testClient = await createTestClient();
+        clientToken = await jwtService.signAsync({
+            keyType: 'access',
+            id: testClient.user.id,
+        });
     });
 
     afterAll(async () => {
         try {
+            if (professional) {
+                await Schedule.destroy({
+                    where: { professional_id: professional.professional.id },
+                    force: true,
+                });
+                await WorkSchedule.destroy({
+                    where: { professional_id: professional.professional.id },
+                    force: true,
+                });
+            }
+            for (const id of createdProcedureIds) {
+                await Procedure.destroy({ where: { id }, force: true });
+            }
             for (const { user, professional } of createdUsers) {
                 await redis.del(`user:${user.id}`);
                 await Professional.destroy({
                     where: { id: professional.id },
                     force: true,
                 });
+                await User.destroy({ where: { id: user.id }, force: true });
+            }
+            for (const { user, client } of createdClients) {
+                await redis.del(`user:${user.id}`);
+                await Client.destroy({ where: { id: client.id }, force: true });
                 await User.destroy({ where: { id: user.id }, force: true });
             }
         } finally {
@@ -126,6 +179,22 @@ describe('API (e2e)', () => {
                 .expect(401);
         });
 
+        it('POST /schedules com cliente para outro cliente retorna 401', () => {
+            return request(app.getHttpServer())
+                .post('/schedules')
+                .set('Authorization', `Bearer ${clientToken}`)
+                .send({ client_id: testClient.client.id + 1 })
+                .expect(401);
+        });
+
+        it('POST /schedules com cliente para o próprio client_id passa da autorização', () => {
+            return request(app.getHttpServer())
+                .post('/schedules')
+                .set('Authorization', `Bearer ${clientToken}`)
+                .send({ client_id: testClient.client.id })
+                .expect(400);
+        });
+
         it('POST /schedules com JWT de profissional retorna 401', () => {
             return request(app.getHttpServer())
                 .post('/schedules')
@@ -141,6 +210,16 @@ describe('API (e2e)', () => {
                 .expect(401);
         });
 
+        it('GET /work-schedules com JWT de admin retorna 200', () => {
+            return request(app.getHttpServer())
+                .get('/work-schedules')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200)
+                .expect((res) => {
+                    expect(Array.isArray(res.body)).toBe(true);
+                });
+        });
+
         it('GET /google-calendar/status com JWT de admin retorna 200', () => {
             return request(app.getHttpServer())
                 .get('/google-calendar/status')
@@ -149,6 +228,70 @@ describe('API (e2e)', () => {
                 .expect((res) => {
                     const body = res.body as { connected?: boolean };
                     expect(typeof body.connected).toBe('boolean');
+                });
+        });
+    });
+
+    describe('Agenda', () => {
+        function nextMonday(): string {
+            const date = new Date();
+            const offset = (8 - date.getUTCDay()) % 7 || 7;
+            date.setUTCDate(date.getUTCDate() + offset);
+            return date.toISOString().slice(0, 10);
+        }
+
+        it('admin cadastra procedimento, disponibilidade e cliente agenda', async () => {
+            const procedure = await request(app.getHttpServer())
+                .post('/procedures')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    name: 'E2E Procedure',
+                    description: 'Procedimento de teste',
+                    duration_minutes: 30,
+                    price: 100,
+                    sessions: 1,
+                    triagem: false,
+                    triagem_minutes: 0,
+                })
+                .expect(201);
+            const procedureId = (procedure.body as { id: number }).id;
+            createdProcedureIds.push(procedureId);
+
+            await request(app.getHttpServer())
+                .post('/work-schedules')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    professional_id: professional.professional.id,
+                    days_of_week: [1],
+                    start_time: '09:00',
+                    end_time: '18:00',
+                })
+                .expect(201);
+
+            const date = nextMonday();
+            const schedule = await request(app.getHttpServer())
+                .post('/schedules')
+                .set('Authorization', `Bearer ${clientToken}`)
+                .send({
+                    procedure_id: procedureId,
+                    professional_id: professional.professional.id,
+                    client_id: testClient.client.id,
+                    date,
+                    start_time: '09:00',
+                    session: 1,
+                })
+                .expect(201);
+
+            const scheduleId = (schedule.body as { id: number }).id;
+            expect(scheduleId).toBeGreaterThan(0);
+
+            await request(app.getHttpServer())
+                .get(`/schedules?client_id=${testClient.client.id}`)
+                .set('Authorization', `Bearer ${clientToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as { total?: number };
+                    expect(body.total).toBeGreaterThan(0);
                 });
         });
     });

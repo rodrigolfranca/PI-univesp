@@ -10,6 +10,9 @@ export function AppointmentTimeGrid({
   today,
   onCancel,
   onGCal,
+  onStatus,
+  gcalConnected,
+  canManage,
   labels,
 }: {
   days: Date[];
@@ -17,6 +20,9 @@ export function AppointmentTimeGrid({
   today: string;
   onCancel: (a: Appointment) => void;
   onGCal: (a: Appointment) => void;
+  onStatus: (a: Appointment, status: "completed" | "absent") => void;
+  gcalConnected: boolean;
+  canManage: boolean;
   labels?: string[];
 }) {
   const hourSlots = Array.from({ length: (DAY_END - DAY_START) * 2 }, (_, i) => {
@@ -128,6 +134,9 @@ export function AppointmentTimeGrid({
                         appointment={appt}
                         onCancel={onCancel}
                         onGCal={onGCal}
+                        onStatus={onStatus}
+                        gcalConnected={gcalConnected}
+                        canManage={canManage}
                         trigger={
                           <button
                             aria-label="Ações do agendamento"

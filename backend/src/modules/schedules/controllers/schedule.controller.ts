@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminGuard, AuthGuard } from '../../auth/guards';
+import { ScheduleCreateGuard } from '../guards/schedule-create.guard';
 import { SchedulesService } from '../services/schedules.service';
 import { ScheduleCreateDto } from '../validation/schedule-create.DTO';
 import { ScheduleGetAllDto } from '../validation/schedule-get-all.DTO';
@@ -28,7 +29,7 @@ export class ScheduleController {
             'Cria um agendamento validando disponibilidade do profissional',
     })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
+    @UseGuards(AuthGuard, ScheduleCreateGuard)
     async create(@Body() dto: ScheduleCreateDto) {
         return await this.schedulesService.create(dto);
     }

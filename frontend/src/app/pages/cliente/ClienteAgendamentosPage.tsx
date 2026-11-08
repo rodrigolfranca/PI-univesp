@@ -1,12 +1,13 @@
-import { useSite } from "../../config/SiteContext";
 import { Link } from "react-router";
 import { Calendar, Clock, Plus, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useAppointments } from "../../context/AppointmentsContext";
+import type { Appointment } from "../../config/types";
 
 type AppointmentStatus = "confirmado" | "pendente" | "concluido" | "cancelado";
 
-interface Appointment {
-  id: string;
+interface ClientAppointment {
+  id: number;
   procedure: string;
   date: string;
   time: string;
@@ -43,28 +44,37 @@ const statusConfig: Record<
   },
 };
 
-function formatDate(dateStr: string) {
-  const [year, month, day] = dateStr.split("-");
-
-  return `${day}/${month}/${year}`;
+function toClientStatus(status: Appointment["status"]): AppointmentStatus {
+  if (status === "Concluído") return "concluido";
+  if (status === "Cancelado" || status === "Ausente") return "cancelado";
+  if (status === "Pendente") return "pendente";
+  return "confirmado";
 }
 
 export function ClienteAgendamentosPage() {
-  // TODO(integracao): buscar agendamentos do cliente autenticado; os exemplos não pertencem à conta real.
-  const MOCK_APPOINTMENTS = useSite().data.clientAppointments;
   const { user } = useAuth();
-  const upcoming = MOCK_APPOINTMENTS.filter(
-    (a) => a.status === "confirmado" || a.status === "pendente",
+  const { appointments, loading, error } = useAppointments();
+  const clientAppointments: ClientAppointment[] = appointments.map((appointment) => ({
+    id: appointment.id,
+    procedure: appointment.procedure,
+    date: appointment.date,
+    time: appointment.time,
+    status: toClientStatus(appointment.status),
+  }));
+  const upcoming = clientAppointments.filter(
+    (appointment) => appointment.status === "confirmado" || appointment.status === "pendente",
   );
-  const past = MOCK_APPOINTMENTS.filter(
-    (a) => a.status === "concluido" || a.status === "cancelado",
+  const past = clientAppointments.filter(
+    (appointment) => appointment.status === "concluido" || appointment.status === "cancelado",
   );
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
-      <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-        Dados de demonstração. Esta seção ainda não foi integrada à sua conta.
-      </p>
+      {error && (
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Meus Agendamentos</h1>
@@ -79,36 +89,49 @@ export function ClienteAgendamentosPage() {
         </Link>
       </div>
 
-      {upcoming.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Próximos
-          </h2>
-          <div className="space-y-3">
-            {upcoming.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} />
-            ))}
-          </div>
-        </section>
-      )}
+      {loading ? (
+        <p className="text-sm text-gray-500">Carregando agendamentos...</p>
+      ) : (
+        <>
+          {upcoming.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Próximos
+              </h2>
+              <div className="space-y-3">
+                {upcoming.map((appointment) => (
+                  <AppointmentCard key={appointment.id} appointment={appointment} />
+                ))}
+              </div>
+            </section>
+          )}
 
-      {past.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Histórico
-          </h2>
-          <div className="space-y-3">
-            {past.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} />
-            ))}
-          </div>
-        </section>
+          {past.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Histórico
+              </h2>
+              <div className="space-y-3">
+                {past.map((appointment) => (
+                  <AppointmentCard key={appointment.id} appointment={appointment} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {clientAppointments.length === 0 && (
+            <div className="py-16 text-center text-gray-400">
+              <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">Nenhum agendamento encontrado.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-function AppointmentCard({ appointment }: { appointment: Appointment }) {
+function AppointmentCard({ appointment }: { appointment: ClientAppointment }) {
   const cfg = statusConfig[appointment.status];
   const StatusIcon = cfg.icon;
 
@@ -122,7 +145,7 @@ function AppointmentCard({ appointment }: { appointment: Appointment }) {
         <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
           <span className="flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" />
-            {formatDate(appointment.date)}
+            {appointment.date}
           </span>
           <span className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />

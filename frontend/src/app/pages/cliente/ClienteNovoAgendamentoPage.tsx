@@ -1,9 +1,6 @@
-import { useTerminology, useSite } from "../../config/SiteContext";
-import { SiteIcon } from "../../components/SiteIcon";
-import { demoOccupiedSlots } from "../../config/agenda";
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { ChevronLeft, ChevronRight, Clock, Calendar, CheckCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import { ChevronLeft, ChevronRight, Clock, CheckCircle } from "lucide-react";
 import {
   format,
   addMonths,
@@ -17,46 +14,140 @@ import {
   startOfDay,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+import { SiteIcon } from "../../components/SiteIcon";
+import { useSite, useTerminology } from "../../config/SiteContext";
+import { useAuth } from "../../context/AuthContext";
 import { useProcedures } from "../../context/ProceduresContext";
+import { useAppointments } from "../../context/AppointmentsContext";
+import { errorMessage } from "../../services/api";
+import { createSchedule, getAvailabilityForDate } from "../../services/schedules";
+import type { AvailabilitySlot } from "../../services/schedules";
+import { displayDateToIso } from "../../utils/appointments/appointment";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 type Step = "procedure" | "datetime" | "confirm" | "done";
 
+interface SelectedSlot {
+  professionalId: number;
+  professionalName: string;
+  time: string;
+}
+
 export function ClienteNovoAgendamentoPage() {
   const copy = useTerminology();
   const site = useSite();
-  const { agenda } = site;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const treatmentId = searchParams.get("treatmentId");
+  const { user, token } = useAuth();
   const { procedures } = useProcedures();
-  const active = procedures.filter((p) => p.status === "Ativo");
-  const [step, setStep] = useState<Step>("procedure");
-  const [selectedProcedureId, setSelectedProcedureId] = useState<number | null>(null);
+  const { reload } = useAppointments();
+  const active = procedures.filter((procedure) => procedure.status === "Ativo");
+  const initialProcedure = treatmentId
+    ? active.find((procedure) => String(procedure.id) === treatmentId)
+    : undefined;
+  const [step, setStep] = useState<Step>(initialProcedure ? "datetime" : "procedure");
+  const [selectedProcedureId, setSelectedProcedureId] = useState<number | null>(
+    initialProcedure?.id ?? null,
+  );
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<
+    { name: string; professionalId: number; slots: AvailabilitySlot[] }[]
+  >([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
+  const [session, setSession] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const today = startOfDay(new Date());
-  const procedure = active.find((p) => p.id === selectedProcedureId);
+  const procedure = active.find((entry) => entry.id === selectedProcedureId);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const days = eachDayOfInterval({
-    start: monthStart,
-    end: monthEnd,
-  });
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startPadding = getDay(monthStart);
-  const occupiedToday = selectedDate ? demoOccupiedSlots(agenda, selectedDate) : [];
+
+  useEffect(() => {
+    if (!treatmentId || selectedProcedureId !== null) return;
+    const match = procedures.find(
+      (entry) => entry.status === "Ativo" && String(entry.id) === treatmentId,
+    );
+    if (match) {
+      setSelectedProcedureId(match.id);
+      setStep("datetime");
+    }
+  }, [procedures, selectedProcedureId, treatmentId]);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setAvailability([]);
+      setSelectedSlot(null);
+      return;
+    }
+    if (!user?.clientId || !token) {
+      setError("Entre com uma conta de cliente para agendar.");
+      return;
+    }
+
+    const controller = new AbortController();
+    setAvailabilityLoading(true);
+    setError("");
+    setSelectedSlot(null);
+    getAvailabilityForDate(
+      token,
+      displayDateToIso(format(selectedDate, "dd/MM/yyyy")),
+      controller.signal,
+    )
+      .then((result) => {
+        if (!controller.signal.aborted) setAvailability(result);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setError(errorMessage(cause));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setAvailabilityLoading(false);
+      });
+    return () => controller.abort();
+  }, [selectedDate, user?.clientId, token]);
 
   function handleDateSelect(date: Date) {
     if (isBefore(date, today)) return;
-
     setSelectedDate(date);
-    setSelectedTime(null);
+    setSelectedSlot(null);
   }
 
   function handleBack() {
     if (step === "procedure") navigate("/cliente/agendamentos");
     else if (step === "datetime") setStep("procedure");
     else if (step === "confirm") setStep("datetime");
+  }
+
+  async function handleConfirm() {
+    if (!user?.clientId || !token || !selectedDate || !selectedSlot || !procedure) return;
+    setSaving(true);
+    setError("");
+    try {
+      await createSchedule(
+        {
+          client_id: user.clientId,
+          professional_id: selectedSlot.professionalId,
+          procedure_id: procedure.id,
+          date: displayDateToIso(format(selectedDate, "dd/MM/yyyy")),
+          start_time: selectedSlot.time,
+          session: procedure.triagem ? session : 1,
+        },
+        token,
+      );
+      reload();
+      setStep("done");
+      toast.success("Agendamento criado");
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (step === "done") {
@@ -76,10 +167,10 @@ export function ClienteNovoAgendamentoPage() {
                 <span className="font-medium text-gray-700">
                   {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
                 </span>{" "}
-                às <span className="font-medium text-gray-700">{selectedTime}</span>
+                às <span className="font-medium text-gray-700">{selectedSlot?.time}</span>
               </>
             )}{" "}
-            foi enviado para confirmação.
+            com <span className="font-medium text-gray-700">{selectedSlot?.professionalName}</span>.
           </p>
         </div>
         <button
@@ -108,11 +199,21 @@ export function ClienteNovoAgendamentoPage() {
         </div>
       </div>
 
+      {error && (
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+
       <div className="flex gap-2 mb-8">
-        {(["procedure", "datetime", "confirm"] as Step[]).map((s, i) => (
+        {(["procedure", "datetime", "confirm"] as Step[]).map((name, index) => (
           <div
-            key={s}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${step === "confirm" || (step === "datetime" && i === 0) || step === s ? "bg-brand-700" : "bg-gray-200"}`}
+            key={name}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              step === "confirm" || (step === "datetime" && index === 0) || step === name
+                ? "bg-brand-700"
+                : "bg-gray-200"
+            }`}
           />
         ))}
       </div>
@@ -124,11 +225,14 @@ export function ClienteNovoAgendamentoPage() {
               {copy("Nenhum procedimento disponível.")}
             </p>
           )}
-          {active.map((proc) => (
+          {active.map((entry) => (
             <button
-              key={proc.id}
+              key={entry.id}
               onClick={() => {
-                setSelectedProcedureId(proc.id);
+                setSelectedProcedureId(entry.id);
+                setSession(1);
+                setSelectedDate(null);
+                setSelectedSlot(null);
                 setStep("datetime");
               }}
               className="w-full text-left bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:border-brand-300 hover:shadow transition-all"
@@ -138,12 +242,12 @@ export function ClienteNovoAgendamentoPage() {
                   <SiteIcon name={site.catalog.icon} className="w-5 h-5 text-brand-700" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900">{proc.name}</p>
-                  {proc.duration && <p className="text-sm text-gray-400">{proc.duration}</p>}
+                  <p className="font-medium text-gray-900">{entry.name}</p>
+                  {entry.duration && <p className="text-sm text-gray-400">{entry.duration}</p>}
                 </div>
-                {proc.price && (
+                {entry.price && (
                   <span className="text-sm font-semibold text-brand-700 flex-shrink-0">
-                    {proc.price}
+                    {entry.price}
                   </span>
                 )}
               </div>
@@ -152,7 +256,7 @@ export function ClienteNovoAgendamentoPage() {
         </div>
       )}
 
-      {step === "datetime" && (
+      {step === "datetime" && procedure && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6">
@@ -177,16 +281,19 @@ export function ClienteNovoAgendamentoPage() {
               </div>
 
               <div className="grid grid-cols-7 mb-2">
-                {WEEKDAYS.map((wd) => (
-                  <div key={wd} className="text-center text-xs font-semibold text-[#9ca3af] py-1">
-                    {wd}
+                {WEEKDAYS.map((weekday) => (
+                  <div
+                    key={weekday}
+                    className="text-center text-xs font-semibold text-[#9ca3af] py-1"
+                  >
+                    {weekday}
                   </div>
                 ))}
               </div>
 
               <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: startPadding }).map((_, i) => (
-                  <div key={`pad-${i}`} />
+                {Array.from({ length: startPadding }).map((_, index) => (
+                  <div key={`pad-${index}`} />
                 ))}
                 {days.map((day) => {
                   const isPast = isBefore(day, today);
@@ -226,136 +333,123 @@ export function ClienteNovoAgendamentoPage() {
                 <p className="text-xs text-[#9ca3af] mb-4 capitalize">
                   {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                 </p>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                  {agenda.timeSlots.map((slot) => {
-                    const occupied = occupiedToday.includes(slot);
-                    const isChosen = selectedTime === slot;
-
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        disabled={occupied}
-                        onClick={() => setSelectedTime(slot)}
-                        className={[
-                          "py-2.5 rounded-lg text-sm font-medium transition-all border",
-                          occupied
-                            ? "border-[#f3f4f6] bg-[#f9fafb] text-[#d1d5db] cursor-not-allowed line-through"
-                            : isChosen
-                              ? "bg-brand-700 text-white border-brand-700 shadow-md"
-                              : "border-brand-100 text-brand-800 hover:border-brand-300 hover:bg-brand-100",
-                        ].join(" ")}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
-                </div>
+                {availabilityLoading ? (
+                  <p className="text-sm text-gray-500">Carregando horários...</p>
+                ) : availability.length === 0 ? (
+                  <p className="text-sm text-gray-500">Nenhum horário disponível nesta data.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {availability.map((professional) => (
+                      <div key={professional.professionalId}>
+                        <p className="mb-2 text-sm font-medium text-gray-700">
+                          {professional.name}
+                        </p>
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                          {professional.slots.map((slot) => {
+                            const selected =
+                              selectedSlot?.professionalId === professional.professionalId &&
+                              selectedSlot.time === slot.start_time;
+                            return (
+                              <button
+                                key={`${professional.professionalId}-${slot.start_time}`}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSlot({
+                                    professionalId: professional.professionalId,
+                                    professionalName: professional.name,
+                                    time: slot.start_time,
+                                  });
+                                  setStep("confirm");
+                                }}
+                                className={`py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                                  selected
+                                    ? "bg-brand-700 text-white"
+                                    : "bg-brand-50 text-brand-800 hover:bg-brand-100"
+                                }`}
+                              >
+                                {slot.start_time}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6 sticky top-20">
-              <h3 className="text-base font-bold text-brand-800 mb-4 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-brand-700" />
-                Resumo
-              </h3>
-              <div className="space-y-3 mb-6">
-                <div>
-                  <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">
-                    {copy("Tratamento")}
-                  </p>
-                  <p className="text-sm font-semibold text-brand-800 mt-0.5">{procedure?.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">Data</p>
-                  <p className="text-sm font-semibold text-brand-800 mt-0.5">
-                    {selectedDate ? (
-                      format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
-                    ) : (
-                      <span className="text-[#d1d5db] font-normal">Selecione uma data</span>
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">
-                    Horário
-                  </p>
-                  <p className="text-sm font-semibold text-brand-800 mt-0.5">
-                    {selectedTime ?? (
-                      <span className="text-[#d1d5db] font-normal">Selecione um horário</span>
-                    )}
-                  </p>
-                </div>
-                {procedure?.price && (
-                  <div className="pt-2 border-t border-brand-100">
-                    <p className="text-xs text-[#9ca3af] font-medium uppercase tracking-wide">
-                      Valor
-                    </p>
-                    <p className="text-lg font-bold text-brand-700 mt-0.5">{procedure.price}</p>
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                disabled={!selectedDate || !selectedTime}
-                onClick={() => setStep("confirm")}
-                className={[
-                  "w-full py-3 rounded-lg font-medium transition-all text-sm",
-                  selectedDate && selectedTime
-                    ? "bg-brand-700 text-white hover:bg-brand-600 shadow-md hover:shadow-lg"
-                    : "bg-[#f3f4f6] text-[#d1d5db] cursor-not-allowed",
-                ].join(" ")}
-              >
-                Continuar
-              </button>
-
-              {(!selectedDate || !selectedTime) && (
-                <p className="text-xs text-center text-[#9ca3af] mt-2">
-                  {!selectedDate
-                    ? "Selecione uma data para continuar"
-                    : "Selecione um horário para continuar"}
+          <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6 h-fit">
+            <h3 className="text-base font-bold text-brand-800 mb-3">Resumo</h3>
+            <p className="text-sm font-medium text-gray-900">{procedure.name}</p>
+            <p className="mt-1 text-sm text-gray-500">{procedure.duration}</p>
+            <p className="mt-1 text-sm font-semibold text-brand-700">{procedure.price}</p>
+            {selectedSlot && (
+              <div className="mt-3 rounded-lg bg-brand-50 p-3 text-sm text-brand-800">
+                <p>{selectedSlot.professionalName}</p>
+                <p>
+                  {format(selectedDate!, "dd/MM/yyyy", { locale: ptBR })} às {selectedSlot.time}
                 </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {step === "confirm" && procedure && (
-        <div className="max-w-md space-y-6">
-          <div className="bg-white border border-brand-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-brand-800 text-lg">Resumo do agendamento</h2>
-            <div className="space-y-3 text-sm">
-              <Row label={copy("Procedimento")} value={procedure.name} />
-              {procedure.duration && <Row label="Duração" value={procedure.duration} />}
-              {procedure.price && <Row label="Valor" value={procedure.price} />}
-              {selectedDate && (
-                <Row label="Data" value={format(selectedDate, "dd/MM/yyyy", { locale: ptBR })} />
-              )}
-              {selectedTime && <Row label="Horário" value={selectedTime} />}
-            </div>
+      {step === "confirm" && procedure && selectedDate && selectedSlot && (
+        <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-md border border-brand-100 p-6 space-y-4">
+          <h2 className="text-xl font-bold text-brand-800">Confirmar agendamento</h2>
+          <div className="space-y-2 text-sm text-gray-700">
+            <p>
+              <strong>Procedimento:</strong> {procedure.name}
+            </p>
+            <p>
+              <strong>Profissional:</strong> {selectedSlot.professionalName}
+            </p>
+            <p>
+              <strong>Data:</strong> {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })} às{" "}
+              {selectedSlot.time}
+            </p>
           </div>
-          <p className="text-xs text-gray-400 text-center">{site.content.bookingConfirmation}</p>
-          <button
-            onClick={() => setStep("done")}
-            className="w-full bg-brand-700 text-white py-3 rounded-xl font-medium hover:bg-brand-600 transition-colors shadow-lg"
-          >
-            Confirmar agendamento
-          </button>
+          {procedure.triagem && (
+            <div>
+              <p className="mb-2 text-sm font-medium text-gray-700">Tipo</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSession(0)}
+                  className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium ${session === 0 ? "bg-brand-700 text-white" : "bg-gray-100 text-gray-700"}`}
+                >
+                  Triagem ({procedure.triagemMinutes} min)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSession(1)}
+                  className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium ${session === 1 ? "bg-brand-700 text-white" : "bg-gray-100 text-gray-700"}`}
+                >
+                  Sessão ({procedure.duration})
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setStep("datetime")}
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Voltar
+            </button>
+            <button
+              onClick={() => void handleConfirm()}
+              disabled={saving}
+              className="flex-1 rounded-lg bg-brand-700 px-4 py-3 text-sm font-medium text-white hover:bg-brand-600 disabled:bg-gray-300"
+            >
+              {saving ? "Confirmando..." : "Confirmar agendamento"}
+            </button>
+          </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-brand-800">{value}</span>
     </div>
   );
 }

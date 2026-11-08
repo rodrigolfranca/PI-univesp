@@ -59,18 +59,26 @@ export class WorkSchedulesService {
         }
     }
 
+    async findAll(dto: WorkScheduleGetAllDto) {
+        try {
+            return await this.workSchedulesRepository.findAllByFilters(dto);
+        } catch (error) {
+            Utils.logError(this.logger, 'Failed to list work schedules', error);
+            Utils.handleError(error);
+        }
+    }
+
     async getAll(dto: WorkScheduleGetAllDto) {
         try {
             const today = new Date().toISOString().split('T')[0];
-            const todayDate = new Date(today + 'T00:00:00Z');
+            const baseDate = dto.date ?? today;
+            const todayDate = new Date(baseDate + 'T00:00:00Z');
             const todayDay = todayDate.getUTCDay();
 
             if (dto.day_of_week !== undefined) {
-                const targetDateStr = this.getTargetDateStr(
-                    dto.day_of_week,
-                    today,
-                    todayDay,
-                );
+                const targetDateStr =
+                    dto.date ??
+                    this.getTargetDateStr(dto.day_of_week, today, todayDay);
                 const effectiveDto = { ...dto, day_of_week: dto.day_of_week };
 
                 if (dto.professional_id) {
@@ -114,11 +122,9 @@ export class WorkSchedulesService {
                     this.usersService.findProfessionalById(dto.professional_id),
                     Promise.all(
                         allDays.map(async (day) => {
-                            const dateStr = this.getTargetDateStr(
-                                day,
-                                today,
-                                todayDay,
-                            );
+                            const dateStr =
+                                dto.date ??
+                                this.getTargetDateStr(day, today, todayDay);
                             const slots =
                                 await this.computeSlotsForProfessional(
                                     dto.professional_id,
@@ -148,11 +154,9 @@ export class WorkSchedulesService {
                 (professionals ?? []).map(async (p) => {
                     const dayResults = await Promise.all(
                         allDays.map(async (day) => {
-                            const dateStr = this.getTargetDateStr(
-                                day,
-                                today,
-                                todayDay,
-                            );
+                            const dateStr =
+                                dto.date ??
+                                this.getTargetDateStr(day, today, todayDay);
                             const slots =
                                 await this.computeSlotsForProfessional(
                                     p.id,

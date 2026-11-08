@@ -21,10 +21,20 @@ export const STATUS_STYLE: Record<
     badge: "bg-yellow-100 text-yellow-700",
     chip: "bg-amber-400 text-amber-900",
   },
+  Concluído: {
+    block: "bg-emerald-100 border-emerald-500 text-emerald-800",
+    badge: "bg-emerald-100 text-emerald-800",
+    chip: "bg-emerald-100 text-emerald-800",
+  },
   Cancelado: {
     block: "bg-gray-300 border-gray-400 text-gray-600 line-through opacity-60",
     badge: "bg-red-100 text-red-700",
     chip: "bg-gray-300 text-gray-600 line-through opacity-60",
+  },
+  Ausente: {
+    block: "bg-orange-100 border-orange-400 text-orange-800",
+    badge: "bg-orange-100 text-orange-800",
+    chip: "bg-orange-100 text-orange-800",
   },
 };
 export const WEEK_DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];

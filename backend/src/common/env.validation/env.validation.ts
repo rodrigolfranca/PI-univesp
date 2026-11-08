@@ -1,26 +1,55 @@
-import { plainToInstance } from 'class-transformer';
 import {
+    plainToInstance,
+    Transform,
+    TransformFnParams,
+    Type,
+} from 'class-transformer';
+import {
+    IsBoolean,
     IsNotEmpty,
     IsNumber,
     IsOptional,
     IsString,
     Matches,
+    ValidateIf,
     validateSync,
 } from 'class-validator';
+
+function parseBoolean({ value }: TransformFnParams): unknown {
+    if (typeof value === 'boolean') {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+
+        if (['true', '1', 'yes', 'on'].includes(normalized)) {
+            return true;
+        }
+
+        if (['false', '0', 'no', 'off'].includes(normalized)) {
+            return false;
+        }
+    }
+
+    return value;
+}
 
 export class EnvirontmentVariables {
     @IsNotEmpty()
     @IsString()
     NODE_ENV: string;
 
-    @IsNotEmpty()
+    @IsOptional()
+    @Type(() => Number)
     @IsNumber()
-    PORT: number;
+    PORT?: number;
 
     @IsNotEmpty()
     @IsString()
     DB_HOST: string;
 
+    @Type(() => Number)
     @IsNotEmpty()
     @IsNumber()
     DB_PORT: number;
@@ -37,13 +66,43 @@ export class EnvirontmentVariables {
     @IsString()
     DB_NAME: string;
 
+    @IsOptional()
+    @Transform(parseBoolean)
+    @IsBoolean()
+    DB_SSL?: boolean;
+
+    @IsOptional()
+    @Transform(parseBoolean)
+    @IsBoolean()
+    DB_SYNC?: boolean;
+
+    @IsOptional()
+    @IsString()
+    REDIS_URL?: string;
+
+    @ValidateIf((config: { REDIS_URL?: string }) => !config.REDIS_URL)
     @IsNotEmpty()
     @IsString()
-    REDIS_HOST: string;
+    REDIS_HOST?: string;
 
+    @ValidateIf((config: { REDIS_URL?: string }) => !config.REDIS_URL)
+    @Type(() => Number)
     @IsNotEmpty()
     @IsNumber()
-    REDIS_PORT: number;
+    REDIS_PORT?: number;
+
+    @IsOptional()
+    @IsString()
+    REDIS_PASSWORD?: string;
+
+    @IsOptional()
+    @Transform(parseBoolean)
+    @IsBoolean()
+    REDIS_TLS?: boolean;
+
+    @IsOptional()
+    @IsString()
+    CORS_ORIGINS?: string;
 
     @IsNotEmpty()
     @IsString()
@@ -73,18 +132,18 @@ export class EnvirontmentVariables {
     GOOGLE_CALENDAR_TIMEZONE: string;
 
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     AUTH_THROTTLE_TTL_MS?: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     AUTH_THROTTLE_LIMIT?: number;
 }
 
 export function validate(config: Record<string, unknown>) {
-    const validatedConfig = plainToInstance(EnvirontmentVariables, config, {
-        enableImplicitConversion: true,
-    });
+    const validatedConfig = plainToInstance(EnvirontmentVariables, config);
 
     const errors = validateSync(validatedConfig, {
         skipMissingProperties: false,

@@ -43,3 +43,20 @@ export function filterAppointments(
         appointment.procedure.toLowerCase().includes(query)),
   );
 }
+
+export function isoToDisplayDate(date: string): string {
+  const [year, month, day] = date.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+export function displayDateToIso(date: string): string {
+  const [day, month, year] = date.split("/");
+  return `${year}-${month}-${day}`;
+}
+
+export function displayStatusFromApi(status: string): AppStatus {
+  if (status === "completed") return "Concluído";
+  if (status === "canceled") return "Cancelado";
+  if (status === "absent") return "Ausente";
+  return "Confirmado";
+}

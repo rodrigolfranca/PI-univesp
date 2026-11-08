@@ -33,3 +33,25 @@ export async function verifyLoginCode(phone: string, code: string): Promise<stri
   });
   return result.access_token;
 }
+
+export async function requestRecoveryCode(email: string): Promise<void> {
+  await apiRequest("/auth/recovery/request-code", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export async function verifyRecoveryCode(
+  email: string,
+  phone: string,
+  code: string,
+): Promise<void> {
+  await apiRequest("/auth/recovery/verify-code", {
+    method: "POST",
+    body: {
+      email,
+      phone_number: normalizePhone(phone),
+      verification_code: code,
+    },
+  });
+}

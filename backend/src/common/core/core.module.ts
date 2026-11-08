@@ -8,6 +8,7 @@ import { SchedulesModule } from 'src/modules/schedules/schedules.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { DatabaseModule } from '../database/database.module';
 import { validate } from '../env.validation/env.validation';
+import { HealthModule } from '../health/health.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { validate } from '../env.validation/env.validation';
             validate,
         }),
         DatabaseModule,
+        HealthModule,
         UsersModule,
         ProceduresModule,
         PopsModule,
