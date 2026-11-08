@@ -133,6 +133,9 @@ Default values:
 - `GET /work-schedules/all` retorna os horários disponíveis calculados.
 - `GET /schedules` retorna cliente e profissional com nome/telefone; clientes veem apenas os próprios agendamentos.
 - `POST /schedules` aceita admin ou o próprio cliente autenticado (`client_id` igual ao vínculo do usuário).
+- `POST /google-calendar/sync` sincroniza um agendamento ou todos; admin only.
+- O Google usa cores por status e mantém cancelados como `[CANCELADO]`; exclusão definitiva remove o evento.
 - `PATCH` e `DELETE` de agendamentos continuam restritos a admin.
 - O callback do Google Agenda redireciona navegadores para a primeira origem de `CORS_ORIGINS` e retorna JSON para clientes de API.
 - `schedule_exceptions` aceita `name`; rode `npm run migrate:schedule-exception-name` uma vez por banco.
+- `schedules.google_event_link` requer `npm run migrate:google-event-link` uma vez por banco.

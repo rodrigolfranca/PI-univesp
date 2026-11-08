@@ -21,3 +21,20 @@ export async function getGoogleCalendarConnectUrl(token: string): Promise<string
 export async function disconnectGoogleCalendar(token: string): Promise<void> {
   await apiRequest("/google-calendar/disconnect", { method: "DELETE", token });
 }
+
+export interface GoogleCalendarSyncResult {
+  connected: boolean;
+  synced: number;
+  failed: number;
+}
+
+export async function syncGoogleCalendar(
+  token: string,
+  scheduleId?: number,
+): Promise<GoogleCalendarSyncResult> {
+  return await apiRequest<GoogleCalendarSyncResult>("/google-calendar/sync", {
+    method: "POST",
+    token,
+    body: scheduleId ? { schedule_id: scheduleId } : {},
+  });
+}

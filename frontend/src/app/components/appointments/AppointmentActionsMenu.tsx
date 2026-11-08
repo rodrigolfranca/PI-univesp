@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Appointment } from "../../config/types";
-import { Ban, CalendarCheck, ExternalLink, UserX } from "lucide-react";
+import { Ban, CalendarCheck, RefreshCw, UserPlus, UserX } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -32,17 +32,20 @@ export function AppointmentActionsMenu({
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align="end" className={contentClassName}>
         {gcalConnected ? (
-          <DropdownMenuItem disabled className="gap-2">
-            <ExternalLink className="w-4 h-4" />
-            Sincronizado com Google Agenda
+          <DropdownMenuItem
+            className="gap-2 cursor-pointer text-blue-600 focus:text-blue-700 focus:bg-blue-50"
+            onSelect={() => onGCal(appointment)}
+          >
+            <RefreshCw className="w-4 h-4" />
+            Sincronizar com Google
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem
             className="gap-2 cursor-pointer text-blue-600 focus:text-blue-700 focus:bg-blue-50"
             onSelect={() => onGCal(appointment)}
           >
-            <ExternalLink className="w-4 h-4" />
-            Adicionar ao Google Agenda
+            <UserPlus className="w-4 h-4" />
+            Conectar Google Agenda
           </DropdownMenuItem>
         )}
         {canManage && (
