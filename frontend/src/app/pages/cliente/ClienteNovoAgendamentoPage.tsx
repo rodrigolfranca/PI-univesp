@@ -59,7 +59,6 @@ export function ClienteNovoAgendamentoPage() {
   >([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
-  const [session, setSession] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const today = startOfDay(new Date());
@@ -136,7 +135,7 @@ export function ClienteNovoAgendamentoPage() {
           procedure_id: procedure.id,
           date: displayDateToIso(format(selectedDate, "dd/MM/yyyy")),
           start_time: selectedSlot.time,
-          session: procedure.triagem ? session : 1,
+          session: 1,
         },
         token,
       );
@@ -230,7 +229,6 @@ export function ClienteNovoAgendamentoPage() {
               key={entry.id}
               onClick={() => {
                 setSelectedProcedureId(entry.id);
-                setSession(1);
                 setSelectedDate(null);
                 setSelectedSlot(null);
                 setStep("datetime");
@@ -412,27 +410,6 @@ export function ClienteNovoAgendamentoPage() {
               {selectedSlot.time}
             </p>
           </div>
-          {procedure.triagem && (
-            <div>
-              <p className="mb-2 text-sm font-medium text-gray-700">Tipo</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSession(0)}
-                  className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium ${session === 0 ? "bg-brand-700 text-white" : "bg-gray-100 text-gray-700"}`}
-                >
-                  Triagem ({procedure.triagemMinutes} min)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSession(1)}
-                  className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium ${session === 1 ? "bg-brand-700 text-white" : "bg-gray-100 text-gray-700"}`}
-                >
-                  Sessão ({procedure.duration})
-                </button>
-              </div>
-            </div>
-          )}
           <div className="flex gap-3">
             <button
               onClick={() => setStep("datetime")}
