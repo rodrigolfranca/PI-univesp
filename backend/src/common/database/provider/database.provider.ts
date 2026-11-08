@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Sequelize } from 'sequelize-typescript';
 import {
+    Category,
     Client,
     DocumentTemplates,
     Pop,
@@ -77,6 +78,7 @@ export const DatabaseProvider = {
 
         sequelize.addModels([
             User,
+            Category,
             Client,
             Professional,
             Pop,

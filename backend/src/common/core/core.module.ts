@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { CategoriesModule } from 'src/modules/categories/categories.module';
 import { GoogleCalendarModule } from 'src/modules/google-calendar/google-calendar.module';
 import { PopsModule } from 'src/modules/pops/pops.module';
 import { ProceduresModule } from 'src/modules/procedures/procedures.module';
@@ -19,6 +20,7 @@ import { HealthModule } from '../health/health.module';
         }),
         DatabaseModule,
         HealthModule,
+        CategoriesModule,
         UsersModule,
         ProceduresModule,
         PopsModule,

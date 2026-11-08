@@ -4,11 +4,22 @@ import {
     IsInt,
     IsNumber,
     IsOptional,
+    IsPositive,
     IsString,
     Min,
 } from 'class-validator';
 
 export class UpdateProcedureDto {
+    @ApiProperty({
+        description: 'ID da categoria',
+        example: 1,
+        required: false,
+    })
+    @IsOptional()
+    @IsInt()
+    @IsPositive()
+    category_id?: number;
+
     @ApiProperty({
         description: 'Nome do procedimento',
         example: 'Limpeza de pele',

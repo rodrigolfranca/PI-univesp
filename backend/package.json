@@ -22,7 +22,8 @@
         "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json",
         "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
         "migrate:schedule-exception-name": "ts-node -r tsconfig-paths/register src/scripts/migrate-schedule-exception-name.ts",
-        "migrate:google-event-link": "ts-node -r tsconfig-paths/register src/scripts/migrate-google-event-link.ts"
+        "migrate:google-event-link": "ts-node -r tsconfig-paths/register src/scripts/migrate-google-event-link.ts",
+        "migrate:categories": "ts-node -r tsconfig-paths/register src/scripts/migrate-categories.ts"
     },
     "dependencies": {
         "@googleapis/calendar": "^20.1.0",

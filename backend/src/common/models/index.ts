@@ -1,3 +1,4 @@
+export { Category } from './categories.model';
 export { Client } from './clients.model';
 export { Professional } from './professionals.model';
 export { User } from './users.model';
