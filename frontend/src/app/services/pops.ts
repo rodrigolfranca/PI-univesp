@@ -23,7 +23,7 @@ export interface PopUpload {
 
 export async function listPops(
   procedureId: number,
-  token: string,
+  token?: string,
   signal?: AbortSignal,
 ): Promise<ApiPop[]> {
   const pops = new Map<number, ApiPop>();
@@ -36,7 +36,10 @@ export async function listPops(
       page: String(page),
       limit: "100",
     });
-    const result = await apiRequest<PopPage>(`/pops?${params.toString()}`, { token, signal });
+    const result = await apiRequest<PopPage>(`/pops?${params.toString()}`, {
+      token,
+      signal,
+    });
     result.pops.forEach((pop) => pops.set(pop.id, pop));
     received += result.pops.length;
     if (received >= result.total || result.pops.length === 0) return [...pops.values()];
@@ -75,7 +78,7 @@ export async function deletePop(id: number, token: string): Promise<void> {
 
 export async function downloadPop(
   id: number,
-  token: string,
+  token?: string,
 ): Promise<{ blob: Blob; filename: string | null }> {
   return await apiRequestBlob(`/pops/${id}/download`, { token });
 }

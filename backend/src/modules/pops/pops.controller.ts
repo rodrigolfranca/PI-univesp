@@ -61,24 +61,18 @@ export class PopsController {
     }
 
     @Get()
-    @UseGuards(AuthGuard)
-    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Lista as POPs' })
     async list(@Query() query: PopsListDTO) {
         return this.popsService.list(query);
     }
 
     @Get(':id')
-    @UseGuards(AuthGuard)
-    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Obtém uma POP por ID' })
     async get(@Param('id', ParseIntPipe) id: number) {
         return this.popsService.getById(id);
     }
 
     @Get(':id/download')
-    @UseGuards(AuthGuard)
-    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Baixa o PDF de uma POP' })
     @ApiProduces('application/pdf')
     async download(
