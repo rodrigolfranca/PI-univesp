@@ -22,10 +22,11 @@ import {
 } from "../components/ui/alert-dialog";
 import { useCategories } from "../context/CategoriesContext";
 import { useProcedures } from "../context/ProceduresContext";
+import { errorMessage } from "../services/api";
 
 export function CategoriesPage() {
   const copy = useTerminology();
-  const { categories, addCategory, editCategory, deleteCategory } = useCategories();
+  const { categories, loading, error, addCategory, editCategory, deleteCategory } = useCategories();
   const { procedures } = useProcedures();
   const [addOpen, setAddOpen] = useState(false);
   const [addName, setAddName] = useState("");
@@ -41,7 +42,7 @@ export function CategoriesPage() {
     return procedures.filter((p) => p.category === categoryName).length;
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     const trimmed = addName.trim();
     if (!trimmed) {
       setAddError("Nome é obrigatório");
@@ -53,11 +54,15 @@ export function CategoriesPage() {
       return;
     }
 
-    addCategory(trimmed);
-    toast.success(`Categoria "${trimmed}" criada`);
-    setAddName("");
-    setAddError("");
-    setAddOpen(false);
+    try {
+      await addCategory(trimmed);
+      toast.success(`Categoria "${trimmed}" criada`);
+      setAddName("");
+      setAddError("");
+      setAddOpen(false);
+    } catch (cause) {
+      setAddError(errorMessage(cause));
+    }
   }
 
   function openEdit(id: number, name: string) {
@@ -67,7 +72,7 @@ export function CategoriesPage() {
     setEditOpen(true);
   }
 
-  function handleEdit() {
+  async function handleEdit() {
     const trimmed = editName.trim();
     if (!trimmed) {
       setEditError("Nome é obrigatório");
@@ -79,9 +84,13 @@ export function CategoriesPage() {
       return;
     }
 
-    editCategory(editId!, trimmed);
-    toast.success("Categoria atualizada");
-    setEditOpen(false);
+    try {
+      await editCategory(editId!, trimmed);
+      toast.success("Categoria atualizada");
+      setEditOpen(false);
+    } catch (cause) {
+      setEditError(errorMessage(cause));
+    }
   }
 
   function openDelete(id: number) {
@@ -107,10 +116,14 @@ export function CategoriesPage() {
     setDeleteOpen(true);
   }
 
-  function handleDelete() {
-    deleteCategory(deleteId!);
-    toast.success("Categoria removida");
-    setDeleteOpen(false);
+  async function handleDelete() {
+    try {
+      await deleteCategory(deleteId!);
+      toast.success("Categoria removida");
+      setDeleteOpen(false);
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
   }
 
   return (
@@ -122,6 +135,12 @@ export function CategoriesPage() {
         <ChevronRight className="w-4 h-4" />
         <span className="text-gray-900 font-medium">Categorias</span>
       </nav>
+
+      {error && (
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
@@ -135,7 +154,9 @@ export function CategoriesPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <span className="text-sm text-gray-500">
-            {categories.length} categori{categories.length === 1 ? "a" : "as"}
+            {loading
+              ? "Carregando..."
+              : `${categories.length} categori${categories.length === 1 ? "a" : "as"}`}
           </span>
           <button
             onClick={() => {
