@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Appointment } from "../../config/types";
-import { Ban, CalendarCheck, RefreshCw, UserPlus, UserX } from "lucide-react";
+import { Ban, CalendarCheck, Eye, RefreshCw, Trash2, UserPlus, UserX } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,7 +10,9 @@ import {
 } from "../ui/dropdown-menu";
 export function AppointmentActionsMenu({
   appointment,
+  onDetails,
   onCancel,
+  onDelete,
   onGCal,
   onStatus,
   gcalConnected,
@@ -19,7 +21,9 @@ export function AppointmentActionsMenu({
   contentClassName,
 }: {
   appointment: Appointment;
+  onDetails: (appointment: Appointment) => void;
   onCancel: (appointment: Appointment) => void;
+  onDelete: (appointment: Appointment) => void;
   onGCal: (appointment: Appointment) => void;
   onStatus: (appointment: Appointment, status: "completed" | "absent") => void;
   gcalConnected: boolean;
@@ -31,6 +35,11 @@ export function AppointmentActionsMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align="end" className={contentClassName}>
+        <DropdownMenuItem className="gap-2 cursor-pointer" onSelect={() => onDetails(appointment)}>
+          <Eye className="w-4 h-4" />
+          Ver detalhes
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {gcalConnected ? (
           <DropdownMenuItem
             className="gap-2 cursor-pointer text-blue-600 focus:text-blue-700 focus:bg-blue-50"
@@ -74,6 +83,13 @@ export function AppointmentActionsMenu({
             >
               <Ban className="w-4 h-4" />
               Cancelar agendamento
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-red-700 focus:text-red-700 focus:bg-red-50 gap-2 cursor-pointer"
+              onSelect={() => onDelete(appointment)}
+            >
+              <Trash2 className="w-4 h-4" />
+              Excluir definitivamente
             </DropdownMenuItem>
           </>
         )}

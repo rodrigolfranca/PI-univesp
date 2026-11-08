@@ -14,6 +14,17 @@ export interface ApiSchedule {
   session: number;
   status: ApiScheduleStatus;
   google_event_id: string | null;
+  google_event_link: string | null;
+  client?: {
+    id: number;
+    name: string | null;
+    phone_number: string | null;
+  } | null;
+  professional?: {
+    id: number;
+    name: string | null;
+    phone_number: string | null;
+  } | null;
   procedure?: ApiProcedure;
 }
 
@@ -233,6 +244,7 @@ export interface ApiScheduleException {
   type: ScheduleExceptionType;
   start_time: string | null;
   end_time: string | null;
+  name: string | null;
 }
 
 interface ScheduleExceptionPage {

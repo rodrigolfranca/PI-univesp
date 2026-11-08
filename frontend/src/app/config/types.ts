@@ -30,7 +30,7 @@ export interface Client {
   status: string;
 }
 
-export type AppStatus = "Confirmado" | "Pendente" | "Concluído" | "Cancelado" | "Ausente";
+export type AppStatus = "Confirmado" | "Concluído" | "Cancelado" | "Ausente";
 
 export interface Appointment {
   id: number;
@@ -38,12 +38,16 @@ export interface Appointment {
   professionalId: number;
   procedureId: number;
   client: string;
+  clientPhone: string;
+  professional: string;
+  professionalPhone: string;
   procedure: string;
   date: string;
   time: string;
   status: AppStatus;
   durationMin: number;
   session: number;
+  googleEventLink: string | null;
 }
 export interface Manifest {
   id: string;

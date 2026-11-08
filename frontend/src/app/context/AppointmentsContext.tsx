@@ -2,10 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import type { ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { useProcedures } from "./ProceduresContext";
-import { useUsers } from "./UsersContext";
 import { errorMessage } from "../services/api";
-import { getUser } from "../services/users";
-import type { ApiUser } from "../services/users";
 import * as schedulesService from "../services/schedules";
 import type { ApiSchedule } from "../services/schedules";
 import type { Appointment } from "../config/types";
@@ -34,6 +31,7 @@ interface AppointmentsContextValue {
   reload: () => void;
   addAppointment: (appointment: AppointmentInput) => Promise<void>;
   cancelAppointment: (id: number) => Promise<void>;
+  deleteAppointment: (id: number) => Promise<void>;
   setAppointmentStatus: (id: number, status: "completed" | "absent") => Promise<void>;
 }
 
@@ -47,7 +45,6 @@ function durationFor(schedule: ApiSchedule, procedureDuration?: number): number 
 export function AppointmentsProvider({ children }: { children: ReactNode }) {
   const { user, token } = useAuth();
   const { procedures } = useProcedures();
-  const { users } = useUsers();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(Boolean(token));
   const [error, setError] = useState("");
@@ -68,39 +65,6 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     async function load() {
       const filters = user?.role === "client" && user.clientId ? { client_id: user.clientId } : {};
       const schedules = await schedulesService.listSchedules(token!, filters, controller.signal);
-      const userMap = new Map<number, ApiUser>(users.map((entry) => [entry.id, entry]));
-
-      if (user) {
-        userMap.set(user.userId, {
-          id: user.userId,
-          name: user.name,
-          phone_number: user.phone,
-          phone_number_confirmed: true,
-          email: user.email,
-          email_confirmed: true,
-          client: user.clientId ? { id: user.clientId } : undefined,
-          professional: user.professionalId
-            ? { id: user.professionalId, is_admin: user.isAdmin }
-            : undefined,
-        });
-      }
-
-      const missingClients = [
-        ...new Set(
-          schedules.map((schedule) => schedule.client_id).filter((id) => !userMap.has(id)),
-        ),
-      ];
-      await Promise.all(
-        missingClients.map(async (id) => {
-          try {
-            const profile = await getUser(id, token!, controller.signal);
-            userMap.set(id, profile);
-          } catch {
-            return undefined;
-          }
-        }),
-      );
-
       if (controller.signal.aborted) return;
 
       const procedureMap = new Map(procedures.map((procedure) => [procedure.id, procedure]));
@@ -111,7 +75,10 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
           clientId: schedule.client_id,
           professionalId: schedule.professional_id,
           procedureId: schedule.procedure_id,
-          client: userMap.get(schedule.client_id)?.name ?? `Cliente #${schedule.client_id}`,
+          client: schedule.client?.name ?? `Cliente #${schedule.client_id}`,
+          clientPhone: schedule.client?.phone_number ?? "",
+          professional: schedule.professional?.name ?? `Profissional #${schedule.professional_id}`,
+          professionalPhone: schedule.professional?.phone_number ?? "",
           procedure:
             schedule.procedure?.name ?? procedure?.name ?? `Procedimento #${schedule.procedure_id}`,
           date: isoToDisplayDate(schedule.date),
@@ -119,6 +86,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
           status: displayStatusFromApi(schedule.status),
           durationMin: durationFor(schedule, procedure?.durationMinutes),
           session: schedule.session,
+          googleEventLink: schedule.google_event_link ?? null,
         };
       });
       setAppointments(mapped);
@@ -133,7 +101,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       });
 
     return () => controller.abort();
-  }, [token, user, users, procedures, revision]);
+  }, [token, user, procedures, revision]);
 
   const reload = useCallback(() => setRevision((value) => value + 1), []);
 
@@ -159,6 +127,12 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     reload();
   }
 
+  async function deleteAppointment(id: number): Promise<void> {
+    if (!token) throw new Error("Entre na sua conta para continuar.");
+    await schedulesService.deleteSchedule(id, token);
+    reload();
+  }
+
   async function setAppointmentStatus(id: number, status: "completed" | "absent"): Promise<void> {
     if (!token) throw new Error("Entre na sua conta para continuar.");
     await schedulesService.updateSchedule(id, { status }, token);
@@ -174,6 +148,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
         reload,
         addAppointment,
         cancelAppointment,
+        deleteAppointment,
         setAppointmentStatus,
       }}
     >

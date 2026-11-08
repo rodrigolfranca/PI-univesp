@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useAppointments } from "../../context/AppointmentsContext";
 import type { Appointment } from "../../config/types";
 
-type AppointmentStatus = "confirmado" | "pendente" | "concluido" | "cancelado";
+type AppointmentStatus = "confirmado" | "concluido" | "cancelado" | "ausente";
 
 interface ClientAppointment {
   id: number;
@@ -27,9 +27,9 @@ const statusConfig: Record<
     color: "text-emerald-600 bg-emerald-50",
     icon: CheckCircle,
   },
-  pendente: {
-    label: "Pendente",
-    color: "text-amber-600 bg-amber-50",
+  ausente: {
+    label: "Ausente",
+    color: "text-orange-600 bg-orange-50",
     icon: AlertCircle,
   },
   concluido: {
@@ -46,8 +46,8 @@ const statusConfig: Record<
 
 function toClientStatus(status: Appointment["status"]): AppointmentStatus {
   if (status === "Concluído") return "concluido";
-  if (status === "Cancelado" || status === "Ausente") return "cancelado";
-  if (status === "Pendente") return "pendente";
+  if (status === "Ausente") return "ausente";
+  if (status === "Cancelado") return "cancelado";
   return "confirmado";
 }
 
@@ -61,11 +61,12 @@ export function ClienteAgendamentosPage() {
     time: appointment.time,
     status: toClientStatus(appointment.status),
   }));
-  const upcoming = clientAppointments.filter(
-    (appointment) => appointment.status === "confirmado" || appointment.status === "pendente",
-  );
+  const upcoming = clientAppointments.filter((appointment) => appointment.status === "confirmado");
   const past = clientAppointments.filter(
-    (appointment) => appointment.status === "concluido" || appointment.status === "cancelado",
+    (appointment) =>
+      appointment.status === "concluido" ||
+      appointment.status === "cancelado" ||
+      appointment.status === "ausente",
   );
 
   return (
@@ -78,7 +79,10 @@ export function ClienteAgendamentosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Meus Agendamentos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{user?.phone}</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {user?.name}
+            {user?.phone ? ` · ${user.phone}` : ""}
+          </p>
         </div>
         <Link
           to="/cliente/novo"

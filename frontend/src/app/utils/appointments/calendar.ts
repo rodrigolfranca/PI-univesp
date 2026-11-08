@@ -1,4 +1,4 @@
-import { DAY_START, SLOT_HEIGHT, MONTH_NAMES } from "./constants";
+import { DAY_START, SLOT_HEIGHT, SLOT_MINUTES, MONTH_NAMES } from "./constants";
 export function getMondayOf(date: Date): Date {
   const monday = new Date(date);
   const daysSinceMonday = monday.getDay() === 0 ? 6 : monday.getDay() - 1;
@@ -31,11 +31,11 @@ export function timeToTop(time: string): number {
   const [hours, minutes] = time.split(":").map(Number);
   const minutesSinceStart = (hours - DAY_START) * 60 + minutes;
 
-  return (minutesSinceStart / 30) * SLOT_HEIGHT;
+  return (minutesSinceStart / SLOT_MINUTES) * SLOT_HEIGHT;
 }
 
 export function durationToHeight(minutes: number): number {
-  return (minutes / 30) * SLOT_HEIGHT - 3;
+  return (minutes / SLOT_MINUTES) * SLOT_HEIGHT - 3;
 }
 
 // A agenda mensal começa na segunda-feira e completa a última semana.

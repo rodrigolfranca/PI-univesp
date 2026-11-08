@@ -2,31 +2,44 @@ import type { Appointment } from "../../config/types";
 import { STATUS_STYLE } from "../../utils/appointments/constants";
 import { AppointmentActionsMenu } from "./AppointmentActionsMenu";
 import { MoreVertical } from "lucide-react";
-import { DAY_END, DAY_START, SLOT_HEIGHT, WEEK_DAYS } from "../../utils/appointments/constants";
+import {
+  DAY_END,
+  DAY_START,
+  SLOT_HEIGHT,
+  SLOT_MINUTES,
+  WEEK_DAYS,
+} from "../../utils/appointments/constants";
 import { toDDMMYYYY, timeToTop, durationToHeight } from "../../utils/appointments/calendar";
+import { minutesToTime, type AvailabilityByDate } from "../../utils/appointments/availability";
 export function AppointmentTimeGrid({
   days,
   filteredAppointments,
   today,
+  onDetails,
   onCancel,
+  onDelete,
   onGCal,
   onStatus,
   gcalConnected,
   canManage,
   labels,
+  availabilityByDate,
 }: {
   days: Date[];
   filteredAppointments: Appointment[];
   today: string;
+  onDetails: (a: Appointment) => void;
   onCancel: (a: Appointment) => void;
+  onDelete: (a: Appointment) => void;
   onGCal: (a: Appointment) => void;
   onStatus: (a: Appointment, status: "completed" | "absent") => void;
   gcalConnected: boolean;
   canManage: boolean;
   labels?: string[];
+  availabilityByDate?: AvailabilityByDate;
 }) {
-  const hourSlots = Array.from({ length: (DAY_END - DAY_START) * 2 }, (_, i) => {
-    const totalMin = i * 30;
+  const hourSlots = Array.from({ length: ((DAY_END - DAY_START) * 60) / SLOT_MINUTES }, (_, i) => {
+    const totalMin = i * SLOT_MINUTES;
     const h = DAY_START + Math.floor(totalMin / 60);
     const m = totalMin % 60;
 
@@ -90,6 +103,31 @@ export function AppointmentTimeGrid({
               className={`relative border-r border-gray-100 last:border-r-0 ${isToday ? "bg-brand-50/30" : ""}`}
               style={{ height: totalHeight }}
             >
+              {(availabilityByDate?.[dateStr] ?? []).map((band, bandIndex) => {
+                const topPx = timeToTop(minutesToTime(band.start));
+                const heightPx = durationToHeight(band.end - band.start);
+                const className =
+                  band.type === "work"
+                    ? "bg-emerald-50/70"
+                    : band.type === "open"
+                      ? "bg-blue-50/70"
+                      : "bg-red-50/80";
+                return (
+                  <div
+                    key={`${band.type}-${band.start}-${bandIndex}`}
+                    className={`absolute left-0 right-0 pointer-events-none border-l-2 ${className}`}
+                    style={{ top: topPx, height: heightPx }}
+                    title={band.label}
+                  >
+                    {band.label && heightPx > 18 && (
+                      <span className="pl-1 text-[10px] font-medium text-gray-500">
+                        {band.label}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+
               {hourSlots.map((_, i) => (
                 <div
                   key={i}
@@ -132,7 +170,9 @@ export function AppointmentTimeGrid({
                       </div>
                       <AppointmentActionsMenu
                         appointment={appt}
+                        onDetails={onDetails}
                         onCancel={onCancel}
+                        onDelete={onDelete}
                         onGCal={onGCal}
                         onStatus={onStatus}
                         gcalConnected={gcalConnected}

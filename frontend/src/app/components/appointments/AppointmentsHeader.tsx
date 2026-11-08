@@ -23,10 +23,16 @@ export function AppointmentsHeader({
   gcalConnected,
   gcalLoading,
   gcalAvailable,
+  professionals,
+  selectedProfessional,
+  setSelectedProfessional,
 }: {
   gcalConnected: boolean;
   gcalLoading: boolean;
   gcalAvailable: boolean;
+  professionals: { id: number; name: string }[];
+  selectedProfessional: string;
+  setSelectedProfessional: (value: string) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   showFilters: boolean;
@@ -112,18 +118,20 @@ export function AppointmentsHeader({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar agendamentos..."
+            placeholder="Buscar por cliente ou procedimento..."
             className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
           />
         </div>
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`px-3 py-2 border rounded-lg text-sm transition-colors flex items-center gap-1.5 ${showFilters || selectedStatus ? "border-brand-500 bg-brand-50 text-brand-700" : "border-gray-300 bg-white hover:bg-gray-50 text-gray-700"}`}
+          className={`px-3 py-2 border rounded-lg text-sm transition-colors flex items-center gap-1.5 ${showFilters || selectedStatus || selectedProfessional ? "border-brand-500 bg-brand-50 text-brand-700" : "border-gray-300 bg-white hover:bg-gray-50 text-gray-700"}`}
         >
           <SlidersHorizontal className="w-4 h-4" />
           <span className="hidden sm:inline">Filtros</span>
-          {selectedStatus && <span className="w-2 h-2 bg-brand-600 rounded-full" />}
+          {(selectedStatus || selectedProfessional) && (
+            <span className="w-2 h-2 bg-brand-600 rounded-full" />
+          )}
         </button>
 
         <div className="flex border border-gray-300 rounded-lg overflow-hidden">
@@ -146,18 +154,40 @@ export function AppointmentsHeader({
             Status
           </label>
           <div className="flex flex-wrap gap-2">
-            {(["", "Confirmado", "Pendente", "Concluído", "Cancelado", "Ausente"] as const).map(
-              (s) => (
-                <button
-                  key={s}
-                  onClick={() => setSelectedStatus(s)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${selectedStatus === s ? "bg-brand-600 text-white" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
-                >
-                  {s || "Todos"}
-                </button>
-              ),
-            )}
+            {(["", "Confirmado", "Concluído", "Cancelado", "Ausente"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSelectedStatus(s)}
+                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${selectedStatus === s ? "bg-brand-600 text-white" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+              >
+                {s || "Todos"}
+              </button>
+            ))}
           </div>
+
+          {professionals.length > 0 && (
+            <div className="mt-4">
+              <label
+                htmlFor="appointments-professional-filter"
+                className="mb-2 block text-xs font-semibold text-gray-500 uppercase tracking-wide"
+              >
+                Profissional
+              </label>
+              <select
+                id="appointments-professional-filter"
+                value={selectedProfessional}
+                onChange={(event) => setSelectedProfessional(event.currentTarget.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-300 md:w-72"
+              >
+                <option value="">Todos os profissionais</option>
+                {professionals.map((professional) => (
+                  <option key={professional.id} value={professional.id}>
+                    {professional.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
     </div>
