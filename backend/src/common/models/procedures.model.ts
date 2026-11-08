@@ -5,6 +5,7 @@ import {
     Model,
     Table,
 } from 'sequelize-typescript';
+import { ProcedureStatus } from '../consts/procedure.status';
 import { Category } from './categories.model';
 
 @Table({
@@ -77,6 +78,13 @@ export class Procedure extends Model {
         allowNull: false,
     })
     declare category_id: number;
+
+    @Column({
+        type: DataType.ENUM(...Object.values(ProcedureStatus)),
+        allowNull: false,
+        defaultValue: ProcedureStatus.ACTIVE,
+    })
+    declare status: string;
 
     @BelongsTo(() => Category, 'category_id')
     declare category: Category;

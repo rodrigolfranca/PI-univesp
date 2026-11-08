@@ -11,6 +11,7 @@ export interface ApiProcedure {
   triagem_minutes: number;
   bloqueio_periodo: number | null;
   category_id: number;
+  status: "active" | "inactive";
   category?: { id: number; name: string };
 }
 
@@ -24,6 +25,7 @@ export interface ProcedurePayload {
   triagem_minutes: number;
   bloqueio_periodo: number | null;
   category_id: number;
+  status: "active" | "inactive";
 }
 
 export async function listProcedures(signal?: AbortSignal): Promise<ApiProcedure[]> {

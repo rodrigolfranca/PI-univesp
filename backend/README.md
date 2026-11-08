@@ -140,4 +140,5 @@ Default values:
 - `schedule_exceptions` aceita `name`; rode `npm run migrate:schedule-exception-name` uma vez por banco.
 - `schedules.google_event_link` requer `npm run migrate:google-event-link` uma vez por banco.
 - `categories` e `procedures.category_id` requerem `npm run migrate:categories` uma vez por banco. A categoria `Geral` é criada e usada como fallback quando o procedimento não informa categoria.
+- `procedures.status` requer `npm run migrate:procedure-status` uma vez por banco.
 - Alteração de telefone/e-mail exige código enviado ao novo contato via `POST /users/:id/contact/request` e `POST /users/:id/contact/verify`. O PATCH direto de contato é bloqueado.

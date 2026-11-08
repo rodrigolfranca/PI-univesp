@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ProcedureStatus } from 'src/common/consts/procedure.status';
 import { Category, Procedure } from 'src/common/models';
 import { CreateProcedureDto } from '../validation/create-procedure.dto';
 import { UpdateProcedureDto } from '../validation/update-procedure.dto';
@@ -25,7 +26,11 @@ export class ProceduresRepository {
 
     async create(dto: CreateProcedureDto): Promise<Procedure> {
         const category_id = dto.category_id ?? (await this.generalCategoryId());
-        return Procedure.create({ ...dto, category_id });
+        return Procedure.create({
+            ...dto,
+            category_id,
+            status: dto.status ?? ProcedureStatus.ACTIVE,
+        });
     }
 
     private async generalCategoryId(): Promise<number> {

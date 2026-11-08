@@ -422,6 +422,55 @@ describe('API (e2e)', () => {
         });
     });
 
+    describe('Procedimentos', () => {
+        it('POST /procedures exige categoria', () => {
+            return request(app.getHttpServer())
+                .post('/procedures')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    name: 'Sem Categoria',
+                    description: 'Teste',
+                    duration_minutes: 30,
+                    price: 100,
+                    sessions: 1,
+                    triagem: false,
+                    triagem_minutes: 0,
+                })
+                .expect(400);
+        });
+
+        it('admin cria procedimento inativo com status no retorno', async () => {
+            const general = await Category.findOne({
+                where: { name: 'Geral' },
+            });
+            const created = await request(app.getHttpServer())
+                .post('/procedures')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    category_id: general!.id,
+                    status: 'inactive',
+                    name: 'Procedimento Inativo E2E',
+                    description: 'Teste',
+                    duration_minutes: 30,
+                    price: 100,
+                    sessions: 1,
+                    triagem: false,
+                    triagem_minutes: 0,
+                })
+                .expect(201);
+            const id = (created.body as { id: number }).id;
+            createdProcedureIds.push(id);
+
+            const listed = await request(app.getHttpServer())
+                .get('/procedures')
+                .expect(200);
+            const body = listed.body as { id: number; status: string }[];
+            expect(body.find((entry) => entry.id === id)?.status).toBe(
+                'inactive',
+            );
+        });
+    });
+
     describe('Agenda', () => {
         function nextMonday(): string {
             const date = new Date();
@@ -431,10 +480,14 @@ describe('API (e2e)', () => {
         }
 
         it('admin cadastra procedimento, disponibilidade e cliente agenda', async () => {
+            const general = await Category.findOne({
+                where: { name: 'Geral' },
+            });
             const procedure = await request(app.getHttpServer())
                 .post('/procedures')
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
+                    category_id: general!.id,
                     name: 'E2E Procedure',
                     description: 'Procedimento de teste',
                     duration_minutes: 30,
