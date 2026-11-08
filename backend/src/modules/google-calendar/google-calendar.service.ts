@@ -149,65 +149,18 @@ export class GoogleCalendarService {
         }
     }
 
-    async syncSchedule(schedule_id: number): Promise<void> {
+    async syncSchedule(schedule_id: number): Promise<boolean> {
         try {
             const connection = await this.getCalendarConnection();
             if (!connection) {
                 this.logger.debug(
                     `Sincronização ignorada: nenhuma agenda conectada (agendamento ${schedule_id})`,
                 );
-                return;
+                return false;
             }
-
-            const schedule =
-                await this.googleCalendarRepository.findScheduleForSync(
-                    schedule_id,
-                );
-            if (!schedule) return;
-
-            if (schedule.status === ScheduleStatus.CANCELED) {
-                await this.removeEvent(connection, schedule.google_event_id);
-                await this.googleCalendarRepository.saveEventId(
-                    schedule.id,
-                    null,
-                );
-                this.logger.log(
-                    `Evento removido do Google: agendamento cancelado (agendamento ${schedule.id}, evento ${schedule.google_event_id ?? '-'})`,
-                );
-                return;
-            }
-
-            const requestBody = await this.buildEvent(schedule);
-
-            if (schedule.google_event_id) {
-                try {
-                    await connection.client.events.update({
-                        calendarId: connection.calendarId,
-                        eventId: schedule.google_event_id,
-                        requestBody,
-                    });
-                    this.logger.log(
-                        `Evento atualizado no Google (agendamento ${schedule.id}, evento ${schedule.google_event_id})`,
-                    );
-                    return;
-                } catch (error) {
-                    if (!this.isEventGone(error)) throw error;
-                    this.logger.warn(
-                        `Evento ${schedule.google_event_id} não existe mais no Google; criando outro (agendamento ${schedule.id})`,
-                    );
-                }
-            }
-
-            const { data } = await connection.client.events.insert({
-                calendarId: connection.calendarId,
-                requestBody,
-            });
-            await this.googleCalendarRepository.saveEventId(
-                schedule.id,
-                data.id ?? null,
-            );
-            this.logger.log(
-                `Evento criado no Google (agendamento ${schedule.id}, evento ${data.id})`,
+            return await this.syncScheduleWithConnection(
+                schedule_id,
+                connection,
             );
         } catch (error) {
             Utils.logError(
@@ -215,7 +168,99 @@ export class GoogleCalendarService {
                 `Failed to sync schedule ${schedule_id} with Google`,
                 error,
             );
+            return false;
         }
+    }
+
+    async syncSchedules(schedule_id?: number) {
+        try {
+            const connection = await this.getCalendarConnection();
+            if (!connection) {
+                return { connected: false, synced: 0, failed: 0 };
+            }
+
+            const ids = schedule_id
+                ? [schedule_id]
+                : await this.googleCalendarRepository.findAllScheduleIds();
+            let synced = 0;
+            let failed = 0;
+
+            for (const id of ids) {
+                const ok = await this.syncScheduleWithConnection(
+                    id,
+                    connection,
+                );
+                if (ok) synced += 1;
+                else failed += 1;
+            }
+
+            return { connected: true, synced, failed };
+        } catch (error) {
+            Utils.logError(
+                this.logger,
+                'Failed to sync schedules with Google',
+                error,
+            );
+            Utils.handleError(error);
+        }
+    }
+
+    private async syncScheduleWithConnection(
+        schedule_id: number,
+        connection: { client: calendar_v3.Calendar; calendarId: string },
+    ): Promise<boolean> {
+        const schedule =
+            await this.googleCalendarRepository.findScheduleForSync(
+                schedule_id,
+            );
+        if (!schedule) return false;
+
+        if (
+            schedule.status === ScheduleStatus.CANCELED &&
+            !schedule.google_event_id
+        ) {
+            return true;
+        }
+
+        const requestBody = await this.buildEvent(schedule);
+
+        if (schedule.google_event_id) {
+            try {
+                const { data } = await connection.client.events.update({
+                    calendarId: connection.calendarId,
+                    eventId: schedule.google_event_id,
+                    requestBody,
+                });
+                await this.googleCalendarRepository.saveEventMetadata(
+                    schedule.id,
+                    data.id ?? schedule.google_event_id,
+                    data.htmlLink ?? schedule.google_event_link,
+                );
+                this.logger.log(
+                    `Evento atualizado no Google (agendamento ${schedule.id}, evento ${data.id ?? schedule.google_event_id})`,
+                );
+                return true;
+            } catch (error) {
+                if (!this.isEventGone(error)) throw error;
+                this.logger.warn(
+                    `Evento ${schedule.google_event_id} não existe mais no Google; criando outro (agendamento ${schedule.id})`,
+                );
+            }
+        }
+
+        const { data } = await connection.client.events.insert({
+            calendarId: connection.calendarId,
+            requestBody,
+        });
+        await this.googleCalendarRepository.saveEventMetadata(
+            schedule.id,
+            data.id ?? null,
+            data.htmlLink ?? null,
+        );
+        this.logger.log(
+            `Evento criado no Google (agendamento ${schedule.id}, evento ${data.id})`,
+        );
+        return true;
     }
 
     async deleteScheduleEvent(google_event_id: string | null): Promise<void> {
@@ -251,10 +296,9 @@ export class GoogleCalendarService {
         const { procedure } = schedule;
         const clientName =
             client?.user?.name ?? `Cliente ${schedule.client_id}`;
-        const sessionLabel =
-            schedule.session === 0
-                ? 'Triagem'
-                : `Sessão ${schedule.session}/${procedure.sessions}`;
+        const professionalName =
+            professional?.user?.name ??
+            `Profissional ${schedule.professional_id}`;
         const duration =
             schedule.session === 0
                 ? procedure.triagem_minutes
@@ -262,14 +306,19 @@ export class GoogleCalendarService {
         const timeZone =
             this.configService.get<string>('GOOGLE_CALENDAR_TIMEZONE') ??
             DEFAULT_TIMEZONE;
+        const canceled = schedule.status === ScheduleStatus.CANCELED;
 
         return {
-            summary: `${clientName} · ${procedure.name} · ${sessionLabel}`,
+            summary: `${canceled ? '[CANCELADO] ' : ''}${professionalName} · ${clientName} · ${procedure.name}`,
             description: [
-                `Profissional: ${professional?.user?.name ?? '-'}`,
+                `Profissional: ${professionalName}`,
+                `Cliente: ${clientName}`,
                 `Telefone do cliente: ${client?.user?.phone_number ?? '-'}`,
+                `Procedimento: ${procedure.name}`,
                 `Agendamento #${schedule.id}`,
+                `Status: ${this.statusLabel(schedule.status)}`,
             ].join('\n'),
+            colorId: this.colorIdForStatus(schedule.status),
             start: {
                 dateTime: this.toLocalDateTime(
                     schedule.date,
@@ -287,6 +336,20 @@ export class GoogleCalendarService {
                 timeZone,
             },
         };
+    }
+
+    private statusLabel(status: string): string {
+        if (status === ScheduleStatus.COMPLETED) return 'Concluído';
+        if (status === ScheduleStatus.CANCELED) return 'Cancelado';
+        if (status === ScheduleStatus.ABSENT) return 'Ausente';
+        return 'Confirmado';
+    }
+
+    private colorIdForStatus(status: string): string {
+        if (status === ScheduleStatus.COMPLETED) return '2';
+        if (status === ScheduleStatus.ABSENT) return '6';
+        if (status === ScheduleStatus.CANCELED) return '8';
+        return '9';
     }
 
     private toLocalDateTime(

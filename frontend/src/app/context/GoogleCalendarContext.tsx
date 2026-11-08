@@ -13,6 +13,7 @@ interface GoogleCalendarContextValue {
   error: string;
   connect: (returnTo?: string) => Promise<void>;
   disconnect: () => Promise<void>;
+  sync: (scheduleId?: number) => Promise<googleCalendarService.GoogleCalendarSyncResult>;
   reload: () => void;
 }
 
@@ -69,8 +70,19 @@ export function GoogleCalendarProvider({ children }: { children: ReactNode }) {
     reload();
   }
 
+  async function sync(
+    scheduleId?: number,
+  ): Promise<googleCalendarService.GoogleCalendarSyncResult> {
+    if (!token) throw new Error("Entre na sua conta para continuar.");
+    const result = await googleCalendarService.syncGoogleCalendar(token, scheduleId);
+    reload();
+    return result;
+  }
+
   return (
-    <GoogleCalendarContext.Provider value={{ status, loading, error, connect, disconnect, reload }}>
+    <GoogleCalendarContext.Provider
+      value={{ status, loading, error, connect, disconnect, sync, reload }}
+    >
       {children}
     </GoogleCalendarContext.Provider>
   );

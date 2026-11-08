@@ -215,6 +215,32 @@ describe('API (e2e)', () => {
                 .expect(401);
         });
 
+        it('POST /google-calendar/sync com JWT de profissional retorna 401', () => {
+            return request(app.getHttpServer())
+                .post('/google-calendar/sync')
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .send({})
+                .expect(401);
+        });
+
+        it('POST /google-calendar/sync com JWT de admin retorna 200', () => {
+            return request(app.getHttpServer())
+                .post('/google-calendar/sync')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({})
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as {
+                        connected?: boolean;
+                        synced?: number;
+                        failed?: number;
+                    };
+                    expect(typeof body.connected).toBe('boolean');
+                    expect(typeof body.synced).toBe('number');
+                    expect(typeof body.failed).toBe('number');
+                });
+        });
+
         it('GET /work-schedules com JWT de admin retorna 200', () => {
             return request(app.getHttpServer())
                 .get('/work-schedules')

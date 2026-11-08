@@ -80,13 +80,22 @@ export class GoogleCalendarRepository {
         });
     }
 
-    async saveEventId(
+    async saveEventMetadata(
         schedule_id: number,
         google_event_id: string | null,
+        google_event_link: string | null,
     ): Promise<void> {
         await Schedule.update(
-            { google_event_id },
+            { google_event_id, google_event_link },
             { where: { id: schedule_id } },
         );
+    }
+
+    async findAllScheduleIds(): Promise<number[]> {
+        const schedules = await Schedule.findAll({
+            attributes: ['id'],
+            order: [['id', 'ASC']],
+        });
+        return schedules.map((schedule) => schedule.id);
     }
 }

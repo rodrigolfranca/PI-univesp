@@ -43,10 +43,10 @@ export function CalendarNavigation({
       </span>
       <button
         onClick={onSync}
-        className="hidden md:flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors"
       >
         <RefreshCw className="w-3.5 h-3.5" />
-        Sincronizar
+        <span className="hidden sm:inline">Sincronizar</span>
       </button>
     </div>
   );

@@ -1,8 +1,11 @@
 import {
+    Body,
     Controller,
     Delete,
     Get,
+    HttpCode,
     HttpException,
+    Post,
     Query,
     Req,
     Res,
@@ -15,6 +18,7 @@ import type { RequestWithUser } from 'src/common/types/request.type';
 import { AdminGuard, AuthGuard } from '../auth/guards';
 import { GoogleCalendarService } from './google-calendar.service';
 import { GoogleCalendarCallbackDTO } from './validation/google-calendar-callback.DTO';
+import { GoogleCalendarSyncDTO } from './validation/google-calendar-sync.DTO';
 
 @Controller('google-calendar')
 @ApiTags('Google-Calendar')
@@ -85,6 +89,18 @@ export class GoogleCalendarController {
             .map((origin) => origin.trim())
             .filter((origin) => origin && origin !== '*');
         return origins[0] ?? 'http://localhost:5173';
+    }
+
+    @Post('sync')
+    @HttpCode(200)
+    @ApiOperation({
+        summary:
+            'Sincroniza um agendamento ou todos os agendamentos com o Google',
+    })
+    @ApiBearerAuth('JWT-auth')
+    @UseGuards(AuthGuard, AdminGuard)
+    async sync(@Body() dto: GoogleCalendarSyncDTO) {
+        return await this.googleCalendarService.syncSchedules(dto.schedule_id);
     }
 
     @Get('status')

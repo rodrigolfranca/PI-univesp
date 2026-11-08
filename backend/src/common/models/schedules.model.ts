@@ -81,6 +81,12 @@ export class Schedule extends Model {
     })
     declare google_event_id: string | null;
 
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+    })
+    declare google_event_link: string | null;
+
     @BelongsTo(() => Procedure, 'procedure_id')
     declare procedure: Procedure;
 

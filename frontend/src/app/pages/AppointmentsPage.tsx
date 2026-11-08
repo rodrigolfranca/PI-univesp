@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { useBrand } from "../context/BrandContext";
 import { useAuth } from "../context/AuthContext";
 import { useAppointments } from "../context/AppointmentsContext";
 import { useGoogleCalendar } from "../context/GoogleCalendarContext";
@@ -9,7 +8,7 @@ import type { AppointmentInput } from "../context/AppointmentsContext";
 import { errorMessage } from "../services/api";
 import type { Appointment, AppStatus } from "../config/types";
 import { useAppointmentNavigation } from "../hooks/useAppointmentNavigation";
-import { filterAppointments, makeGCalUrl } from "../utils/appointments/appointment";
+import { filterAppointments } from "../utils/appointments/appointment";
 import { toDDMMYYYY } from "../utils/appointments/calendar";
 import { AppointmentsHeader } from "../components/appointments/AppointmentsHeader";
 import { CalendarNavigation } from "../components/appointments/CalendarNavigation";
@@ -20,7 +19,6 @@ import { CreateAppointmentModal } from "../components/appointments/CreateAppoint
 import { CancelAppointmentDialog } from "../components/appointments/CancelAppointmentDialog";
 
 export function AppointmentsPage() {
-  const { name: clinicName } = useBrand();
   const { user } = useAuth();
   const {
     appointments,
@@ -35,6 +33,7 @@ export function AppointmentsPage() {
     status: googleStatus,
     loading: googleLoading,
     connect: connectGoogleCalendar,
+    sync: syncGoogleCalendar,
   } = useGoogleCalendar();
   const gcalConnected = googleStatus?.connected === true;
   const navigation = useAppointmentNavigation();
@@ -76,8 +75,23 @@ export function AppointmentsPage() {
     }
   }
 
-  function handleAddToGCal(appointment: Appointment) {
-    window.open(makeGCalUrl(appointment, clinicName), "_blank");
+  async function handleGoogleCalendarAction(appointment: Appointment) {
+    if (!gcalConnected) {
+      await handleConnectGCal();
+      return;
+    }
+
+    try {
+      const result = await syncGoogleCalendar(appointment.id);
+      if (!result.connected) {
+        await handleConnectGCal();
+        return;
+      }
+      toast.success("Agendamento sincronizado com o Google Agenda");
+      reload();
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
   }
 
   async function handleConnectGCal() {
@@ -92,13 +106,28 @@ export function AppointmentsPage() {
     }
   }
 
-  function handleSync() {
-    if (!user?.isAdmin || gcalConnected) {
+  async function handleSync() {
+    if (!user?.isAdmin) {
       reload();
       toast.success("Agendamentos atualizados");
       return;
     }
-    void handleConnectGCal();
+    if (!gcalConnected) {
+      await handleConnectGCal();
+      return;
+    }
+
+    try {
+      const result = await syncGoogleCalendar();
+      toast.success(
+        result.failed > 0
+          ? `${result.synced} sincronizados, ${result.failed} falharam`
+          : `${result.synced} agendamentos sincronizados`,
+      );
+      reload();
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
   }
 
   return (
@@ -130,7 +159,7 @@ export function AppointmentsPage() {
             onPrevious={navigation.previous}
             onNext={navigation.next}
             onToday={navigation.goToToday}
-            onSync={handleSync}
+            onSync={() => void handleSync()}
             alignRight={navigation.view === "day"}
           />
           <AppointmentTimeGrid
@@ -138,7 +167,7 @@ export function AppointmentsPage() {
             filteredAppointments={filteredAppointments}
             today={today}
             onCancel={setAppointmentToCancel}
-            onGCal={handleAddToGCal}
+            onGCal={(appointment) => void handleGoogleCalendarAction(appointment)}
             onStatus={(appointment, status) => void handleStatus(appointment, status)}
             gcalConnected={gcalConnected}
             canManage={Boolean(user?.isAdmin)}
@@ -154,7 +183,7 @@ export function AppointmentsPage() {
             onPrevious={navigation.previous}
             onNext={navigation.next}
             onToday={navigation.goToToday}
-            onSync={handleSync}
+            onSync={() => void handleSync()}
           />
           <AppointmentsMonthView
             date={navigation.monthViewDate}
@@ -169,7 +198,7 @@ export function AppointmentsPage() {
         <AppointmentsListView
           appointments={filteredAppointments}
           onCancel={setAppointmentToCancel}
-          onGCal={handleAddToGCal}
+          onGCal={(appointment) => void handleGoogleCalendarAction(appointment)}
           onStatus={(appointment, status) => void handleStatus(appointment, status)}
           gcalConnected={gcalConnected}
           canManage={Boolean(user?.isAdmin)}
