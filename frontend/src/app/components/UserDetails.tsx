@@ -5,13 +5,11 @@ import { USER_DIRECTORY } from "../config/users";
 import { useAuth } from "../context/AuthContext";
 import { useUsers } from "../context/UsersContext";
 import { useUserDetails } from "../hooks/useUserDetails";
-import { useUserMock } from "../hooks/useUserMock";
 import type { ApiUser, UserFields, UserKind } from "../services/users";
-import { errorMessage } from "../services/api";
 import { DeleteUserButton } from "./DeleteUserButton";
 import { RequestState } from "./RequestState";
 import { UserForm } from "./UserForm";
-import { UserMockDetails } from "./UserMockDetails";
+import { ClientHistory } from "./ClientHistory";
 import { Button } from "./ui/button";
 
 export function UserDetails({ id, kind }: { id: number; kind: UserKind }) {
@@ -43,7 +41,6 @@ function LoadedUserDetails({ user, kind, onUpdated }: LoadedUserDetailsProps) {
   const { update } = useUsers();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
-  const { data: mock, save, clear } = useUserMock(user.id);
   const canEdit = Boolean(currentUser?.isAdmin || currentUser?.userId === user.id);
   const initialValues = { name: user.name, phone: user.phone_number, email: user.email };
 
@@ -65,12 +62,6 @@ function LoadedUserDetails({ user, kind, onUpdated }: LoadedUserDetailsProps) {
   }
 
   function handleDeleted() {
-    // A exclusão no servidor já foi concluída; falha de limpeza local não a reverte.
-    try {
-      clear();
-    } catch (cause) {
-      toast.error(errorMessage(cause));
-    }
     const destination = currentUser?.userId === user.id ? "/login" : USER_DIRECTORY[kind].path;
     navigate(destination, { replace: true });
   }
@@ -101,7 +92,7 @@ function LoadedUserDetails({ user, kind, onUpdated }: LoadedUserDetailsProps) {
           />
         )}
       </section>
-      <UserMockDetails data={mock} save={save} kind={kind} canEdit={canEdit} />
+      {kind === "client" && user.client && <ClientHistory clientId={user.client.id} />}
     </>
   );
 }
