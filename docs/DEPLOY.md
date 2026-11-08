@@ -68,9 +68,12 @@ Preencha `.env.prod` com:
 - demais variáveis obrigatórias, incluindo JWT e Google
 - `SEED_ADMIN_NAME`, `SEED_ADMIN_PHONE` e `SEED_ADMIN_EMAIL`
 
-Depois execute:
+Antes do seed, rode as migrações idempotentes:
 
 ```bash
+NODE_ENV=prod npm run migrate:schedule-exception-name
+NODE_ENV=prod npm run migrate:google-event-link
+NODE_ENV=prod npm run migrate:categories
 NODE_ENV=prod npm run seed:admin
 ```
 
@@ -202,13 +205,18 @@ No frontend, valide:
 - solicitação e validação do código de login;
 - restauração da sessão após recarregar a página;
 - listagem e edição de usuários com uma conta admin;
-- cadastro de procedimento, POP e disponibilidade com uma conta admin;
+- cadastro de procedimento, POP, categoria e disponibilidade com uma conta admin;
 - criação de agendamento pelo admin e pelo cliente;
-- conexão e desconexão da Google Agenda.
+- conexão, desconexão e sincronização da Google Agenda;
+- alteração de telefone/e-mail com código enviado ao novo contato;
+- consulta de cliente por telefone no painel do profissional;
+- detalhes públicos do procedimento e download de POPs antes do login.
 
 ## 8. Limitações e pendências
 
-- **OTP ainda é apenas logado.** O backend não envia WhatsApp nem e-mail. Para testar, leia o código nos Runtime Logs da Vercel. Para usuários reais, integre Z-API e um provedor de e-mail e remova o log do código em produção.
+- **OTP e códigos de alteração de contato ainda são apenas logados.** O backend não envia WhatsApp nem e-mail. Para testar, leia o código nos Runtime Logs da Vercel. Para usuários reais, integre Z-API e um provedor de e-mail e remova o log do código em produção.
+- **Recuperação por e-mail envia o código ao novo telefone informado.** O contato antigo não confirma a troca; mantenha o throttle e considere evoluir para dupla confirmação.
+- **POPs públicos:** listagem e download são públicos por decisão de produto. Não coloque documentos internos em POPs públicos.
 - **Throttle de autenticação é em memória.** Com várias instâncias serverless, o limite não é global. Para produção real, use armazenamento Redis no throttler.
 - **Payload máximo da Vercel:** 4,5 MB por requisição. PDFs de POP maiores precisam ser enviados ao Supabase Storage.
 - **Duração máxima da função:** 300 segundos na Hobby.
@@ -218,6 +226,7 @@ No frontend, valide:
 - **Backend sem migrações versionadas.** O schema inicial usa `DB_SYNC=true` uma única vez. Mudanças futuras de modelo precisam de migração controlada.
 - **PDFs e documentos ficam no Postgres.** Para volume maior, migrar para Supabase Storage.
 - **Vercel Hobby:** uso não comercial e restrição para repositórios de organização GitHub.
+- **Matriz de acesso:** consulte `docs/ACCESS.md`.
 
 ## 9. Segurança
 
