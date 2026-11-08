@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsBoolean,
+    IsIn,
     IsInt,
     IsNotEmpty,
     IsNumber,
@@ -14,12 +15,21 @@ export class CreateProcedureDto {
     @ApiProperty({
         description: 'ID da categoria',
         example: 1,
+    })
+    @IsNotEmpty()
+    @IsInt()
+    @IsPositive()
+    category_id: number;
+
+    @ApiProperty({
+        description: 'Status do procedimento',
+        enum: ['active', 'inactive'],
+        example: 'active',
         required: false,
     })
     @IsOptional()
-    @IsInt()
-    @IsPositive()
-    category_id?: number;
+    @IsIn(['active', 'inactive'])
+    status?: string;
 
     @ApiProperty({
         description: 'Nome do procedimento',

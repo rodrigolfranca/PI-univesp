@@ -26,8 +26,6 @@ export interface Client {
   name: string;
   phone: string;
   email: string;
-  lastVisit: string;
-  status: string;
 }
 
 export type AppStatus = "Confirmado" | "Concluído" | "Cancelado" | "Ausente";

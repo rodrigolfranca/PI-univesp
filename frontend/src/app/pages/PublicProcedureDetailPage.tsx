@@ -33,6 +33,12 @@ export function PublicProcedureDetailPage() {
     ])
       .then(([procedureResult, popResult]) => {
         if (controller.signal.aborted) return;
+        if (procedureResult.status === "inactive") {
+          setError("Procedimento não encontrado.");
+          setProcedure(null);
+          setPops([]);
+          return;
+        }
         setProcedure(procedureResult);
         setPops(popResult);
       })

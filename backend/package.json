@@ -23,7 +23,8 @@
         "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
         "migrate:schedule-exception-name": "ts-node -r tsconfig-paths/register src/scripts/migrate-schedule-exception-name.ts",
         "migrate:google-event-link": "ts-node -r tsconfig-paths/register src/scripts/migrate-google-event-link.ts",
-        "migrate:categories": "ts-node -r tsconfig-paths/register src/scripts/migrate-categories.ts"
+        "migrate:categories": "ts-node -r tsconfig-paths/register src/scripts/migrate-categories.ts",
+        "migrate:procedure-status": "ts-node -r tsconfig-paths/register src/scripts/migrate-procedure-status.ts"
     },
     "dependencies": {
         "@googleapis/calendar": "^20.1.0",

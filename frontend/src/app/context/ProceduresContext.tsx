@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { useSite, useStorageKey } from "../config/SiteContext";
 import { useAuth } from "./AuthContext";
 import { useCategories } from "./CategoriesContext";
 import { errorMessage } from "../services/api";
@@ -23,11 +22,6 @@ export interface ProcedureFormData {
   bloqueioPeriodo: number | null;
 }
 
-interface ProcedureMetadata {
-  category?: string;
-  status?: string;
-}
-
 interface ProceduresContextValue {
   procedures: Procedure[];
   loading: boolean;
@@ -47,6 +41,7 @@ function formatPrice(value: number): string {
 function toPayload(data: ProcedureFormData, categoryId: number): ProcedurePayload {
   return {
     category_id: categoryId,
+    status: data.status === "Ativo" ? "active" : "inactive",
     name: data.name.trim(),
     description: data.description.trim(),
     duration_minutes: data.durationMinutes,
@@ -58,46 +53,30 @@ function toPayload(data: ProcedureFormData, categoryId: number): ProcedurePayloa
   };
 }
 
-function readMetadata(key: string): Record<string, ProcedureMetadata> {
-  try {
-    return JSON.parse(localStorage.getItem(key) ?? "{}") as Record<string, ProcedureMetadata>;
-  } catch {
-    return {};
-  }
-}
-
 export function ProceduresProvider({ children }: { children: ReactNode }) {
-  const site = useSite();
   const { token } = useAuth();
   const { categories } = useCategories();
-  const metadataKey = useStorageKey("procedures_meta_v1");
   const [procedures, setProcedures] = useState<Procedure[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
-  const metadataRef = useRef<Record<string, ProcedureMetadata>>(readMetadata(metadataKey));
 
-  const mapProcedure = useCallback(
-    (procedure: ApiProcedure): Procedure => {
-      const local = metadataRef.current[String(procedure.id)];
-      const configured = site.catalog.procedures.find((entry) => entry.name === procedure.name);
-      return {
-        id: procedure.id,
-        name: procedure.name,
-        category: procedure.category?.name ?? local?.category ?? configured?.category ?? "Geral",
-        duration: `${procedure.duration_minutes} min`,
-        price: formatPrice(procedure.price),
-        status: local?.status ?? "Ativo",
-        description: procedure.description,
-        durationMinutes: procedure.duration_minutes,
-        sessions: procedure.sessions,
-        triagem: procedure.triagem,
-        triagemMinutes: procedure.triagem_minutes,
-        bloqueioPeriodo: procedure.bloqueio_periodo,
-      };
-    },
-    [site.catalog.procedures],
-  );
+  const mapProcedure = useCallback((procedure: ApiProcedure): Procedure => {
+    return {
+      id: procedure.id,
+      name: procedure.name,
+      category: procedure.category?.name ?? "Geral",
+      duration: `${procedure.duration_minutes} min`,
+      price: formatPrice(procedure.price),
+      status: procedure.status === "inactive" ? "Inativo" : "Ativo",
+      description: procedure.description,
+      durationMinutes: procedure.duration_minutes,
+      sessions: procedure.sessions,
+      triagem: procedure.triagem,
+      triagemMinutes: procedure.triagem_minutes,
+      bloqueioPeriodo: procedure.bloqueio_periodo,
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -124,11 +103,6 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
     return token;
   }
 
-  function persistMetadata(next: Record<string, ProcedureMetadata>) {
-    metadataRef.current = next;
-    localStorage.setItem(metadataKey, JSON.stringify(next));
-  }
-
   function categoryId(name: string): number {
     const category = categories.find((entry) => entry.name === name);
     if (!category) throw new Error("Selecione uma categoria válida.");
@@ -140,10 +114,6 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
       toPayload(data, categoryId(data.category)),
       requireToken(),
     );
-    persistMetadata({
-      ...metadataRef.current,
-      [String(created.id)]: { category: data.category, status: data.status },
-    });
     const mapped = mapProcedure(created);
     setProcedures((current) => [...current, mapped]);
     return mapped;
@@ -155,10 +125,6 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
       toPayload(data, categoryId(data.category)),
       requireToken(),
     );
-    persistMetadata({
-      ...metadataRef.current,
-      [String(id)]: { category: data.category, status: data.status },
-    });
     const mapped = mapProcedure(updated);
     setProcedures((current) => current.map((entry) => (entry.id === id ? mapped : entry)));
     return mapped;
@@ -166,9 +132,6 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
 
   async function deleteProcedure(id: number): Promise<void> {
     await proceduresService.deleteProcedure(id, requireToken());
-    const next = { ...metadataRef.current };
-    delete next[String(id)];
-    persistMetadata(next);
     setProcedures((current) => current.filter((entry) => entry.id !== id));
   }
 
