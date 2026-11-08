@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode } from "react";
 import { useSite, useStorageKey } from "../config/SiteContext";
 import { useAuth } from "./AuthContext";
+import { useCategories } from "./CategoriesContext";
 import { errorMessage } from "../services/api";
 import * as proceduresService from "../services/procedures";
 import type { ApiProcedure, ProcedurePayload } from "../services/procedures";
@@ -43,8 +44,9 @@ function formatPrice(value: number): string {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
 }
 
-function toPayload(data: ProcedureFormData): ProcedurePayload {
+function toPayload(data: ProcedureFormData, categoryId: number): ProcedurePayload {
   return {
+    category_id: categoryId,
     name: data.name.trim(),
     description: data.description.trim(),
     duration_minutes: data.durationMinutes,
@@ -67,6 +69,7 @@ function readMetadata(key: string): Record<string, ProcedureMetadata> {
 export function ProceduresProvider({ children }: { children: ReactNode }) {
   const site = useSite();
   const { token } = useAuth();
+  const { categories } = useCategories();
   const metadataKey = useStorageKey("procedures_meta_v1");
   const [procedures, setProcedures] = useState<Procedure[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +84,7 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
       return {
         id: procedure.id,
         name: procedure.name,
-        category: local?.category ?? configured?.category ?? "Geral",
+        category: procedure.category?.name ?? local?.category ?? configured?.category ?? "Geral",
         duration: `${procedure.duration_minutes} min`,
         price: formatPrice(procedure.price),
         status: local?.status ?? "Ativo",
@@ -126,8 +129,17 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(metadataKey, JSON.stringify(next));
   }
 
+  function categoryId(name: string): number {
+    const category = categories.find((entry) => entry.name === name);
+    if (!category) throw new Error("Selecione uma categoria válida.");
+    return category.id;
+  }
+
   async function addProcedure(data: ProcedureFormData): Promise<Procedure> {
-    const created = await proceduresService.createProcedure(toPayload(data), requireToken());
+    const created = await proceduresService.createProcedure(
+      toPayload(data, categoryId(data.category)),
+      requireToken(),
+    );
     persistMetadata({
       ...metadataRef.current,
       [String(created.id)]: { category: data.category, status: data.status },
@@ -138,7 +150,11 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
   }
 
   async function editProcedure(id: number, data: ProcedureFormData): Promise<Procedure> {
-    const updated = await proceduresService.updateProcedure(id, toPayload(data), requireToken());
+    const updated = await proceduresService.updateProcedure(
+      id,
+      toPayload(data, categoryId(data.category)),
+      requireToken(),
+    );
     persistMetadata({
       ...metadataRef.current,
       [String(id)]: { category: data.category, status: data.status },

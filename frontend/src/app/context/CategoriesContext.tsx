@@ -1,61 +1,82 @@
-import { useSite, useStorageKey } from "../config/SiteContext";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useAuth } from "./AuthContext";
+import { errorMessage } from "../services/api";
+import * as categoriesService from "../services/categories";
 import type { Category } from "../config/types";
-import React, { createContext, useContext, useState } from "react";
 
 export type { Category } from "../config/types";
 
 interface CategoriesContextValue {
   categories: Category[];
-  addCategory: (name: string) => void;
-  editCategory: (id: number, name: string) => void;
-  deleteCategory: (id: number) => void;
+  loading: boolean;
+  error: string;
+  reload: () => void;
+  addCategory: (name: string) => Promise<void>;
+  editCategory: (id: number, name: string) => Promise<void>;
+  deleteCategory: (id: number) => Promise<void>;
 }
 
-const CategoriesContext = createContext<CategoriesContextValue>({
-  categories: [],
-  addCategory: () => {},
-  editCategory: () => {},
-  deleteCategory: () => {},
-});
+const CategoriesContext = createContext<CategoriesContextValue | null>(null);
 
-export function CategoriesProvider({ children }: { children: React.ReactNode }) {
-  const site = useSite();
-  const STORAGE_KEY = useStorageKey("categories_data");
-  const initialCategories = site.catalog.categories;
-  const [categories, setCategories] = useState<Category[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : initialCategories;
-    } catch {
-      return initialCategories;
-    }
-  });
+export function CategoriesProvider({ children }: { children: ReactNode }) {
+  const { token } = useAuth();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
 
-  function save(next: Category[]) {
-    setCategories(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    categoriesService
+      .listCategories(controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) setCategories(result);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setError(errorMessage(cause));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [revision]);
+
+  const reload = useCallback(() => setRevision((value) => value + 1), []);
+
+  function requireToken() {
+    if (!token) throw new Error("Entre na sua conta para continuar.");
+    return token;
   }
 
-  function addCategory(name: string) {
-    const newId = categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1;
-    save([...categories, { id: newId, name }]);
+  async function addCategory(name: string): Promise<void> {
+    await categoriesService.createCategory(name, requireToken());
+    reload();
   }
 
-  function editCategory(id: number, name: string) {
-    save(categories.map((c) => (c.id === id ? { ...c, name } : c)));
+  async function editCategory(id: number, name: string): Promise<void> {
+    await categoriesService.updateCategory(id, name, requireToken());
+    reload();
   }
 
-  function deleteCategory(id: number) {
-    save(categories.filter((c) => c.id !== id));
+  async function deleteCategory(id: number): Promise<void> {
+    await categoriesService.deleteCategory(id, requireToken());
+    reload();
   }
 
   return (
-    <CategoriesContext.Provider value={{ categories, addCategory, editCategory, deleteCategory }}>
+    <CategoriesContext.Provider
+      value={{ categories, loading, error, reload, addCategory, editCategory, deleteCategory }}
+    >
       {children}
     </CategoriesContext.Provider>
   );
 }
 
 export function useCategories() {
-  return useContext(CategoriesContext);
+  const context = useContext(CategoriesContext);
+  if (!context) throw new Error("useCategories deve ser usado dentro de CategoriesProvider");
+  return context;
 }
