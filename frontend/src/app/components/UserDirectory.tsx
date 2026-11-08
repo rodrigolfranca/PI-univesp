@@ -6,7 +6,8 @@ import { USER_DIRECTORY } from "../config/users";
 import { useAuth } from "../context/AuthContext";
 import { useUsers } from "../context/UsersContext";
 import type { ApiUser, UserFields, UserKind } from "../services/users";
-import { normalizePhone } from "../services/users";
+import { getUserByPhone, normalizePhone } from "../services/users";
+import { errorMessage } from "../services/api";
 import { UserForm } from "./UserForm";
 import { RequestState } from "./RequestState";
 import { Button } from "./ui/button";
@@ -82,16 +83,36 @@ export function UserDirectory({ kind }: { kind: UserKind }) {
 
 function RestrictedUserLookup({ kind }: { kind: UserKind }) {
   const navigate = useNavigate();
-  const [lookupId, setLookupId] = useState("");
+  const { token } = useAuth();
+  const [lookupPhone, setLookupPhone] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const { singular, path } = USER_DIRECTORY[kind];
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (/^[1-9]\d*$/.test(lookupId)) navigate(`${path}/${lookupId}`);
+    setError("");
+    if (!/^\d{11}$/.test(normalizePhone(lookupPhone))) {
+      setError("Informe o DDD e o telefone com 11 dígitos.");
+      return;
+    }
+    if (!token) {
+      setError("Entre na sua conta para continuar.");
+      return;
+    }
+    setPending(true);
+    try {
+      const found = await getUserByPhone(lookupPhone, token);
+      navigate(`${path}/${found.id}`);
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setPending(false);
+    }
   }
 
-  function handleIdChange(event: ChangeEvent<HTMLInputElement>) {
-    setLookupId(event.currentTarget.value);
+  function handlePhoneChange(event: ChangeEvent<HTMLInputElement>) {
+    setLookupPhone(event.currentTarget.value);
   }
 
   return (
@@ -99,25 +120,28 @@ function RestrictedUserLookup({ kind }: { kind: UserKind }) {
       <h2 className="font-semibold">Acesso restrito</h2>
       <p>
         A listagem de usuários é exclusiva de administradores. Você pode consultar um {singular}{" "}
-        pelo ID ou editar seu próprio perfil nas configurações.
+        pelo telefone ou editar seu próprio perfil nas configurações.
       </p>
       <form className="flex flex-wrap items-end gap-3" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="user-lookup" className="mb-1 block text-sm">
-            ID do usuário
+            Telefone do {singular}
           </label>
           <input
             id="user-lookup"
             required
-            inputMode="numeric"
-            pattern="[1-9][0-9]*"
-            value={lookupId}
-            onChange={handleIdChange}
+            type="tel"
+            value={lookupPhone}
+            onChange={handlePhoneChange}
+            placeholder="(11) 94002-8922"
             className="rounded-lg border px-3 py-2"
           />
         </div>
-        <Button type="submit">Consultar</Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Consultando..." : "Consultar"}
+        </Button>
       </form>
+      <RequestState error={error} />
     </section>
   );
 }

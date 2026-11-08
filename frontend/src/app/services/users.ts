@@ -67,6 +67,24 @@ export async function getUser(id: number, token: string, signal?: AbortSignal): 
   }
 }
 
+export async function getUserByPhone(
+  phone: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<ApiUser> {
+  try {
+    return await apiRequest<ApiUser>(
+      `/users/by-phone?phone_number=${encodeURIComponent(normalizePhone(phone))}`,
+      { token, signal },
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      throw new ApiError("Usuário não encontrado.", 404);
+    }
+    throw error;
+  }
+}
+
 export async function listAllUsers(token: string, signal?: AbortSignal): Promise<ApiUser[]> {
   const users = new Map<number, ApiUser>();
   let page = 1;

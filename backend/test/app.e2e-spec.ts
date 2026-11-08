@@ -268,6 +268,30 @@ describe('API (e2e)', () => {
         });
     });
 
+    describe('Consulta por telefone', () => {
+        it('profissional consulta por telefone', () => {
+            return request(app.getHttpServer())
+                .get(
+                    `/users/by-phone?phone_number=${professional.user.phone_number}`,
+                )
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as { id?: number };
+                    expect(body.id).toBe(professional.user.id);
+                });
+        });
+
+        it('cliente não consulta por telefone', () => {
+            return request(app.getHttpServer())
+                .get(
+                    `/users/by-phone?phone_number=${professional.user.phone_number}`,
+                )
+                .set('Authorization', `Bearer ${clientToken}`)
+                .expect(401);
+        });
+    });
+
     describe('Categorias', () => {
         it('GET /categories é público e contém Geral', () => {
             return request(app.getHttpServer())
