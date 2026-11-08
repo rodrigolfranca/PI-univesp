@@ -273,14 +273,17 @@ describe("gestão e perfil", () => {
 
   it("consulta por URL funciona para profissional sem depender da lista", async () => {
     restoreAs(professional);
-    const fetchMock = vi.fn(async (url: string) =>
-      jsonResponse(url.endsWith("/51") ? professional : client),
-    );
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith("/api/schedules")) {
+        return jsonResponse({ total: 0, page: 1, limit: 30, data: [] });
+      }
+      return jsonResponse(url.endsWith("/51") ? professional : client);
+    });
     vi.stubGlobal("fetch", fetchMock);
     renderFlow("/app/clients/42");
     expect(await screen.findByRole("heading", { name: "Maria Silva" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Editar dados" })).toBeNull();
-    expect(fetchMock.mock.calls.some(([url]) => url.includes("page="))).toBe(false);
+    expect(fetchMock.mock.calls.some(([url]) => url.startsWith("/api/users?page="))).toBe(false);
   });
 
   it("mostra usuário inexistente quando o backend retorna 404", async () => {
@@ -317,19 +320,43 @@ describe("gestão e perfil", () => {
     expect(screen.queryByRole("button", { name: "Salvar alterações" })).toBeNull();
   });
 
-  it("complementos locais são isolados por ID e não provocam PATCH", async () => {
+  it("mostra o histórico real do cliente sem complementos mock", async () => {
     restoreAs(admin);
-    const fetchMock = vi.fn(async (url: string) =>
-      jsonResponse(
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith("/api/schedules")) {
+        return jsonResponse({
+          total: 1,
+          page: 1,
+          limit: 30,
+          data: [
+            {
+              id: 9,
+              procedure_id: 1,
+              professional_id: 7,
+              client_id: 42,
+              document_id: null,
+              date: "2026-11-09",
+              start_time: "10:00",
+              session: 1,
+              status: "completed",
+              google_event_id: null,
+              google_event_link: null,
+              procedure: { id: 1, name: "Limpeza", duration_minutes: 30 },
+              professional: { id: 7, name: "Prof Teste", phone_number: "11911111111" },
+              client: { id: 42, name: "Maria Silva", phone_number: "11912345678" },
+            },
+          ],
+        });
+      }
+      return jsonResponse(
         url.includes("page=") ? { total: 0, users: [] } : url.endsWith("/51") ? admin : client,
-      ),
-    );
+      );
+    });
     vi.stubGlobal("fetch", fetchMock);
     renderFlow("/app/clients/42");
-    const input = userEvent.setup();
-    await input.selectOptions(await screen.findByLabelText("Status demonstrativo"), "Inativo");
-    expect(localStorage.getItem(`test:user_mock_v1:${API_STORAGE_SCOPE}:42`)).toContain("Inativo");
-    expect(localStorage.getItem(`test:user_mock_v1:${API_STORAGE_SCOPE}:7`)).toBeNull();
+    expect(await screen.findByText("Histórico de atendimentos")).toBeTruthy();
+    expect(await screen.findByText("Limpeza")).toBeTruthy();
+    expect(screen.queryByLabelText("Status demonstrativo")).toBeNull();
     expect(fetchMock.mock.calls.every(([, init]) => init.method === "GET")).toBe(true);
   });
 });
