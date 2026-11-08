@@ -286,6 +286,7 @@ export interface ScheduleExceptionPayload {
   professional_id: number;
   date: string;
   type: ScheduleExceptionType;
+  name?: string | null;
   start_time?: string | null;
   end_time?: string | null;
 }
@@ -296,6 +297,20 @@ export async function createScheduleException(
 ): Promise<ApiScheduleException> {
   return await apiRequest<ApiScheduleException>("/schedule-exceptions", {
     method: "POST",
+    token,
+    body: payload,
+  });
+}
+
+export async function updateScheduleException(
+  id: number,
+  payload: Partial<Omit<ScheduleExceptionPayload, "professional_id">> & {
+    professional_id?: number;
+  },
+  token: string,
+): Promise<{ message: string }> {
+  return await apiRequest<{ message: string }>(`/schedule-exceptions/${id}`, {
+    method: "PATCH",
     token,
     body: payload,
   });
