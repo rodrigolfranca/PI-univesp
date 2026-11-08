@@ -139,3 +139,4 @@ Default values:
 - O callback do Google Agenda redireciona navegadores para a primeira origem de `CORS_ORIGINS` e retorna JSON para clientes de API.
 - `schedule_exceptions` aceita `name`; rode `npm run migrate:schedule-exception-name` uma vez por banco.
 - `schedules.google_event_link` requer `npm run migrate:google-event-link` uma vez por banco.
+- `categories` e `procedures.category_id` requerem `npm run migrate:categories` uma vez por banco. A categoria `Geral` é criada e usada como fallback quando o procedimento não informa categoria.

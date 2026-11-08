@@ -1,4 +1,11 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import {
+    BelongsTo,
+    Column,
+    DataType,
+    Model,
+    Table,
+} from 'sequelize-typescript';
+import { Category } from './categories.model';
 
 @Table({
     tableName: 'procedures',
@@ -64,4 +71,13 @@ export class Procedure extends Model {
         allowNull: true,
     })
     declare bloqueio_periodo: number | null;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: false,
+    })
+    declare category_id: number;
+
+    @BelongsTo(() => Category, 'category_id')
+    declare category: Category;
 }

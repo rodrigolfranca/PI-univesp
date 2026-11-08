@@ -4,6 +4,7 @@ import { Redis } from 'ioredis';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import {
+    Category,
     Client,
     Procedure,
     Professional,
@@ -37,6 +38,7 @@ describe('API (e2e)', () => {
     const createdClients: TestClient[] = [];
     const createdProcedureIds: number[] = [];
     const createdExceptionIds: number[] = [];
+    const createdCategoryIds: number[] = [];
 
     async function createTestClient(): Promise<TestClient> {
         const suffix = String(Date.now()).slice(-8);
@@ -108,6 +110,9 @@ describe('API (e2e)', () => {
             }
             for (const id of createdExceptionIds) {
                 await ScheduleException.destroy({ where: { id }, force: true });
+            }
+            for (const id of createdCategoryIds) {
+                await Category.destroy({ where: { id }, force: true });
             }
             for (const { user, professional } of createdUsers) {
                 await redis.del(`user:${user.id}`);
@@ -260,6 +265,95 @@ describe('API (e2e)', () => {
                     const body = res.body as { connected?: boolean };
                     expect(typeof body.connected).toBe('boolean');
                 });
+        });
+    });
+
+    describe('Categorias', () => {
+        it('GET /categories é público e contém Geral', () => {
+            return request(app.getHttpServer())
+                .get('/categories')
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as { name: string }[];
+                    expect(
+                        body.some((category) => category.name === 'Geral'),
+                    ).toBe(true);
+                });
+        });
+
+        it('POST /categories como profissional retorna 401', () => {
+            return request(app.getHttpServer())
+                .post('/categories')
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .send({ name: 'Categoria Prof' })
+                .expect(401);
+        });
+
+        it('admin cria, edita e exclui categoria livre', async () => {
+            const created = await request(app.getHttpServer())
+                .post('/categories')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ name: `Categoria E2E ${Date.now()}` })
+                .expect(201);
+            const id = (created.body as { id: number }).id;
+            createdCategoryIds.push(id);
+
+            await request(app.getHttpServer())
+                .patch(`/categories/${id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ name: `Categoria E2E Editada ${Date.now()}` })
+                .expect(200);
+
+            await request(app.getHttpServer())
+                .delete(`/categories/${id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+        });
+
+        it('não exclui categoria vinculada a procedimento', async () => {
+            const category = await request(app.getHttpServer())
+                .post('/categories')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ name: `Categoria Vinculada ${Date.now()}` })
+                .expect(201);
+            const categoryId = (category.body as { id: number }).id;
+            createdCategoryIds.push(categoryId);
+
+            const procedure = await request(app.getHttpServer())
+                .post('/procedures')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    category_id: categoryId,
+                    name: 'Procedimento Categoria E2E',
+                    description: 'Teste',
+                    duration_minutes: 30,
+                    price: 100,
+                    sessions: 1,
+                    triagem: false,
+                    triagem_minutes: 0,
+                })
+                .expect(201);
+            const procedureId = (procedure.body as { id: number }).id;
+            createdProcedureIds.push(procedureId);
+
+            await request(app.getHttpServer())
+                .delete(`/categories/${categoryId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(400);
+
+            await Procedure.destroy({
+                where: { id: procedureId },
+                force: true,
+            });
+            createdProcedureIds.splice(
+                createdProcedureIds.indexOf(procedureId),
+                1,
+            );
+
+            await request(app.getHttpServer())
+                .delete(`/categories/${categoryId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
         });
     });
 
