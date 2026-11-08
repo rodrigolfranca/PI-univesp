@@ -76,8 +76,8 @@ Adicionar uma pasta válida basta para o registro automático. Nenhum componente
 - `content`: títulos e introduções das páginas (`pageHeadings`), apresentação (`hero`, `authTagline`), benefícios (`features`), apresentação da home (`homeAbout`), página sobre (`about`), cards estáticos de tratamentos (`treatments`), experiência (`experience`), chamadas do catálogo e contato, rodapé (`footer`) e informações do responsável (`owner`). Parágrafos e cards são listas. Blocos opcionais vazios não são renderizados.
 - `contact`: endereço e horários como listas de linhas, telefone, e-mail, WhatsApp como número com DDI ou link `https://wa.me/...`, Instagram sem `@`. Contatos ausentes não geram links vazios.
 - `catalog`: categorias, procedimentos editáveis, galeria e ícone dos serviços. O catálogo editável é independente dos cards estáticos em `content.treatments`.
-- `agenda`: horários disponíveis e bloqueados em `HH:MM`. A disponibilidade continua demonstrativa, sem reserva no servidor.
-- `data`: listas iniciais de clientes, agendamentos, equipe, notificações de gestão e cliente, agendamentos demonstrativos da área de cliente e documentos de exemplo. Novas variantes começam com listas vazias.
+- `agenda`: horários padrão de apresentação da variante. A disponibilidade usada no agendamento vem da API de horários de trabalho.
+- `data`: dados demonstrativos usados apenas nas áreas ainda locais, como notificações, complementos de perfil, documentos/histórico do cliente e configuração visual. Clientes, procedimentos e agendamentos reais vêm da API.
 
 Os contratos completos ficam em `src/app/config/types.ts`; `defaults.json` oferece uma referência dos grupos e valores padrão. As configurações existentes exemplificam listas preenchidas. Ícones aceitos: `briefcase`, `calendar`, `sparkles`, `heart`, `star`, `award`, `users`, `droplet`, `zap`, `activity`, `clock`, `wrench`, `scissors`, `phone`.
 
@@ -85,9 +85,11 @@ Os contratos completos ficam em `src/app/config/types.ts`; `defaults.json` ofere
 
 Domínios registrados sempre prevalecem sobre `VITE_CLIENTE`. Localhost e previews usam essa variável; sem ela, usam o ID em `src/variants/settings.json` (`defaultVariant`). Reinicie o servidor ao alterar a variável. Uma seleção explícita inexistente gera erro de configuração. Os domínios publicados devem estar cadastrados nos manifestos.
 
-Nos domínios registrados, as chaves de armazenamento existentes são preservadas. Nos demais ambientes, recebem o prefixo `<id>:` para permitir alternar variantes na mesma origem. Edições salvas no navegador prevalecem sobre os dados iniciais, inclusive listas vazias. O formato antigo dos parágrafos e temas é adaptado ao carregar; novos salvamentos usam arrays e a configuração de tema atual. O cadastro, a autenticação e os dados pessoais de clientes/profissionais usam o backend. Os demais módulos e os complementos identificados como demonstrativos continuam locais.
+Nos domínios registrados, as chaves de armazenamento existentes são preservadas. Nos demais ambientes, recebem o prefixo `<id>:` para permitir alternar variantes na mesma origem. Edições salvas no navegador prevalecem sobre os dados iniciais, inclusive listas vazias. O formato antigo dos parágrafos e temas é adaptado ao carregar; novos salvamentos usam arrays e a configuração de tema atual. Cadastro, autenticação, usuários, procedimentos, agenda, disponibilidade, POPs e Google Agenda usam o backend. Notificações, complementos de perfil, documentos/histórico do cliente, galeria, marca e categorias continuam locais.
 
 Na Vercel, use `frontend` como diretório raiz, `npm run build` e saída `dist`. Associe os domínios ao mesmo projeto e gere uma implantação após cadastrar variantes. `vercel.json` mantém o acesso direto e a recarga das rotas internas. Para previews, defina `VITE_CLIENTE` antes do build. A associação de domínios é feita na plataforma; nenhum domínio é criado pelo comando de cadastro.
+
+O frontend e o backend são projetos Vercel separados. Em produção, defina `VITE_API_BASE_URL` com a URL pública do backend, sem `/api` no final, e defina `CORS_ORIGINS` no backend com a origem do frontend. O proxy do Vite existe apenas em desenvolvimento; não use `VITE_API_BASE_URL=/api` em produção.
 
 As configurações Dayane e Karina mantêm o conteúdo anterior. O contato, alguns textos e dados de demonstração herdados da Dayane continuam explicitamente na configuração da Karina, conforme solicitado. A pasta original `Karina Alexitsch` permanece como referência.
 
@@ -113,9 +115,9 @@ Execute `npm run dev` com o backend e suas dependências já disponíveis. O pro
 - Cadastro público: cria uma conta de cliente com nome, telefone de 11 dígitos e e-mail. Não confirma o telefone nem inicia uma sessão automaticamente. Após cadastrar, entre com o telefone e o código.
 - Login: solicita um código e valida seus seis dígitos pela API. O envio por WhatsApp ainda está pendente no backend; em desenvolvimento, obtenha o código no log do servidor. O código vale cinco minutos. Telefones desconhecidos recebem a mesma mensagem de solicitação, sem criar conta ou sessão.
 - Sessão: token em `sessionStorage`, isolado por variante e destino da API. A recarga consulta o perfil no servidor; logout e expiração limpam a sessão. A sessão demonstrativa antiga é descartada. Não há refresh token nem endpoint de logout: sair remove a sessão deste navegador.
-- Clientes podem consultar e editar o próprio perfil em `/cliente/perfil`.
+- Clientes podem consultar e editar o próprio perfil em `/cliente/perfil` e criar os próprios agendamentos escolhendo procedimento, data, horário disponível e profissional.
 - Profissionais consultam e editam o próprio perfil nas configurações. Podem consultar outros usuários por ID, mas não listar nem editar terceiros.
-- Administradores podem listar, cadastrar, editar e excluir clientes e profissionais. As listas percorrem todas as páginas da API antes da busca local. Uma conta administrativa já existente é necessária; o frontend não cria administradores nem altera privilégios.
+- Administradores podem listar, cadastrar, editar e excluir clientes e profissionais. Também gerenciam procedimentos, POPs, disponibilidade, exceções de agenda e Google Agenda. As listas percorrem todas as páginas da API antes da busca local. Uma conta administrativa já existente é necessária; o frontend não cria administradores nem altera privilégios.
 - As rotas de detalhes usam o ID de **usuário**, não o ID do vínculo de cliente/profissional. Excluir remove a conta de usuário e afeta ambos os vínculos quando existentes.
 
 O backend não separa usuários por variante/negócio. As variantes selecionam apresentação e armazenamento local; para bases de usuários separadas, configure destinos de API separados. Não há isolamento por negócio implementado no frontend.
@@ -124,13 +126,13 @@ O backend não separa usuários por variante/negócio. As variantes selecionam a
 
 Os comentários `TODO(integracao)` marcam os limites da integração:
 
-- Status, última visita, cargo específico e documentos de exemplo continuam locais, separados por variante, API e ID real do usuário. Contas novas começam com status demonstrativo “Ativo”, última visita “—”, cargo “Profissional” e documentos vazios. O cargo não altera permissões. Nenhum desses campos é enviado à API de usuários.
-- Documentos são apenas nomes de exemplo: não há upload ou download real. O histórico começa vazio e não vincula exemplos por nome. Os dados antigos de demonstração permanecem nas variantes/armazenamento anterior, sem migração automática para contas reais.
-- Agenda, procedimentos, notificações e personalização continuam demonstrativos nesta etapa. A agenda administrativa usa a lista real de clientes quando o usuário possui permissão; seus agendamentos ainda são locais.
-- Recuperação por e-mail foi adiada. Troca de senha é apenas um aviso de recurso pendente: o backend atual autentica por código e não oferece senha.
+- Status, última visita, cargo específico e documentos do cliente na tela de usuário continuam locais, separados por variante, API e ID real do usuário. Contas novas começam com status demonstrativo “Ativo”, última visita “—”, cargo “Profissional” e documentos vazios. O cargo não altera permissões. Nenhum desses campos é enviado à API de usuários.
+- POPs de procedimento são reais: upload, listagem, download e exclusão usam a API. Documentos e histórico exibidos nos complementos do usuário continuam demonstrativos.
+- Agenda, procedimentos, disponibilidade e POPs usam a API. Notificações administrativas/cliente, galeria, marca e categorias continuam locais/demonstrativas.
+- Recuperação por e-mail está integrada à API para alterar o telefone. Como o envio de e-mail ainda não existe, o código aparece no log do backend. Troca de senha é apenas um aviso de recurso pendente: o backend autentica por código e não oferece senha.
 - Falhas da API aparecem na tela e nunca ativam um fallback para dados fictícios. Erros de permissão não encerram automaticamente a sessão, pois os guards do backend também usam HTTP 401 para autorização.
 
-**TODO(integracao): configurar proxy de produção antes de publicar a integração.** O proxy do Vite só existe em desenvolvimento; o rewrite atual de hospedagem atende apenas o SPA. Em produção, encaminhe `/api/*` para a API antes do fallback do SPA, ou use `VITE_API_BASE_URL` apontando para uma API que já permita a origem do frontend. A configuração de hospedagem não é alterada nesta entrega.
+Em produção, a API é acessada diretamente pela URL configurada em `VITE_API_BASE_URL`; o backend precisa liberar a origem do frontend em `CORS_ORIGINS`. O rewrite de `vercel.json` atende apenas as rotas internas do SPA.
 
 ### Validação
 

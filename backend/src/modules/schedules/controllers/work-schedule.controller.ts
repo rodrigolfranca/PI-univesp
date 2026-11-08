@@ -45,6 +45,18 @@ export class WorkScheduleController {
         return await this.workSchedulesService.getAll(workScheduleGetAllDto);
     }
 
+    @Get()
+    @ApiOperation({
+        summary: 'Lista os horários de trabalho cadastrados',
+    })
+    @ApiBearerAuth('JWT-auth')
+    @UseGuards(AuthGuard, AdminGuard)
+    async WorkScheduleFindAll(
+        @Query() workScheduleGetAllDto: WorkScheduleGetAllDto,
+    ) {
+        return await this.workSchedulesService.findAll(workScheduleGetAllDto);
+    }
+
     @Patch('update/:id')
     @ApiOperation({ summary: 'Atualiza um horário de trabalho existente' })
     @ApiBearerAuth('JWT-auth')

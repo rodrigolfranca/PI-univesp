@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+    IsDateString,
     IsInt,
     IsNumber,
     IsOptional,
@@ -11,6 +12,15 @@ import {
 } from 'class-validator';
 
 export class WorkScheduleGetAllDto {
+    @ApiProperty({
+        description: 'Data específica para calcular os horários (YYYY-MM-DD)',
+        example: '2026-05-25',
+        required: false,
+    })
+    @IsOptional()
+    @IsDateString()
+    date?: string;
+
     @ApiProperty({
         description:
             'Número do dia da semana para filtrar os horários de trabalho (0 para domingo, 6 para sábado)',

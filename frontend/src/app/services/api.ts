@@ -22,7 +22,14 @@ interface RequestOptions {
   signal?: AbortSignal;
 }
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function apiFetch(path: string, options: RequestOptions = {}): Promise<Response> {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const body: BodyInit | undefined =
+    options.body === undefined
+      ? undefined
+      : isFormData
+        ? (options.body as FormData)
+        : JSON.stringify(options.body);
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -30,14 +37,37 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       signal: options.signal,
       headers: {
         Accept: "application/json",
-        ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(options.body === undefined || isFormData ? {} : { "Content-Type": "application/json" }),
         ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
       },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body,
     });
   } catch (error) {
     if (options.signal?.aborted) throw error;
     throw new ApiError("Não foi possível conectar ao servidor. Tente novamente.", 0);
+  }
+
+  return response;
+}
+
+async function readError(response: Response): Promise<ApiError> {
+  const content = await response.text();
+  let data: unknown;
+  try {
+    data = content ? JSON.parse(content) : null;
+  } catch {
+    throw new ApiError("O servidor retornou uma resposta inválida.", response.status);
+  }
+
+  const message = (data as { message?: unknown } | null)?.message;
+  return new ApiError(getApiErrorDescription(message), response.status);
+}
+
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await apiFetch(path, options);
+
+  if (!response.ok) {
+    throw await readError(response);
   }
 
   const content = await response.text();
@@ -48,13 +78,22 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     throw new ApiError("O servidor retornou uma resposta inválida.", response.status);
   }
 
+  return data as T;
+}
+
+export async function apiRequestBlob(
+  path: string,
+  options: RequestOptions = {},
+): Promise<{ blob: Blob; filename: string | null }> {
+  const response = await apiFetch(path, options);
+
   if (!response.ok) {
-    const message = (data as { message?: unknown } | null)?.message;
-    const description = getApiErrorDescription(message);
-    throw new ApiError(description, response.status);
+    throw await readError(response);
   }
 
-  return data as T;
+  const disposition = response.headers.get("Content-Disposition");
+  const filename = disposition?.match(/filename="?([^";]+)"?/i)?.[1] ?? null;
+  return { blob: await response.blob(), filename };
 }
 
 export function errorMessage(error: unknown): string {

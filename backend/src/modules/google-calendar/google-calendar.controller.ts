@@ -1,4 +1,15 @@
-import { Controller, Delete, Get, Query, Req, UseGuards } from '@nestjs/common';
+import {
+    Controller,
+    Delete,
+    Get,
+    HttpException,
+    Query,
+    Req,
+    Res,
+    UseGuards,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { RequestWithUser } from 'src/common/types/request.type';
 import { AdminGuard, AuthGuard } from '../auth/guards';
@@ -10,6 +21,7 @@ import { GoogleCalendarCallbackDTO } from './validation/google-calendar-callback
 export class GoogleCalendarController {
     constructor(
         private readonly googleCalendarService: GoogleCalendarService,
+        private readonly configService: ConfigService,
     ) {}
 
     @Get('connect')
@@ -30,8 +42,33 @@ export class GoogleCalendarController {
         summary:
             'Recebe o redirecionamento do Google e salva a conexão (chamada pelo Google, não pelo front)',
     })
-    async callback(@Query() dto: GoogleCalendarCallbackDTO) {
-        return await this.googleCalendarService.handleCallback(dto);
+    async callback(
+        @Query() dto: GoogleCalendarCallbackDTO,
+        @Res() response: Response,
+    ) {
+        const frontend = this.frontendUrl();
+        try {
+            await this.googleCalendarService.handleCallback(dto);
+            return response.redirect(
+                `${frontend}/app/settings?google=connected`,
+            );
+        } catch (error) {
+            const message =
+                error instanceof HttpException
+                    ? error.message
+                    : 'Falha ao conectar a agenda Google';
+            return response.redirect(
+                `${frontend}/app/settings?google=error&message=${encodeURIComponent(message)}`,
+            );
+        }
+    }
+
+    private frontendUrl(): string {
+        const origins = (this.configService.get<string>('CORS_ORIGINS') ?? '')
+            .split(',')
+            .map((origin) => origin.trim())
+            .filter((origin) => origin && origin !== '*');
+        return origins[0] ?? 'http://localhost:5173';
     }
 
     @Get('status')

@@ -124,3 +124,13 @@ Default values:
 
 - Backend: http://localhost:3000
 - PostgreSQL: localhost:5432
+
+---
+
+## Integração com o frontend
+
+- `GET /work-schedules` lista os horários de trabalho cadastrados (admin).
+- `GET /work-schedules/all` retorna os horários disponíveis calculados.
+- `POST /schedules` aceita admin ou o próprio cliente autenticado (`client_id` igual ao vínculo do usuário).
+- `PATCH` e `DELETE` de agendamentos continuam restritos a admin.
+- O callback do Google Agenda redireciona para a primeira origem de `CORS_ORIGINS`.

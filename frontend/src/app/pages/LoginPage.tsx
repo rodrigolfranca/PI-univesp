@@ -8,8 +8,10 @@ import { Button } from "../components/ui/button";
 import { useAuth } from "../context/AuthContext";
 import type { UserRole } from "../context/AuthContext";
 import { errorMessage } from "../services/api";
-import { requestLoginCode } from "../services/auth";
+import { requestLoginCode, requestRecoveryCode, verifyRecoveryCode } from "../services/auth";
 import { normalizePhone } from "../services/users";
+
+type Mode = "login" | "recovery";
 
 export function LoginPage() {
   const site = useSite();
@@ -17,12 +19,17 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const treatmentId = params.get("treatmentId");
+  const [mode, setMode] = useState<Mode>("login");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [recoveryStep, setRecoveryStep] = useState<"email" | "verify">("email");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryPhone, setRecoveryPhone] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
   const submitting = useRef(false);
 
   async function submit(action: "request" | "verify") {
@@ -59,8 +66,60 @@ export function LoginPage() {
     }
   }
 
+  async function submitRecovery(action: "request" | "verify") {
+    if (submitting.current) return;
+    setError("");
+    setNotice("");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail.trim())) {
+      setError("Informe um e-mail válido.");
+      return;
+    }
+    if (action === "verify") {
+      if (!/^\d{11}$/.test(normalizePhone(recoveryPhone))) {
+        setError("Informe o DDD e o telefone com 11 dígitos.");
+        return;
+      }
+      if (!/^\d{6}$/.test(recoveryCode)) {
+        setError("Informe o código de seis dígitos.");
+        return;
+      }
+    }
+    submitting.current = true;
+    setPending(true);
+    try {
+      if (action === "request") {
+        await requestRecoveryCode(recoveryEmail.trim());
+        setRecoveryStep("verify");
+        setRecoveryCode("");
+        setNotice(
+          "Se o e-mail estiver cadastrado, um código será gerado. Ele expira em cinco minutos.",
+        );
+      } else {
+        await verifyRecoveryCode(recoveryEmail.trim(), recoveryPhone, recoveryCode);
+        setPhone(recoveryPhone);
+        setMode("login");
+        setStep("phone");
+        setCode("");
+        setRecoveryStep("email");
+        setRecoveryEmail("");
+        setRecoveryPhone("");
+        setRecoveryCode("");
+        setNotice("Telefone atualizado. Solicite um novo código para entrar.");
+      }
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      submitting.current = false;
+      setPending(false);
+    }
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (mode === "recovery") {
+      void submitRecovery(recoveryStep === "email" ? "request" : "verify");
+      return;
+    }
     void submit(step === "phone" ? "request" : "verify");
   }
 
@@ -83,7 +142,26 @@ export function LoginPage() {
     setNotice("");
   }
 
-  const submitLabel = getSubmitLabel(pending, step);
+  function openRecovery() {
+    setMode("recovery");
+    setRecoveryStep("email");
+    setError("");
+    setNotice("");
+  }
+
+  function backToLogin() {
+    setMode("login");
+    setError("");
+    setNotice("");
+  }
+
+  const isRecovery = mode === "recovery";
+  const title = isRecovery ? "Recuperar conta" : "Entre na sua conta";
+  const submitLabel = isRecovery
+    ? recoveryStep === "email"
+      ? "Enviar código por e-mail"
+      : "Atualizar telefone"
+    : getSubmitLabel(pending, step);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-50 p-4">
@@ -91,8 +169,12 @@ export function LoginPage() {
         <div className="flex justify-center">
           <BrandLogo size="auth" />
         </div>
-        <p className="text-center text-sm text-gray-600">{site.content.authTagline}</p>
-        <h1 className="text-center text-3xl font-bold text-brand-800">Entre na sua conta</h1>
+        <p className="text-center text-sm text-gray-600">
+          {isRecovery
+            ? "Informe o e-mail cadastrado para alterar seu telefone de acesso."
+            : site.content.authTagline}
+        </p>
+        <h1 className="text-center text-3xl font-bold text-brand-800">{title}</h1>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <RequestState error={error} />
           {notice && (
@@ -100,48 +182,111 @@ export function LoginPage() {
               {notice}
             </p>
           )}
-          <div>
-            <label htmlFor="login-phone" className="mb-1 block font-medium">
-              Telefone
-            </label>
-            <input
-              id="login-phone"
-              type="tel"
-              autoComplete="tel-national"
-              value={phone}
-              readOnly={step === "code"}
-              disabled={pending}
-              onChange={handlePhoneChange}
-              placeholder="(11) 94002-8922"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-          {step === "code" && (
-            <div>
-              <label htmlFor="login-code" className="mb-1 block font-medium">
-                Código de verificação
-              </label>
-              <input
-                id="login-code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                value={code}
-                disabled={pending}
-                onChange={handleCodeChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
-              />
-              {/* TODO(integracao): retirar a orientação quando o backend enviar os códigos por WhatsApp. */}
-              <p className="mt-2 text-sm text-amber-800">
-                O envio por WhatsApp está pendente. Em desenvolvimento, obtenha o código no log do
-                backend.
-              </p>
-            </div>
+
+          {isRecovery ? (
+            <>
+              <div>
+                <label htmlFor="recovery-email" className="mb-1 block font-medium">
+                  E-mail
+                </label>
+                <input
+                  id="recovery-email"
+                  type="email"
+                  autoComplete="email"
+                  value={recoveryEmail}
+                  readOnly={recoveryStep === "verify"}
+                  disabled={pending}
+                  onChange={(event) => setRecoveryEmail(event.currentTarget.value)}
+                  placeholder="voce@exemplo.com"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              {recoveryStep === "verify" && (
+                <>
+                  <div>
+                    <label htmlFor="recovery-phone" className="mb-1 block font-medium">
+                      Novo telefone
+                    </label>
+                    <input
+                      id="recovery-phone"
+                      type="tel"
+                      autoComplete="tel-national"
+                      value={recoveryPhone}
+                      disabled={pending}
+                      onChange={(event) => setRecoveryPhone(event.currentTarget.value)}
+                      placeholder="(11) 94002-8922"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="recovery-code" className="mb-1 block font-medium">
+                      Código de recuperação
+                    </label>
+                    <input
+                      id="recovery-code"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={recoveryCode}
+                      disabled={pending}
+                      onChange={(event) =>
+                        setRecoveryCode(event.currentTarget.value.replace(/\D/g, ""))
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
+                    />
+                    <p className="mt-2 text-sm text-amber-800">
+                      O envio por e-mail está pendente. Obtenha o código no log do backend.
+                    </p>
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <div>
+                <label htmlFor="login-phone" className="mb-1 block font-medium">
+                  Telefone
+                </label>
+                <input
+                  id="login-phone"
+                  type="tel"
+                  autoComplete="tel-national"
+                  value={phone}
+                  readOnly={step === "code"}
+                  disabled={pending}
+                  onChange={handlePhoneChange}
+                  placeholder="(11) 94002-8922"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              {step === "code" && (
+                <div>
+                  <label htmlFor="login-code" className="mb-1 block font-medium">
+                    Código de verificação
+                  </label>
+                  <input
+                    id="login-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={code}
+                    disabled={pending}
+                    onChange={handleCodeChange}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
+                  />
+                  <p className="mt-2 text-sm text-amber-800">
+                    O envio por WhatsApp está pendente. Obtenha o código no log do backend.
+                  </p>
+                </div>
+              )}
+            </>
           )}
+
           <Button type="submit" disabled={pending} className="w-full">
-            {submitLabel}
+            {pending ? "Aguarde..." : submitLabel}
           </Button>
-          {step === "code" && (
+
+          {!isRecovery && step === "code" && (
             <div className="flex flex-wrap gap-3">
               <Button type="button" variant="outline" disabled={pending} onClick={handleResendCode}>
                 Reenviar código
@@ -151,15 +296,51 @@ export function LoginPage() {
               </Button>
             </div>
           )}
+
+          {isRecovery && recoveryStep === "verify" && (
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() => void submitRecovery("request")}
+              >
+                Reenviar código
+              </Button>
+              <Button type="button" variant="ghost" disabled={pending} onClick={backToLogin}>
+                Voltar ao login
+              </Button>
+            </div>
+          )}
         </form>
-        <Link
-          to={treatmentId ? `/signup?${new URLSearchParams({ treatmentId })}` : "/signup"}
-          className="block text-center text-brand-700 underline"
-        >
-          Cadastre-se
-        </Link>
-        {/* TODO(integracao): conectar as duas etapas de recuperação por e-mail em uma próxima entrega. */}
-        <p className="text-sm text-gray-500">Recuperação de conta por e-mail: em breve.</p>
+
+        {!isRecovery && (
+          <Link
+            to={treatmentId ? `/signup?${new URLSearchParams({ treatmentId })}` : "/signup"}
+            className="block text-center text-brand-700 underline"
+          >
+            Cadastre-se
+          </Link>
+        )}
+
+        {isRecovery ? (
+          <button
+            type="button"
+            onClick={backToLogin}
+            className="block w-full text-center text-sm text-gray-600"
+          >
+            ← Voltar para o login
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={openRecovery}
+            className="block w-full text-center text-sm text-brand-700 underline"
+          >
+            Recuperar conta por e-mail
+          </button>
+        )}
+
         <Link to="/" className="block text-center text-sm text-gray-600">
           ← Voltar para Home
         </Link>

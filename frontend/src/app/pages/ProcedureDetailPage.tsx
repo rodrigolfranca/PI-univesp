@@ -1,5 +1,4 @@
-import { useSite, useTerminology } from "../config/SiteContext";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
@@ -21,15 +20,13 @@ import {
   DialogFooter,
 } from "../components/ui/dialog";
 import { useProcedures } from "../context/ProceduresContext";
+import type { ProcedureFormData } from "../context/ProceduresContext";
 import { useCategories } from "../context/CategoriesContext";
-
-interface POPDocument {
-  id: number;
-  name: string;
-  uploadDate: string;
-  size: string;
-  url: string;
-}
+import { useAuth } from "../context/AuthContext";
+import { errorMessage } from "../services/api";
+import * as popsService from "../services/pops";
+import type { ApiPop } from "../services/pops";
+import { useTerminology } from "../config/SiteContext";
 
 type ProcedureForm = {
   name: string;
@@ -41,15 +38,22 @@ type ProcedureForm = {
 };
 
 export function ProcedureDetailPage() {
-  const site = useSite();
   const copy = useTerminology();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { procedures, editProcedure } = useProcedures();
+  const { user, token } = useAuth();
+  const { procedures, loading, error, editProcedure } = useProcedures();
   const { categories } = useCategories();
-  const procedure = procedures.find((p) => p.id === Number(id));
+  const procedure = procedures.find((entry) => entry.id === Number(id));
+  const [pops, setPops] = useState<ApiPop[]>([]);
+  const [popsLoading, setPopsLoading] = useState(false);
+  const [popsError, setPopsError] = useState("");
   const [showAddPOP, setShowAddPOP] = useState(false);
+  const [popName, setPopName] = useState("");
+  const [popFile, setPopFile] = useState<File | null>(null);
+  const [popSaving, setPopSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
   const [editForm, setEditForm] = useState<ProcedureForm>({
     name: "",
     category: "",
@@ -59,7 +63,35 @@ export function ProcedureDetailPage() {
     description: "",
   });
   const [editErrors, setEditErrors] = useState<Partial<ProcedureForm>>({});
-  const [popDocuments, setPopDocuments] = useState<POPDocument[]>(site.data.procedureDocuments);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!procedure || !token) {
+      setPops([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    setPopsLoading(true);
+    setPopsError("");
+    popsService
+      .listPops(procedure.id, token, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) setPops(result);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setPopsError(errorMessage(cause));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPopsLoading(false);
+      });
+    return () => controller.abort();
+  }, [procedure, token]);
+
+  if (loading && !procedure) {
+    return <p className="p-4 text-gray-500 md:p-8">Carregando procedimento...</p>;
+  }
+
   if (!procedure) {
     return (
       <div className="p-4 md:p-8">
@@ -70,7 +102,7 @@ export function ProcedureDetailPage() {
           <ArrowLeft className="w-5 h-5" />
           <span>{copy("Voltar para Procedimentos")}</span>
         </button>
-        <p className="text-gray-500">{copy("Procedimento não encontrado.")}</p>
+        <p className="text-gray-500">{error || copy("Procedimento não encontrado.")}</p>
       </div>
     );
   }
@@ -100,48 +132,112 @@ export function ProcedureDetailPage() {
       }));
   }
 
-  function handleEditSubmit() {
+  async function handleEditSubmit() {
     const newErrors: Partial<ProcedureForm> = {};
     if (!editForm.name.trim()) newErrors.name = "Nome é obrigatório";
-
     if (!editForm.category) newErrors.category = "Categoria é obrigatória";
-
     if (!editForm.duration.trim()) newErrors.duration = "Duração é obrigatória";
-
     if (!editForm.price.trim()) newErrors.price = "Preço é obrigatório";
+
+    const durationMinutes = Number.parseInt(editForm.duration.replace(/\D/g, ""), 10);
+    const priceValue = Number.parseFloat(editForm.price.replace(/[^\d,.-]/g, "").replace(",", "."));
+    if (!Number.isInteger(durationMinutes) || durationMinutes < 1) {
+      newErrors.duration = "Informe a duração em minutos";
+    }
+    if (!Number.isFinite(priceValue) || priceValue < 0) {
+      newErrors.price = "Informe um preço válido";
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setEditErrors(newErrors);
       return;
     }
 
-    editProcedure(procedure!.id, {
+    const payload: ProcedureFormData = {
       name: editForm.name,
       category: editForm.category,
-      duration: editForm.duration,
-      price: editForm.price.startsWith("R$") ? editForm.price : `R$ ${editForm.price}`,
       status: editForm.status,
       description: editForm.description,
-    });
-    toast.success(copy("Procedimento atualizado com sucesso"));
-    setEditOpen(false);
+      durationMinutes,
+      priceValue,
+      sessions: procedure!.sessions,
+      triagem: procedure!.triagem,
+      triagemMinutes: procedure!.triagemMinutes,
+      bloqueioPeriodo: procedure!.bloqueioPeriodo,
+    };
+
+    setEditSaving(true);
+    try {
+      await editProcedure(procedure!.id, payload);
+      toast.success(copy("Procedimento atualizado com sucesso"));
+      setEditOpen(false);
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    } finally {
+      setEditSaving(false);
+    }
   }
 
-  const handleDeletePOP = (popId: number) => {
-    setPopDocuments(popDocuments.filter((doc) => doc.id !== popId));
-  };
+  async function handleAddPOP() {
+    if (!token) return;
+    if (!popFile) {
+      setPopsError("Selecione um arquivo PDF.");
+      return;
+    }
+    if (popFile.size > 4.5 * 1024 * 1024) {
+      setPopsError("O PDF deve ter no máximo 4,5 MB.");
+      return;
+    }
 
-  const handleAddPOP = () => {
-    const newDoc: POPDocument = {
-      id: Date.now(),
-      name: "Novo Documento POP.pdf",
-      uploadDate: new Date().toLocaleDateString("pt-BR"),
-      size: "1.5 MB",
-      url: "#",
-    };
-    setPopDocuments([...popDocuments, newDoc]);
-    setShowAddPOP(false);
-  };
+    setPopSaving(true);
+    setPopsError("");
+    try {
+      const created = await popsService.createPop(
+        {
+          procedureId: procedure!.id,
+          name: popName.trim() || popFile.name,
+          file: popFile,
+        },
+        token,
+      );
+      setPops((current) => [created, ...current]);
+      setShowAddPOP(false);
+      setPopName("");
+      setPopFile(null);
+      toast.success("Documento POP adicionado");
+    } catch (cause) {
+      setPopsError(errorMessage(cause));
+    } finally {
+      setPopSaving(false);
+    }
+  }
+
+  async function handleDownloadPOP(pop: ApiPop) {
+    if (!token) return;
+    try {
+      const { blob, filename } = await popsService.downloadPop(pop.id, token);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename ?? `${pop.name}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
+  }
+
+  async function handleDeletePOP(pop: ApiPop) {
+    if (!token) return;
+    if (!window.confirm(`Excluir o documento "${pop.name}"?`)) return;
+    try {
+      await popsService.deletePop(pop.id, token);
+      setPops((current) => current.filter((entry) => entry.id !== pop.id));
+      toast.success("Documento POP excluído");
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -156,6 +252,12 @@ export function ProcedureDetailPage() {
         <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{procedure.name}</h1>
         <p className="text-gray-500 mt-1 text-sm md:text-base">{procedure.category}</p>
       </div>
+
+      {error && (
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -184,6 +286,18 @@ export function ProcedureDetailPage() {
                   <p className="text-gray-600">{procedure.price}</p>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Sessões</h3>
+                  <p className="text-gray-600">{procedure.sessions}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Triagem</h3>
+                  <p className="text-gray-600">
+                    {procedure.triagem ? `${procedure.triagemMinutes} min` : "Não exige"}
+                  </p>
+                </div>
+              </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-1">Status</h3>
                 <span
@@ -203,24 +317,35 @@ export function ProcedureDetailPage() {
                   {copy("Procedimento Operacional Padrão")}
                 </p>
               </div>
-              <button
-                onClick={() => setShowAddPOP(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors text-sm md:text-base"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden md:inline">Adicionar</span>
-              </button>
+              {user?.isAdmin && (
+                <button
+                  onClick={() => setShowAddPOP(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors text-sm md:text-base"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden md:inline">Adicionar</span>
+                </button>
+              )}
             </div>
+
+            {popsError && (
+              <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                {popsError}
+              </p>
+            )}
+
             <div className="space-y-3">
-              {popDocuments.length === 0 ? (
+              {popsLoading ? (
+                <p className="py-8 text-center text-gray-500">Carregando documentos...</p>
+              ) : pops.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                   <p>Nenhum documento POP cadastrado</p>
                 </div>
               ) : (
-                popDocuments.map((doc) => (
+                pops.map((pop) => (
                   <div
-                    key={doc.id}
+                    key={pop.id}
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -228,25 +353,31 @@ export function ProcedureDetailPage() {
                         <FileText className="w-5 h-5 text-brand-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">{doc.name}</h3>
+                        <h3 className="font-medium text-gray-900 truncate">{pop.name}</h3>
                         <p className="text-sm text-gray-500">
-                          {doc.uploadDate} • {doc.size}
+                          {pop.created_at
+                            ? new Date(pop.created_at).toLocaleDateString("pt-BR")
+                            : "PDF"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
                       <button
-                        onClick={() => window.open(doc.url, "_blank")}
+                        onClick={() => void handleDownloadPOP(pop)}
                         className="p-2 text-gray-600 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                        title="Baixar PDF"
                       >
                         <Download className="w-5 h-5" />
                       </button>
-                      <button
-                        onClick={() => handleDeletePOP(doc.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      {user?.isAdmin && (
+                        <button
+                          onClick={() => void handleDeletePOP(pop)}
+                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -259,28 +390,33 @@ export function ProcedureDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
             <div className="space-y-3">
+              {user?.isAdmin && (
+                <button
+                  onClick={openEdit}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-brand-600 text-brand-600 rounded-lg hover:bg-brand-50 transition-colors font-medium"
+                >
+                  {copy(" Editar Procedimento ")}
+                </button>
+              )}
               <button
-                onClick={openEdit}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-brand-600 text-brand-600 rounded-lg hover:bg-brand-50 transition-colors font-medium"
+                onClick={() => navigate(`/agendar/${procedure.id}`)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium"
               >
-                {copy(" Editar Procedimento ")}
-              </button>
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium">
                 {copy(" Agendar Procedimento ")}
               </button>
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Estatísticas</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informações</h2>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-500">Agendamentos este mês</p>
-                <p className="text-2xl font-bold text-brand-600">12</p>
+                <p className="text-sm text-gray-500">Sessões incluídas</p>
+                <p className="text-2xl font-bold text-brand-600">{procedure.sessions}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Documentos POP</p>
-                <p className="text-2xl font-bold text-gray-900">{popDocuments.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{pops.length}</p>
               </div>
             </div>
           </div>
@@ -306,20 +442,38 @@ export function ProcedureDetailPage() {
                 </label>
                 <input
                   type="text"
+                  value={popName}
+                  onChange={(event) => setPopName(event.target.value)}
                   placeholder="Ex: Instruções do serviço.pdf"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Arquivo</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-brand-600 transition-colors cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-brand-600 transition-colors"
+                >
                   <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600">
-                    Clique para selecionar ou arraste o arquivo
+                    {popFile ? popFile.name : "Clique para selecionar o PDF"}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX até 10MB</p>
-                </div>
+                  <p className="text-xs text-gray-500 mt-1">Somente PDF até 4,5 MB</p>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  onChange={(event) => setPopFile(event.target.files?.[0] ?? null)}
+                />
               </div>
+              {popsError && (
+                <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                  {popsError}
+                </p>
+              )}
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => setShowAddPOP(false)}
@@ -328,10 +482,11 @@ export function ProcedureDetailPage() {
                   Cancelar
                 </button>
                 <button
-                  onClick={handleAddPOP}
-                  className="flex-1 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium"
+                  onClick={() => void handleAddPOP()}
+                  disabled={popSaving || !popFile}
+                  className="flex-1 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Adicionar
+                  {popSaving ? "Enviando..." : "Adicionar"}
                 </button>
               </div>
             </div>
@@ -424,14 +579,14 @@ export function ProcedureDetailPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <div className="flex gap-2">
-                {["Ativo", "Inativo"].map((s) => (
+                {["Ativo", "Inativo"].map((status) => (
                   <button
-                    key={s}
+                    key={status}
                     type="button"
-                    onClick={() => handleEditField("status", s)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${editForm.status === s ? (s === "Ativo" ? "bg-green-600 text-white border-green-600" : "bg-gray-500 text-white border-gray-500") : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                    onClick={() => handleEditField("status", status)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${editForm.status === status ? (status === "Ativo" ? "bg-green-600 text-white border-green-600" : "bg-gray-500 text-white border-gray-500") : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"}`}
                   >
-                    {s}
+                    {status}
                   </button>
                 ))}
               </div>
@@ -458,10 +613,11 @@ export function ProcedureDetailPage() {
             </button>
             <button
               type="button"
-              onClick={handleEditSubmit}
-              className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+              disabled={editSaving}
+              onClick={() => void handleEditSubmit()}
+              className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              Salvar Alterações
+              {editSaving ? "Salvando..." : "Salvar Alterações"}
             </button>
           </DialogFooter>
         </DialogContent>

@@ -1,5 +1,7 @@
 import { useTerminology } from "../config/SiteContext";
 import { UserProfile } from "../components/UserProfile";
+import { GoogleCalendarSettings } from "../components/GoogleCalendarSettings";
+import { AvailabilitySettings } from "../components/AvailabilitySettings";
 import { useAuth } from "../context/AuthContext";
 import type { Theme } from "../config/types";
 import React, { useRef, useState } from "react";
@@ -111,6 +113,10 @@ export function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <UserProfile />
+
+          <GoogleCalendarSettings />
+
+          <AvailabilitySettings />
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-6">

@@ -10,6 +10,11 @@ export interface Procedure {
   price: string;
   status: string;
   description: string;
+  durationMinutes: number;
+  sessions: number;
+  triagem: boolean;
+  triagemMinutes: number;
+  bloqueioPeriodo: number | null;
 }
 export interface GalleryImage {
   id: string;
@@ -25,16 +30,20 @@ export interface Client {
   status: string;
 }
 
-export type AppStatus = "Confirmado" | "Pendente" | "Cancelado";
+export type AppStatus = "Confirmado" | "Pendente" | "Concluído" | "Cancelado" | "Ausente";
 
 export interface Appointment {
   id: number;
+  clientId: number;
+  professionalId: number;
+  procedureId: number;
   client: string;
   procedure: string;
   date: string;
   time: string;
   status: AppStatus;
   durationMin: number;
+  session: number;
 }
 export interface Manifest {
   id: string;

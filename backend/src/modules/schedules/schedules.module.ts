@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { RedisModule } from 'src/common/redis/redis.module';
 import { AuthModule } from '../auth/auth.module';
 import { GoogleCalendarModule } from '../google-calendar/google-calendar.module';
+import { ScheduleCreateGuard } from './guards/schedule-create.guard';
 import { UsersModule } from '../users/users.module';
 import { ScheduleExceptionsController } from './controllers/schedule-exceptions.controller';
 import { ScheduleController } from './controllers/schedule.controller';
@@ -27,6 +28,7 @@ import { WorkSchedulesService } from './services/work-schedules.service';
         WorkScheduleRepository,
         ScheduleRepository,
         ScheduleExceptionsRepository,
+        ScheduleCreateGuard,
     ],
     exports: [],
 })

@@ -22,6 +22,8 @@ import {
 } from "../components/ui/alert-dialog";
 import { useProcedures } from "../context/ProceduresContext";
 import { useCategories } from "../context/CategoriesContext";
+import { useAuth } from "../context/AuthContext";
+import { errorMessage } from "../services/api";
 
 type ProcedureForm = {
   name: string;
@@ -30,6 +32,10 @@ type ProcedureForm = {
   price: string;
   status: string;
   description: string;
+  sessions: string;
+  triagem: boolean;
+  triagemMinutes: string;
+  bloqueioPeriodo: string;
 };
 
 const emptyForm: ProcedureForm = {
@@ -39,12 +45,18 @@ const emptyForm: ProcedureForm = {
   price: "",
   status: "Ativo",
   description: "",
+  sessions: "1",
+  triagem: false,
+  triagemMinutes: "0",
+  bloqueioPeriodo: "",
 };
 
 export function ProceduresPage() {
   const copy = useTerminology();
-  const { procedures, addProcedure, editProcedure, deleteProcedure } = useProcedures();
+  const { procedures, loading, error, addProcedure, editProcedure, deleteProcedure } =
+    useProcedures();
   const { categories } = useCategories();
+  const { user } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,6 +65,7 @@ export function ProceduresPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<ProcedureForm>(emptyForm);
   const [errors, setErrors] = useState<Partial<ProcedureForm>>({});
+  const [saving, setSaving] = useState(false);
   const filteredProcedures = procedures.filter((p) => {
     const matchesCategory = !selectedCategory || p.category === selectedCategory;
     const matchesSearch =
@@ -109,38 +122,77 @@ export function ProceduresPage() {
       price: proc.price.replace("R$ ", ""),
       status: proc.status,
       description: proc.description,
+      sessions: String(proc.sessions),
+      triagem: proc.triagem,
+      triagemMinutes: String(proc.triagemMinutes),
+      bloqueioPeriodo: proc.bloqueioPeriodo === null ? "" : String(proc.bloqueioPeriodo),
     });
     setErrors({});
     setModalOpen(true);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const newErrors = validate();
+    const durationMinutes = Number.parseInt(form.duration.replace(/\D/g, ""), 10);
+    const priceValue = Number.parseFloat(form.price.replace(/[^\d,.-]/g, "").replace(",", "."));
+    const sessions = Number.parseInt(form.sessions, 10);
+    const triagemMinutes = Number.parseInt(form.triagemMinutes || "0", 10);
+    const bloqueioPeriodo = form.bloqueioPeriodo.trim()
+      ? Number.parseInt(form.bloqueioPeriodo, 10)
+      : null;
+
+    if (!Number.isInteger(durationMinutes) || durationMinutes < 1) {
+      newErrors.duration = "Informe a duração em minutos";
+    }
+    if (!Number.isFinite(priceValue) || priceValue < 0) {
+      newErrors.price = "Informe um preço válido";
+    }
+    if (!Number.isInteger(sessions) || sessions < 1) {
+      newErrors.sessions = "Informe pelo menos uma sessão";
+    }
+    if (form.triagem && (!Number.isInteger(triagemMinutes) || triagemMinutes < 0)) {
+      newErrors.triagemMinutes = "Informe a duração da triagem";
+    }
+    if (bloqueioPeriodo !== null && (!Number.isInteger(bloqueioPeriodo) || bloqueioPeriodo < 0)) {
+      newErrors.bloqueioPeriodo = "Informe um período válido";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    const data = {
-      name: form.name,
-      duration: form.duration,
-      price: form.price.startsWith("R$") ? form.price : `R$ ${form.price}`,
-      category: form.category,
-      status: form.status,
-      description: form.description,
-    };
-    if (editingId !== null) {
-      editProcedure(editingId, data);
-      toast.success(copy("Procedimento atualizado com sucesso"));
-    } else {
-      addProcedure(data);
-      toast.success(copy("Procedimento cadastrado com sucesso"));
-    }
+    setSaving(true);
+    try {
+      const data = {
+        name: form.name,
+        category: form.category,
+        status: form.status,
+        description: form.description,
+        durationMinutes,
+        priceValue,
+        sessions,
+        triagem: form.triagem,
+        triagemMinutes: form.triagem ? triagemMinutes : 0,
+        bloqueioPeriodo,
+      };
+      if (editingId !== null) {
+        await editProcedure(editingId, data);
+        toast.success(copy("Procedimento atualizado com sucesso"));
+      } else {
+        await addProcedure(data);
+        toast.success(copy("Procedimento cadastrado com sucesso"));
+      }
 
-    setForm(emptyForm);
-    setErrors({});
-    setModalOpen(false);
-    setEditingId(null);
+      setForm(emptyForm);
+      setErrors({});
+      setModalOpen(false);
+      setEditingId(null);
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleClose() {
@@ -150,12 +202,16 @@ export function ProceduresPage() {
     setEditingId(null);
   }
 
-  function handleConfirmDelete() {
+  async function handleConfirmDelete() {
     if (deleteId === null) return;
 
-    deleteProcedure(deleteId);
-    toast.success(copy("Procedimento excluído"));
-    setDeleteId(null);
+    try {
+      await deleteProcedure(deleteId);
+      toast.success(copy("Procedimento excluído"));
+      setDeleteId(null);
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    }
   }
 
   return (
@@ -168,6 +224,12 @@ export function ProceduresPage() {
           {copy("Gerencie os procedimentos oferecidos")}
         </p>
       </div>
+
+      {error && (
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-4 md:p-6 border-b border-gray-200">
@@ -236,26 +298,28 @@ export function ProceduresPage() {
                     {procedure.category}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 ml-2">
-                  <button
-                    onClick={(e) => handleOpenEdit(e, procedure.id)}
-                    className="p-1.5 hover:bg-brand-50 hover:text-brand-600 rounded-lg transition-colors text-gray-400 opacity-0 group-hover:opacity-100"
-                    title="Editar"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDeleteId(procedure.id);
-                    }}
-                    className="p-1.5 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-gray-400 opacity-0 group-hover:opacity-100"
-                    title="Excluir"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {user?.isAdmin && (
+                  <div className="flex items-center gap-1 ml-2">
+                    <button
+                      onClick={(e) => handleOpenEdit(e, procedure.id)}
+                      className="p-1.5 hover:bg-brand-50 hover:text-brand-600 rounded-lg transition-colors text-gray-400 opacity-0 group-hover:opacity-100"
+                      title="Editar"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteId(procedure.id);
+                      }}
+                      className="p-1.5 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-gray-400 opacity-0 group-hover:opacity-100"
+                      title="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {procedure.description && (
@@ -287,18 +351,22 @@ export function ProceduresPage() {
 
           {filteredProcedures.length === 0 && (
             <div className="col-span-full py-16 text-center text-gray-400">
-              <p className="text-sm">{copy("Nenhum procedimento encontrado")}</p>
+              <p className="text-sm">
+                {loading ? "Carregando procedimentos..." : copy("Nenhum procedimento encontrado")}
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      <button
-        onClick={handleOpenCreate}
-        className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-[60]"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {user?.isAdmin && (
+        <button
+          onClick={handleOpenCreate}
+          className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-[60]"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
 
       <AlertDialog
         open={deleteId !== null}
@@ -404,6 +472,60 @@ export function ProceduresPage() {
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sessões</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.sessions}
+                  onChange={(e) => handleField("sessions", e.target.value)}
+                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.sessions ? "border-red-400" : "border-gray-300"}`}
+                />
+                {errors.sessions && <p className="mt-1 text-xs text-red-500">{errors.sessions}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Triagem (min)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.triagemMinutes}
+                  onChange={(e) => handleField("triagemMinutes", e.target.value)}
+                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.triagemMinutes ? "border-red-400" : "border-gray-300"}`}
+                />
+                {errors.triagemMinutes && (
+                  <p className="mt-1 text-xs text-red-500">{errors.triagemMinutes}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bloqueio (dias)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.bloqueioPeriodo}
+                  onChange={(e) => handleField("bloqueioPeriodo", e.target.value)}
+                  placeholder="Opcional"
+                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.bloqueioPeriodo ? "border-red-400" : "border-gray-300"}`}
+                />
+                {errors.bloqueioPeriodo && (
+                  <p className="mt-1 text-xs text-red-500">{errors.bloqueioPeriodo}</p>
+                )}
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={form.triagem}
+                onChange={(e) => setForm((prev) => ({ ...prev, triagem: e.target.checked }))}
+              />
+              Exige triagem antes do procedimento
+            </label>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <div className="flex gap-2">
@@ -444,10 +566,15 @@ export function ProceduresPage() {
             </button>
             <button
               type="button"
-              onClick={handleSubmit}
-              className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+              disabled={saving}
+              onClick={() => void handleSubmit()}
+              className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              {editingId !== null ? "Salvar Alterações" : copy("Salvar Procedimento")}
+              {saving
+                ? "Salvando..."
+                : editingId !== null
+                  ? "Salvar Alterações"
+                  : copy("Salvar Procedimento")}
             </button>
           </DialogFooter>
         </DialogContent>

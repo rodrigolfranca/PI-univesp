@@ -7,10 +7,16 @@ export function AppointmentsListView({
   appointments: filteredAppointments,
   onCancel,
   onGCal,
+  onStatus,
+  gcalConnected,
+  canManage,
 }: {
   appointments: Appointment[];
   onCancel: (appointment: Appointment) => void;
   onGCal: (appointment: Appointment) => void;
+  onStatus: (appointment: Appointment, status: "completed" | "absent") => void;
+  gcalConnected: boolean;
+  canManage: boolean;
 }) {
   const copy = useTerminology();
   return (
@@ -48,6 +54,9 @@ export function AppointmentsListView({
                   appointment={appt}
                   onCancel={onCancel}
                   onGCal={onGCal}
+                  onStatus={onStatus}
+                  gcalConnected={gcalConnected}
+                  canManage={canManage}
                   trigger={
                     <button
                       aria-label="Ações do agendamento"
@@ -122,6 +131,9 @@ export function AppointmentsListView({
                       appointment={appt}
                       onCancel={onCancel}
                       onGCal={onGCal}
+                      onStatus={onStatus}
+                      gcalConnected={gcalConnected}
+                      canManage={canManage}
                       trigger={
                         <button
                           aria-label="Ações do agendamento"

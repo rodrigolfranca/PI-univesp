@@ -136,10 +136,11 @@ function MockClientDocuments({ documents, canEdit, onChange }: MockClientDocumen
           </div>
         </form>
       )}
-      {/* TODO(integracao): buscar atendimentos pelo ID de cliente quando a agenda for integrada. */}
+      {/* TODO(integracao): buscar o histórico quando houver endpoint de atendimentos por cliente. */}
       <h3 className="font-medium">Histórico demonstrativo</h3>
       <p className="text-sm text-gray-500">
-        Nenhum atendimento vinculado. A agenda ainda não foi integrada a esta conta.
+        Nenhum atendimento vinculado. O histórico de atendimentos ainda não está integrado a esta
+        conta.
       </p>
     </>
   );
