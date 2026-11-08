@@ -5,14 +5,18 @@ import { AppointmentActionsMenu } from "./AppointmentActionsMenu";
 import { User, Calendar as CalendarIcon, Clock, MoreVertical } from "lucide-react";
 export function AppointmentsListView({
   appointments: filteredAppointments,
+  onDetails,
   onCancel,
+  onDelete,
   onGCal,
   onStatus,
   gcalConnected,
   canManage,
 }: {
   appointments: Appointment[];
+  onDetails: (appointment: Appointment) => void;
   onCancel: (appointment: Appointment) => void;
+  onDelete: (appointment: Appointment) => void;
   onGCal: (appointment: Appointment) => void;
   onStatus: (appointment: Appointment, status: "completed" | "absent") => void;
   gcalConnected: boolean;
@@ -52,7 +56,9 @@ export function AppointmentsListView({
                 </div>
                 <AppointmentActionsMenu
                   appointment={appt}
+                  onDetails={onDetails}
                   onCancel={onCancel}
+                  onDelete={onDelete}
                   onGCal={onGCal}
                   onStatus={onStatus}
                   gcalConnected={gcalConnected}
@@ -129,7 +135,9 @@ export function AppointmentsListView({
                   <td className="px-6 py-4 text-right">
                     <AppointmentActionsMenu
                       appointment={appt}
+                      onDetails={onDetails}
                       onCancel={onCancel}
+                      onDelete={onDelete}
                       onGCal={onGCal}
                       onStatus={onStatus}
                       gcalConnected={gcalConnected}

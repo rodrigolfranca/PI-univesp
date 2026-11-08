@@ -32,7 +32,7 @@ export function ClientLayout() {
             <BrandLogo size="dashboard" />
             <div>
               <h1 className="text-base font-semibold text-brand-700 leading-tight">{name}</h1>
-              {user?.phone && <p className="text-xs text-gray-400">{user.phone}</p>}
+              {user?.name && <p className="text-xs text-gray-400">{user.name}</p>}
             </div>
           </div>
 
