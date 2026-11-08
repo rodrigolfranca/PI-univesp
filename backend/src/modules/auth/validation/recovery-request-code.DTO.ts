@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import {
+    IsEmail,
+    IsNotEmpty,
+    IsNumberString,
+    IsOptional,
+    Matches,
+} from 'class-validator';
 
 export class RecoveryRequestCodeDTO {
     @ApiProperty({
@@ -10,4 +16,17 @@ export class RecoveryRequestCodeDTO {
     @IsNotEmpty()
     @IsEmail()
     email: string;
+
+    @ApiProperty({
+        description: 'Novo telefone que receberá o código',
+        example: '11953797436',
+        required: false,
+        type: String,
+    })
+    @IsOptional()
+    @IsNumberString()
+    @Matches(/^\d{11}$/, {
+        message: 'Telefone deve conter exatamente 11 dígitos: 11953797436',
+    })
+    phone_number?: string;
 }

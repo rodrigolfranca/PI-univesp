@@ -13,6 +13,7 @@ interface UserFormProps {
   onCancel?: () => void;
   onPendingChange?: (pending: boolean) => void;
   submitLabel?: string;
+  lockContact?: boolean;
 }
 
 const EMPTY_USER: UserFields = { name: "", phone: "", email: "" };
@@ -29,6 +30,7 @@ export function UserForm({
   onCancel,
   onPendingChange,
   submitLabel = "Salvar alterações",
+  lockContact = false,
 }: UserFormProps) {
   const id = useId();
   const [fields, setFields] = useState<UserFields>(initialValues);
@@ -84,6 +86,7 @@ export function UserForm({
               autoComplete={field.autoComplete}
               value={fields[field.name]}
               required
+              readOnly={lockContact && field.name !== "name"}
               maxLength={field.name === "name" ? 150 : undefined}
               aria-invalid={Boolean(errors[field.name])}
               aria-describedby={errors[field.name] ? `${id}-${field.name}-error` : undefined}

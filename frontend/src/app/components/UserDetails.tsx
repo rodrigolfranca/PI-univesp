@@ -10,6 +10,8 @@ import { DeleteUserButton } from "./DeleteUserButton";
 import { RequestState } from "./RequestState";
 import { UserForm } from "./UserForm";
 import { ClientHistory } from "./ClientHistory";
+import { ContactChangeDialog } from "./ContactChangeDialog";
+import type { ContactField } from "../services/contact-change";
 import { Button } from "./ui/button";
 
 export function UserDetails({ id, kind }: { id: number; kind: UserKind }) {
@@ -24,7 +26,13 @@ export function UserDetails({ id, kind }: { id: number; kind: UserKind }) {
       </Link>
       <RequestState loading={loading} error={error} onRetry={reload} />
       {ready && user && (
-        <LoadedUserDetails key={user.id} user={user} kind={kind} onUpdated={setUser} />
+        <LoadedUserDetails
+          key={user.id}
+          user={user}
+          kind={kind}
+          onUpdated={setUser}
+          onReload={reload}
+        />
       )}
     </div>
   );
@@ -34,13 +42,15 @@ interface LoadedUserDetailsProps {
   user: ApiUser;
   kind: UserKind;
   onUpdated: (user: ApiUser) => void;
+  onReload: () => void;
 }
 
-function LoadedUserDetails({ user, kind, onUpdated }: LoadedUserDetailsProps) {
+function LoadedUserDetails({ user, kind, onUpdated, onReload }: LoadedUserDetailsProps) {
   const { user: currentUser } = useAuth();
   const { update } = useUsers();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+  const [contactField, setContactField] = useState<ContactField | null>(null);
   const canEdit = Boolean(currentUser?.isAdmin || currentUser?.userId === user.id);
   const initialValues = { name: user.name, phone: user.phone_number, email: user.email };
 
@@ -81,6 +91,7 @@ function LoadedUserDetails({ user, kind, onUpdated }: LoadedUserDetailsProps) {
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             onSuccess={handleSuccess}
+            lockContact
           />
         ) : (
           <UserPersonalDetails
@@ -89,9 +100,17 @@ function LoadedUserDetails({ user, kind, onUpdated }: LoadedUserDetailsProps) {
             canDelete={Boolean(currentUser?.isAdmin)}
             onEdit={handleEdit}
             onDeleted={handleDeleted}
+            onChangeContact={setContactField}
           />
         )}
       </section>
+      <ContactChangeDialog
+        userId={user.id}
+        field={contactField}
+        currentValue={contactField === "phone" ? user.phone_number : user.email}
+        onClose={() => setContactField(null)}
+        onSuccess={onReload}
+      />
       {kind === "client" && user.client && <ClientHistory clientId={user.client.id} />}
     </>
   );
@@ -103,6 +122,7 @@ interface UserPersonalDetailsProps {
   canDelete: boolean;
   onEdit: () => void;
   onDeleted: () => void;
+  onChangeContact: (field: ContactField) => void;
 }
 
 function UserPersonalDetails({
@@ -111,6 +131,7 @@ function UserPersonalDetails({
   canDelete,
   onEdit,
   onDeleted,
+  onChangeContact,
 }: UserPersonalDetailsProps) {
   return (
     <>
@@ -136,9 +157,17 @@ function UserPersonalDetails({
       </dl>
       <div className="flex flex-wrap gap-3">
         {canEdit && (
-          <Button type="button" onClick={onEdit}>
-            Editar dados
-          </Button>
+          <>
+            <Button type="button" onClick={onEdit}>
+              Editar dados
+            </Button>
+            <Button type="button" variant="outline" onClick={() => onChangeContact("phone")}>
+              Alterar telefone
+            </Button>
+            <Button type="button" variant="outline" onClick={() => onChangeContact("email")}>
+              Alterar e-mail
+            </Button>
+          </>
         )}
         {canDelete && <DeleteUserButton user={user} onDeleted={onDeleted} />}
       </div>

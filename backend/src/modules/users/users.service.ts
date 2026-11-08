@@ -3,7 +3,10 @@ import {
     Inject,
     Injectable,
     Logger,
+    NotFoundException,
+    UnauthorizedException,
 } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import { Redis } from 'ioredis';
 import { Utils } from 'src/common/utils/utils';
 import { ClientsRepository } from './repositories/clients.repository';
@@ -12,6 +15,8 @@ import { UsersRepository } from './repositories/users.repository';
 import { UsersList } from './types/users.interfaces';
 import { UsersCreateDTO } from './validation/users-create.DTO';
 import { UsersListDTO } from './validation/users-list.DTO';
+import { ContactChangeRequestDTO } from './validation/contact-change-request.dto';
+import { ContactChangeVerifyDTO } from './validation/contact-change-verify.dto';
 import { UserUpdateDTO } from './validation/users-update.DTO';
 
 @Injectable()
@@ -129,6 +134,26 @@ export class UsersService {
 
     async updateUser(id: number, userUpdateDTO: UserUpdateDTO) {
         try {
+            const current = await this.usersRepository.getById(id);
+            if (!current) {
+                throw new NotFoundException('User not found');
+            }
+            if (
+                userUpdateDTO.phone_number !== undefined &&
+                userUpdateDTO.phone_number !== current.phone_number
+            ) {
+                throw new BadRequestException(
+                    'Alteração de telefone exige verificação do novo contato',
+                );
+            }
+            if (
+                userUpdateDTO.email !== undefined &&
+                userUpdateDTO.email !== current.email
+            ) {
+                throw new BadRequestException(
+                    'Alteração de e-mail exige verificação do novo contato',
+                );
+            }
             if (
                 !!userUpdateDTO.phone_number &&
                 !!(await this.usersRepository.findByPhoneNumber(
@@ -196,6 +221,73 @@ export class UsersService {
             Utils.logError(this.logger, 'Failed to find user by email', error);
             Utils.handleError(error);
         }
+    }
+
+    async requestContactChange(id: number, dto: ContactChangeRequestDTO) {
+        const user = await this.usersRepository.getById(id);
+        if (!user) throw new NotFoundException('User not found');
+        const value = dto.value.trim();
+        if (dto.field === 'phone') {
+            if (!/^\d{11}$/.test(value)) {
+                throw new BadRequestException(
+                    'Telefone deve conter exatamente 11 dígitos',
+                );
+            }
+            const existing =
+                await this.usersRepository.findByPhoneNumber(value);
+            if (existing && existing.id !== id) {
+                throw new BadRequestException(
+                    'Número de telefone já cadastrado',
+                );
+            }
+        } else {
+            const existing = await this.usersRepository.findByEmail(value);
+            if (existing && existing.id !== id) {
+                throw new BadRequestException('Email já cadastrado');
+            }
+        }
+
+        const code = String(randomInt(100000, 1000000));
+        await this.redis.setex(
+            `contact_change:${id}:${dto.field}`,
+            300,
+            JSON.stringify({ value, code }),
+        );
+        this.logger.log(`Contact change code for ${value}: ${code}`);
+        return {
+            message: 'Código enviado para o novo contato',
+            expires_in: 300,
+        };
+    }
+
+    async verifyContactChange(id: number, dto: ContactChangeVerifyDTO) {
+        const key = `contact_change:${id}:${dto.field}`;
+        const stored = await this.redis.get(key);
+        if (!stored) {
+            throw new UnauthorizedException('Código inválido ou expirado');
+        }
+        const parsed = JSON.parse(stored) as { value: string; code: string };
+        if (parsed.value !== dto.value.trim() || parsed.code !== dto.code) {
+            throw new UnauthorizedException('Código inválido ou expirado');
+        }
+        await this.redis.del(key);
+        if (dto.field === 'phone') {
+            await this.changePhoneNumber(id, dto.value.trim());
+        } else {
+            await this.changeEmail(id, dto.value.trim());
+        }
+        return { message: 'Contato atualizado com sucesso' };
+    }
+
+    async changeEmail(id: number, email: string) {
+        const existing = await this.usersRepository.findByEmail(email);
+        if (existing && existing.id !== id) {
+            throw new BadRequestException('Email já cadastrado');
+        }
+        await this.redis.del(`user:${id}`);
+        return await this.usersRepository.update(id, {
+            email,
+        } as UserUpdateDTO);
     }
 
     async changePhoneNumber(id: number, phone_number: string) {

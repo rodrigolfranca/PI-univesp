@@ -75,8 +75,10 @@ async function fillUser(name = "Ana Souza", phone = "11987654321", email = "ana@
     ["Telefone com DDD", phone],
     ["E-mail", email],
   ]) {
-    await input.clear(screen.getByLabelText(label));
-    await input.type(screen.getByLabelText(label), value);
+    const field = screen.getByLabelText(label) as HTMLInputElement;
+    if (field.readOnly) continue;
+    await input.clear(field);
+    await input.type(field, value);
   }
   return input;
 }

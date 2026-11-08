@@ -357,6 +357,47 @@ describe('API (e2e)', () => {
         });
     });
 
+    describe('Alteração de contato', () => {
+        it('PATCH /users/:id não altera telefone sem verificação', () => {
+            return request(app.getHttpServer())
+                .patch(`/users/${testClient.user.id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ phone_number: `119${String(Date.now()).slice(-8)}` })
+                .expect(400);
+        });
+
+        it('altera telefone após código enviado ao novo contato', async () => {
+            const phone = `119${String(Date.now()).slice(-8)}`;
+            await request(app.getHttpServer())
+                .post(`/users/${testClient.user.id}/contact/request`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ field: 'phone', value: phone })
+                .expect(201);
+
+            const stored = await redis.get(
+                `contact_change:${testClient.user.id}:phone`,
+            );
+            expect(stored).toBeTruthy();
+            const { code } = JSON.parse(stored!) as { code: string };
+
+            await request(app.getHttpServer())
+                .post(`/users/${testClient.user.id}/contact/verify`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ field: 'phone', value: phone, code })
+                .expect(201);
+
+            testClient.user.phone_number = phone;
+            await request(app.getHttpServer())
+                .get(`/users/${testClient.user.id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as { phone_number?: string };
+                    expect(body.phone_number).toBe(phone);
+                });
+        });
+    });
+
     describe('Agenda', () => {
         function nextMonday(): string {
             const date = new Date();

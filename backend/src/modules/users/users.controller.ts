@@ -21,6 +21,8 @@ import {
 import { UsersList } from './types/users.interfaces';
 import { UsersService } from './users.service';
 import { UsersCreateDTO } from './validation/users-create.DTO';
+import { ContactChangeRequestDTO } from './validation/contact-change-request.dto';
+import { ContactChangeVerifyDTO } from './validation/contact-change-verify.dto';
 import { UsersListDTO } from './validation/users-list.DTO';
 import { UserUpdateDTO } from './validation/users-update.DTO';
 
@@ -72,6 +74,28 @@ export class UsersController {
         @Body() userUpdateDTO: UserUpdateDTO,
     ) {
         return await this.usersService.updateUser(id, userUpdateDTO);
+    }
+
+    @Post(':id/contact/request')
+    @UseGuards(AuthGuard, AdminOrSelfGuard)
+    @ApiBearerAuth('JWT-auth')
+    @ApiOperation({ summary: 'Solicita código para alterar contato' })
+    async requestContactChange(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: ContactChangeRequestDTO,
+    ) {
+        return await this.usersService.requestContactChange(id, dto);
+    }
+
+    @Post(':id/contact/verify')
+    @UseGuards(AuthGuard, AdminOrSelfGuard)
+    @ApiBearerAuth('JWT-auth')
+    @ApiOperation({ summary: 'Confirma a alteração de contato' })
+    async verifyContactChange(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: ContactChangeVerifyDTO,
+    ) {
+        return await this.usersService.verifyContactChange(id, dto);
     }
 
     @Delete(':id')

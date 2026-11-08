@@ -104,9 +104,8 @@ export class AuthService {
             const code = this.cryptoService.generateCode();
             await this.redis.setex(`recovery_code:${email}`, 300, code);
 
-            // Sendgrid integration to send the code via email
-
-            this.logger.log(`Recovery code for ${email}: ${code}`); // For development purposes, log the code
+            const recipient = recoveryRequestCodeDTO.phone_number ?? email;
+            this.logger.log(`Recovery code for ${recipient}: ${code}`);
 
             return {
                 message: 'If the email is registered, a recovery code was sent',

@@ -6,13 +6,16 @@ import type { AuthUser } from "../context/AuthContext";
 import { useUsers } from "../context/UsersContext";
 import type { UserFields } from "../services/users";
 import { UserForm } from "./UserForm";
+import { ContactChangeDialog } from "./ContactChangeDialog";
+import type { ContactField } from "../services/contact-change";
 import { Button } from "./ui/button";
 
 export function UserProfile() {
-  const { user, logout } = useAuth();
+  const { user, logout, retrySession } = useAuth();
   const { update } = useUsers();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+  const [contactField, setContactField] = useState<ContactField | null>(null);
 
   function handleEdit() {
     setEditing(true);
@@ -49,18 +52,34 @@ export function UserProfile() {
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           onSuccess={handleSuccess}
+          lockContact
         />
       ) : (
-        <ProfileSummary user={user} onEdit={handleEdit} />
+        <ProfileSummary user={user} onEdit={handleEdit} onChangeContact={setContactField} />
       )}
       <Button type="button" variant="outline" onClick={handleLogout}>
         Sair da conta
       </Button>
+      <ContactChangeDialog
+        userId={user.userId}
+        field={contactField}
+        currentValue={contactField === "phone" ? user.phone : user.email}
+        onClose={() => setContactField(null)}
+        onSuccess={retrySession}
+      />
     </section>
   );
 }
 
-function ProfileSummary({ user, onEdit }: { user: AuthUser; onEdit: () => void }) {
+function ProfileSummary({
+  user,
+  onEdit,
+  onChangeContact,
+}: {
+  user: AuthUser;
+  onEdit: () => void;
+  onChangeContact: (field: ContactField) => void;
+}) {
   const permissionLabel = getPermissionLabel(user);
   return (
     <>
@@ -82,9 +101,17 @@ function ProfileSummary({ user, onEdit }: { user: AuthUser; onEdit: () => void }
           <dd>{permissionLabel}</dd>
         </div>
       </dl>
-      <Button type="button" onClick={onEdit}>
-        Editar perfil
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={onEdit}>
+          Editar perfil
+        </Button>
+        <Button type="button" variant="outline" onClick={() => onChangeContact("phone")}>
+          Alterar telefone
+        </Button>
+        <Button type="button" variant="outline" onClick={() => onChangeContact("email")}>
+          Alterar e-mail
+        </Button>
+      </div>
     </>
   );
 }
