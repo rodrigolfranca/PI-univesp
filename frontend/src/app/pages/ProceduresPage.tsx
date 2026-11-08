@@ -472,60 +472,6 @@ export function ProceduresPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sessões</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.sessions}
-                  onChange={(e) => handleField("sessions", e.target.value)}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.sessions ? "border-red-400" : "border-gray-300"}`}
-                />
-                {errors.sessions && <p className="mt-1 text-xs text-red-500">{errors.sessions}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Triagem (min)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.triagemMinutes}
-                  onChange={(e) => handleField("triagemMinutes", e.target.value)}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.triagemMinutes ? "border-red-400" : "border-gray-300"}`}
-                />
-                {errors.triagemMinutes && (
-                  <p className="mt-1 text-xs text-red-500">{errors.triagemMinutes}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bloqueio (dias)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.bloqueioPeriodo}
-                  onChange={(e) => handleField("bloqueioPeriodo", e.target.value)}
-                  placeholder="Opcional"
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 ${errors.bloqueioPeriodo ? "border-red-400" : "border-gray-300"}`}
-                />
-                {errors.bloqueioPeriodo && (
-                  <p className="mt-1 text-xs text-red-500">{errors.bloqueioPeriodo}</p>
-                )}
-              </div>
-            </div>
-
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={form.triagem}
-                onChange={(e) => setForm((prev) => ({ ...prev, triagem: e.target.checked }))}
-              />
-              Exige triagem antes do procedimento
-            </label>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <div className="flex gap-2">

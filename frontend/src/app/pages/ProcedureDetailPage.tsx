@@ -286,18 +286,6 @@ export function ProcedureDetailPage() {
                   <p className="text-gray-600">{procedure.price}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Sessões</h3>
-                  <p className="text-gray-600">{procedure.sessions}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Triagem</h3>
-                  <p className="text-gray-600">
-                    {procedure.triagem ? `${procedure.triagemMinutes} min` : "Não exige"}
-                  </p>
-                </div>
-              </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-1">Status</h3>
                 <span
@@ -410,10 +398,6 @@ export function ProcedureDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Informações</h2>
             <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-500">Sessões incluídas</p>
-                <p className="text-2xl font-bold text-brand-600">{procedure.sessions}</p>
-              </div>
               <div>
                 <p className="text-sm text-gray-500">Documentos POP</p>
                 <p className="text-2xl font-bold text-gray-900">{pops.length}</p>

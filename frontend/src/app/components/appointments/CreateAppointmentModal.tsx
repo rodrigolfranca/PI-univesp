@@ -30,7 +30,6 @@ export function CreateAppointmentModal({
   const [selectedProfessionalId, setSelectedProfessionalId] = useState("");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState("");
-  const [session, setSession] = useState(1);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [slots, setSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
@@ -90,14 +89,13 @@ export function CreateAppointmentModal({
         procedureId: Number(selectedProcedureId),
         date: selectedDate,
         time: selectedTime,
-        session: procedure?.triagem ? session : 1,
+        session: 1,
       });
       setSelectedProcedureId("");
       setSelectedClientId("");
       setSelectedProfessionalId("");
       setSelectedDate(null);
       setSelectedTime("");
-      setSession(1);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -134,7 +132,6 @@ export function CreateAppointmentModal({
               value={selectedProcedureId}
               onChange={(e) => {
                 setSelectedProcedureId(e.target.value);
-                setSession(1);
                 setSelectedTime("");
               }}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
@@ -149,28 +146,6 @@ export function CreateAppointmentModal({
                 ))}
             </select>
           </div>
-
-          {procedure?.triagem && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSession(0)}
-                  className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium ${session === 0 ? "bg-brand-600 text-white" : "bg-gray-100 text-gray-700"}`}
-                >
-                  Triagem ({procedure.triagemMinutes} min)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSession(1)}
-                  className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium ${session === 1 ? "bg-brand-600 text-white" : "bg-gray-100 text-gray-700"}`}
-                >
-                  Sessão ({procedure.duration})
-                </button>
-              </div>
-            </div>
-          )}
 
           <div>
             <label
