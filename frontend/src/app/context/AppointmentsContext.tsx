@@ -21,6 +21,7 @@ const AppointmentsContext = createContext<AppointmentsContextValue>({
 export function AppointmentsProvider({ children }: { children: React.ReactNode }) {
   const site = useSite();
   const STORAGE_KEY = useStorageKey("appointments_data");
+  // TODO(integracao): conectar a agenda à API em uma próxima etapa; estes dados são demonstrativos.
   const initialAppointments = site.data.appointments;
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     try {

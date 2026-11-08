@@ -43,12 +43,16 @@ const typeConfig: Record<
 };
 
 export function ClienteNotificacoesPage() {
+  // TODO(integracao): substituir as notificações demonstrativas por dados da conta autenticada.
   const MOCK_NOTIFICATIONS = useSite().data.clientNotifications;
   const unread = MOCK_NOTIFICATIONS.filter((n) => !n.read);
   const read = MOCK_NOTIFICATIONS.filter((n) => n.read);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+      <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+        Dados de demonstração. Esta seção ainda não foi integrada à sua conta.
+      </p>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Notificações</h1>
         {unread.length > 0 && (
