@@ -4,6 +4,8 @@ import {
     IsIn,
     IsOptional,
     IsPositive,
+    IsString,
+    Length,
     Matches,
 } from 'class-validator';
 import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
@@ -26,6 +28,17 @@ export class ScheduleExceptionUpdateDto {
     @IsOptional()
     @IsIn(Object.values(ScheduleExceptionType))
     type: string;
+
+    @ApiProperty({
+        description: 'Nome ou motivo da exceção',
+        example: 'Feriado',
+        required: false,
+        nullable: true,
+    })
+    @IsOptional()
+    @IsString()
+    @Length(1, 255)
+    name?: string | null;
 
     @ApiProperty({ required: false, nullable: true, example: '09:00' })
     @IsOptional()

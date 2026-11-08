@@ -6,7 +6,9 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { ScheduleStatus } from '../consts/schedule.status';
+import { Client } from './clients.model';
 import { Procedure } from './procedures.model';
+import { Professional } from './professionals.model';
 
 @Table({
     tableName: 'schedules',
@@ -81,4 +83,10 @@ export class Schedule extends Model {
 
     @BelongsTo(() => Procedure, 'procedure_id')
     declare procedure: Procedure;
+
+    @BelongsTo(() => Client, 'client_id')
+    declare client: Client;
+
+    @BelongsTo(() => Professional, 'professional_id')
+    declare professional: Professional;
 }

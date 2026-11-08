@@ -8,6 +8,7 @@ import {
     Procedure,
     Professional,
     Schedule,
+    ScheduleException,
     User,
     WorkSchedule,
 } from 'src/common/models';
@@ -35,6 +36,7 @@ describe('API (e2e)', () => {
     const createdUsers: TestUser[] = [];
     const createdClients: TestClient[] = [];
     const createdProcedureIds: number[] = [];
+    const createdExceptionIds: number[] = [];
 
     async function createTestClient(): Promise<TestClient> {
         const suffix = String(Date.now()).slice(-8);
@@ -103,6 +105,9 @@ describe('API (e2e)', () => {
             }
             for (const id of createdProcedureIds) {
                 await Procedure.destroy({ where: { id }, force: true });
+            }
+            for (const id of createdExceptionIds) {
+                await ScheduleException.destroy({ where: { id }, force: true });
             }
             for (const { user, professional } of createdUsers) {
                 await redis.del(`user:${user.id}`);
@@ -290,9 +295,109 @@ describe('API (e2e)', () => {
                 .set('Authorization', `Bearer ${clientToken}`)
                 .expect(200)
                 .expect((res) => {
-                    const body = res.body as { total?: number };
+                    const body = res.body as {
+                        total?: number;
+                        data?: {
+                            client_id: number;
+                            client?: { name?: string; phone_number?: string };
+                            professional?: {
+                                name?: string;
+                                phone_number?: string;
+                            };
+                        }[];
+                    };
                     expect(body.total).toBeGreaterThan(0);
+                    expect(body.data?.length).toBeGreaterThan(0);
+                    expect(
+                        body.data?.every(
+                            (entry) => entry.client_id === testClient.client.id,
+                        ),
+                    ).toBe(true);
+                    expect(body.data?.[0]?.client?.name).toBe(
+                        testClient.user.name,
+                    );
+                    expect(body.data?.[0]?.client?.phone_number).toBe(
+                        testClient.user.phone_number,
+                    );
+                    expect(body.data?.[0]?.professional?.name).toBe(
+                        professional.user.name,
+                    );
+                    expect(body.data?.[0]?.professional?.phone_number).toBe(
+                        professional.user.phone_number,
+                    );
                 });
+
+            await request(app.getHttpServer())
+                .get(`/schedules?client_id=${testClient.client.id + 999}`)
+                .set('Authorization', `Bearer ${clientToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as {
+                        data?: { client_id: number }[];
+                    };
+                    expect(
+                        body.data?.every(
+                            (entry) => entry.client_id === testClient.client.id,
+                        ),
+                    ).toBe(true);
+                });
+        });
+
+        it('exceção de agenda aceita e retorna nome', async () => {
+            const date = '2031-01-01';
+            const created = await request(app.getHttpServer())
+                .post('/schedule-exceptions')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    professional_id: professional.professional.id,
+                    date,
+                    type: 'open',
+                    name: 'Feriado',
+                })
+                .expect(201);
+            const id = (created.body as { id: number }).id;
+            createdExceptionIds.push(id);
+
+            await request(app.getHttpServer())
+                .get(
+                    `/schedule-exceptions?professional_id=${professional.professional.id}&date=${date}`,
+                )
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as {
+                        data?: { id: number; name?: string }[];
+                    };
+                    expect(
+                        body.data?.find((entry) => entry.id === id)?.name,
+                    ).toBe('Feriado');
+                });
+
+            await request(app.getHttpServer())
+                .patch(`/schedule-exceptions/${id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ name: 'Feriado Atualizado' })
+                .expect(200);
+
+            await request(app.getHttpServer())
+                .get(
+                    `/schedule-exceptions?professional_id=${professional.professional.id}&date=${date}`,
+                )
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as {
+                        data?: { id: number; name?: string }[];
+                    };
+                    expect(
+                        body.data?.find((entry) => entry.id === id)?.name,
+                    ).toBe('Feriado Atualizado');
+                });
+
+            await request(app.getHttpServer())
+                .delete(`/schedule-exceptions/${id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
         });
     });
 

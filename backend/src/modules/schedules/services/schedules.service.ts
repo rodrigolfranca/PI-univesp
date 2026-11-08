@@ -5,6 +5,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Procedure, Schedule } from 'src/common/models';
+import { UserWithType } from 'src/common/types/users.type';
 import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
 import { Utils } from 'src/common/utils/utils';
 import { GoogleCalendarService } from 'src/modules/google-calendar/google-calendar.service';
@@ -46,13 +47,51 @@ export class SchedulesService {
         }
     }
 
-    async getAll(dto: ScheduleGetAllDto) {
+    async getAll(dto: ScheduleGetAllDto, user?: UserWithType) {
         try {
-            return await this.scheduleRepository.findByFilters(dto);
+            if (user?.client && !user.professional) {
+                dto.client_id = user.client.id;
+            }
+            const result = await this.scheduleRepository.findByFilters(dto);
+            return {
+                ...result,
+                data: result.data.map((schedule) =>
+                    this.serializeSchedule(schedule),
+                ),
+            };
         } catch (error) {
             Utils.logError(this.logger, 'Failed to get schedules', error);
             Utils.handleError(error);
         }
+    }
+
+    private serializeSchedule(schedule: Schedule) {
+        type Relation = {
+            id: number;
+            user?: { name: string; phone_number: string };
+        };
+        const plain = schedule.get({ plain: true }) as {
+            client?: Relation;
+            professional?: Relation;
+        } & Record<string, unknown>;
+        return {
+            ...plain,
+            client: plain.client
+                ? {
+                      id: plain.client.id,
+                      name: plain.client.user?.name ?? null,
+                      phone_number: plain.client.user?.phone_number ?? null,
+                  }
+                : null,
+            professional: plain.professional
+                ? {
+                      id: plain.professional.id,
+                      name: plain.professional.user?.name ?? null,
+                      phone_number:
+                          plain.professional.user?.phone_number ?? null,
+                  }
+                : null,
+        };
     }
 
     async update(id: number, dto: ScheduleUpdateDto) {

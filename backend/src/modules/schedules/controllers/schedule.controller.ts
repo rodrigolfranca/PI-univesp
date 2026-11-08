@@ -8,9 +8,11 @@ import {
     Patch,
     Post,
     Query,
+    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { RequestWithUser } from 'src/common/types/request.type';
 import { AdminGuard, AuthGuard } from '../../auth/guards';
 import { ScheduleCreateGuard } from '../guards/schedule-create.guard';
 import { SchedulesService } from '../services/schedules.service';
@@ -38,8 +40,11 @@ export class ScheduleController {
     @ApiOperation({ summary: 'Lista agendamentos com filtros opcionais' })
     @ApiBearerAuth('JWT-auth')
     @UseGuards(AuthGuard)
-    async getAll(@Query() dto: ScheduleGetAllDto) {
-        return await this.schedulesService.getAll(dto);
+    async getAll(
+        @Query() dto: ScheduleGetAllDto,
+        @Req() request: RequestWithUser,
+    ) {
+        return await this.schedulesService.getAll(dto, request.user);
     }
 
     @Patch(':id')

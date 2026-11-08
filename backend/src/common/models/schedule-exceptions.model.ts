@@ -59,6 +59,12 @@ export class ScheduleException extends Model {
     })
     declare end_time: string | null;
 
+    @Column({
+        type: DataType.STRING(255),
+        allowNull: true,
+    })
+    declare name: string | null;
+
     @BelongsTo(() => Professional, 'professional_id')
     declare professional: Professional;
 }
