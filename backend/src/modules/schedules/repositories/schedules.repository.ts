@@ -1,7 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { Op, WhereOptions } from 'sequelize';
 import { ScheduleStatus } from 'src/common/consts/schedule.status';
-import { Procedure, Schedule } from 'src/common/models';
+import {
+    Client,
+    Procedure,
+    Professional,
+    Schedule,
+    User,
+} from 'src/common/models';
 import { ScheduleCreateDto } from '../validation/schedule-create.DTO';
 import { ScheduleGetAllDto } from '../validation/schedule-get-all.DTO';
 import { ScheduleUpdateDto } from '../validation/schedule-update.DTO';
@@ -40,7 +46,19 @@ export class ScheduleRepository {
 
         const { count, rows } = await Schedule.findAndCountAll({
             where,
-            include: [{ model: Procedure, as: 'procedure' }],
+            include: [
+                { model: Procedure, as: 'procedure' },
+                {
+                    model: Client,
+                    as: 'client',
+                    include: [{ model: User, as: 'user', required: true }],
+                },
+                {
+                    model: Professional,
+                    as: 'professional',
+                    include: [{ model: User, as: 'user', required: true }],
+                },
+            ],
             limit: dto.limit,
             offset: (dto.page - 1) * dto.limit,
             order: [

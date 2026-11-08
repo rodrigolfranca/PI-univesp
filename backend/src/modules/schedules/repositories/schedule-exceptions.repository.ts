@@ -51,6 +51,7 @@ export class ScheduleExceptionsRepository {
                 }),
                 ...(dto.date !== undefined && { date: dto.date }),
                 ...(dto.type !== undefined && { type: dto.type }),
+                ...(dto.name !== undefined && { name: dto.name }),
                 ...(dto.start_time !== undefined && {
                     start_time: dto.start_time,
                 }),
