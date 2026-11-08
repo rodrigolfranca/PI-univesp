@@ -9,7 +9,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { RequestWithUser } from 'src/common/types/request.type';
 import { AdminGuard, AuthGuard } from '../auth/guards';
@@ -44,23 +44,39 @@ export class GoogleCalendarController {
     })
     async callback(
         @Query() dto: GoogleCalendarCallbackDTO,
+        @Req() request: Request,
         @Res() response: Response,
     ) {
         const frontend = this.frontendUrl();
+        const browser = this.wantsHtml(request);
         try {
-            await this.googleCalendarService.handleCallback(dto);
-            return response.redirect(
-                `${frontend}/app/settings?google=connected`,
-            );
+            const result = await this.googleCalendarService.handleCallback(dto);
+            if (browser) {
+                return response.redirect(
+                    `${frontend}/app/settings?google=connected`,
+                );
+            }
+            return response.json(result);
         } catch (error) {
+            const status =
+                error instanceof HttpException ? error.getStatus() : 500;
             const message =
                 error instanceof HttpException
                     ? error.message
                     : 'Falha ao conectar a agenda Google';
-            return response.redirect(
-                `${frontend}/app/settings?google=error&message=${encodeURIComponent(message)}`,
-            );
+            if (browser) {
+                return response.redirect(
+                    `${frontend}/app/settings?google=error&message=${encodeURIComponent(message)}`,
+                );
+            }
+            return response
+                .status(status)
+                .json({ statusCode: status, message });
         }
+    }
+
+    private wantsHtml(request: Request): boolean {
+        return (request.headers.accept ?? '').includes('text/html');
     }
 
     private frontendUrl(): string {
