@@ -1,20 +1,13 @@
 import { useTerminology } from "../config/SiteContext";
 import { UserProfile } from "../components/UserProfile";
 import { GoogleCalendarSettings } from "../components/GoogleCalendarSettings";
-import { AvailabilitySettings } from "../components/AvailabilitySettings";
-import { useAuth } from "../context/AuthContext";
 import type { Theme } from "../config/types";
 import React, { useRef, useState } from "react";
-import { Link } from "react-router";
 import {
-  Users,
-  Lock,
-  LogOut,
   Phone,
   Palette,
   Upload,
   Check,
-  LayoutList,
   Instagram,
   Images,
   ImageOff,
@@ -26,7 +19,6 @@ import { useGallery } from "../context/GalleryContext";
 
 export function SettingsPage() {
   const copy = useTerminology();
-  const { logout } = useAuth();
   const {
     name,
     logoUrl,
@@ -110,13 +102,11 @@ export function SettingsPage() {
         <p className="text-gray-500 mt-1 text-sm md:text-base">Gerencie suas preferências</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-6">
+        <div className="space-y-6">
           <UserProfile />
 
           <GoogleCalendarSettings />
-
-          <AvailabilitySettings />
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -420,69 +410,6 @@ export function SettingsPage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
-
-            <div className="space-y-3">
-              <Link
-                to="/app/employees"
-                className="flex items-center gap-3 p-3 md:p-4 rounded-lg border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Users className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-medium text-gray-900 text-sm md:text-base">Funcionários</h3>
-                  <p className="text-xs md:text-sm text-gray-500">Gerenciar equipe</p>
-                </div>
-              </Link>
-
-              <Link
-                to="/app/categories"
-                className="flex items-center gap-3 p-3 md:p-4 rounded-lg border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
-                  <LayoutList className="w-5 h-5 text-brand-600" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-medium text-gray-900 text-sm md:text-base">Categorias</h3>
-                  <p className="text-xs md:text-sm text-gray-500">
-                    {copy("Gerenciar categorias de procedimentos")}
-                  </p>
-                </div>
-              </Link>
-
-              <Link
-                to="/app/change-password"
-                className="flex items-center gap-3 p-3 md:p-4 rounded-lg border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                  <Lock className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-medium text-gray-900 text-sm md:text-base">Trocar Senha</h3>
-                  <p className="text-xs md:text-sm text-gray-500">Atualizar senha</p>
-                </div>
-              </Link>
-
-              <Link
-                to="/login"
-                onClick={logout}
-                className="w-full flex items-center gap-3 p-3 md:p-4 rounded-lg border border-red-200 hover:bg-red-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                  <LogOut className="w-5 h-5 text-red-600" />
-                </div>
-                <div className="text-left min-w-0">
-                  <h3 className="font-medium text-gray-900 text-sm md:text-base">Sair</h3>
-                  <p className="text-xs md:text-sm text-gray-500">Encerrar sessão</p>
-                </div>
-              </Link>
-            </div>
           </div>
         </div>
       </div>

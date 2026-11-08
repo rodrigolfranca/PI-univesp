@@ -1,6 +1,7 @@
 import { useTerminology } from "../config/SiteContext";
 import { Outlet, Link, useLocation } from "react-router";
-import { Users, Sparkles, Calendar, Bell, UserCircle } from "lucide-react";
+import { Users, Sparkles, Calendar, Bell, UserCircle, CalendarClock, Tags } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import { BrandLogo } from "./BrandLogo";
 import { useBrand } from "../context/BrandContext";
 
@@ -8,6 +9,7 @@ export function RootLayout() {
   const copy = useTerminology();
   const location = useLocation();
   const { name } = useBrand();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -29,6 +31,25 @@ export function RootLayout() {
       icon: Calendar,
       label: "Agendamentos",
     },
+    ...(user?.isAdmin
+      ? [
+          {
+            path: "/app/availability",
+            icon: CalendarClock,
+            label: "Disponibilidade",
+          },
+          {
+            path: "/app/employees",
+            icon: Users,
+            label: "Equipe",
+          },
+          {
+            path: "/app/categories",
+            icon: Tags,
+            label: "Categorias",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -80,7 +101,10 @@ export function RootLayout() {
       </main>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-inset-bottom z-50">
-        <div className="grid grid-cols-3 h-16">
+        <div
+          className="grid h-16"
+          style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
