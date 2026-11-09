@@ -56,6 +56,7 @@ pids
 # envs
 .env.dev
 .env.prod
+.env.prod.*
 .env.staging
 .env.test
 
