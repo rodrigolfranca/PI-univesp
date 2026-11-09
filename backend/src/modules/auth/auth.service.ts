@@ -4,12 +4,16 @@ import {
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { randomUUID } from 'node:crypto';
 import { Redis } from 'ioredis';
 import { CryptoService } from 'src/common/crypto/crypto.service';
+import { redisKey } from 'src/common/redis/redis-keys';
 import { User } from 'src/common/models';
 import { Utils } from 'src/common/utils/utils';
 import { UsersService } from '../users/users.service';
+import { ACCESS_TOKEN_TTL_SECONDS, sessionKey } from './session-key';
 import { JwtPayload } from './types/jwt-payload.interface';
 import { LoginRequestCodeDTO } from './validation/login-request-code.DTO';
 import { LoginVerifyCodeDTO } from './validation/login-verify-code.DTO';
@@ -24,8 +28,13 @@ export class AuthService {
         private readonly userService: UsersService,
         private readonly cryptoService: CryptoService,
         private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
+
+    private get siteId() {
+        return this.configService.get<string>('SITE_ID');
+    }
 
     async requestCode(requestCodeDTO: LoginRequestCodeDTO) {
         try {
@@ -43,7 +52,11 @@ export class AuthService {
             }
 
             const code = this.cryptoService.generateCode();
-            await this.redis.setex(`auth_code:${phone_number}`, 300, code);
+            await this.redis.setex(
+                redisKey(this.siteId, 'auth_code', phone_number),
+                300,
+                code,
+            );
 
             // Z-API integration to send the code via WhatsApp
 
@@ -70,7 +83,7 @@ export class AuthService {
             }
 
             const storedCode = await this.redis.get(
-                `auth_code:${phone_number}`,
+                redisKey(this.siteId, 'auth_code', phone_number),
             );
 
             if (!storedCode || storedCode !== verification_code) {
@@ -79,7 +92,9 @@ export class AuthService {
                 );
             }
 
-            await this.redis.del(`auth_code:${phone_number}`);
+            await this.redis.del(
+                redisKey(this.siteId, 'auth_code', phone_number),
+            );
 
             return this.signIn(user);
         } catch (e) {
@@ -102,7 +117,11 @@ export class AuthService {
             }
 
             const code = this.cryptoService.generateCode();
-            await this.redis.setex(`recovery_code:${email}`, 300, code);
+            await this.redis.setex(
+                redisKey(this.siteId, 'recovery_code', email),
+                300,
+                code,
+            );
 
             const recipient = recoveryRequestCodeDTO.phone_number ?? email;
             this.logger.log(`Recovery code for ${recipient}: ${code}`);
@@ -129,7 +148,9 @@ export class AuthService {
                 );
             }
 
-            const storedCode = await this.redis.get(`recovery_code:${email}`);
+            const storedCode = await this.redis.get(
+                redisKey(this.siteId, 'recovery_code', email),
+            );
 
             if (!storedCode || storedCode !== verification_code) {
                 throw new UnauthorizedException(
@@ -137,7 +158,9 @@ export class AuthService {
                 );
             }
 
-            await this.redis.del(`recovery_code:${email}`);
+            await this.redis.del(
+                redisKey(this.siteId, 'recovery_code', email),
+            );
             await this.userService.changePhoneNumber(user.id, phone_number);
 
             return { message: 'Phone number updated successfully' };
@@ -148,11 +171,23 @@ export class AuthService {
     }
 
     async signIn(user: User): Promise<{ access_token: string }> {
+        const jti = randomUUID();
+        await this.redis.setex(
+            sessionKey(this.siteId, jti),
+            ACCESS_TOKEN_TTL_SECONDS,
+            String(user.id),
+        );
         const payload: JwtPayload = {
             keyType: 'access',
             id: user.id,
+            jti,
         };
 
         return { access_token: await this.jwtService.signAsync(payload) };
+    }
+
+    async logout(jti: string): Promise<{ message: string }> {
+        await this.redis.del(sessionKey(this.siteId, jti));
+        return { message: 'Logged out' };
     }
 }

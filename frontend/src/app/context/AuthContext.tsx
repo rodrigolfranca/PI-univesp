@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode } from "react";
 import { useStorageKey } from "../config/SiteContext";
 import { API_STORAGE_SCOPE, ApiError, errorMessage } from "../services/api";
-import { readAccessToken, verifyLoginCode } from "../services/auth";
+import { logoutSession, readAccessToken, verifyLoginCode } from "../services/auth";
 import { getUser } from "../services/users";
 import type { ApiUser } from "../services/users";
 
@@ -55,9 +55,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const generation = useRef(0);
+  const tokenRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   const logout = useCallback(() => {
     generation.current += 1;
+    const currentToken = tokenRef.current;
+    tokenRef.current = null;
+    if (currentToken) void logoutSession(currentToken).catch(() => undefined);
     sessionStorage.removeItem(sessionKey);
     setUser(null);
     setToken(null);
@@ -84,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { id } = readAccessToken(stored);
         const profile = toAuthUser(await getUser(id, stored, controller.signal));
         if (generation.current !== version) return;
+        tokenRef.current = stored;
         setToken(stored);
         setUser(profile);
       } catch (cause) {
@@ -129,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const profile = toAuthUser(await getUser(id, accessToken));
     if (generation.current !== version) throw new Error("Login interrompido. Tente novamente.");
     sessionStorage.setItem(sessionKey, accessToken);
+    tokenRef.current = accessToken;
     setToken(accessToken);
     setUser(profile);
     setError("");

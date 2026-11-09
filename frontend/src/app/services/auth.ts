@@ -19,6 +19,10 @@ export function readAccessToken(token: string): { id: number; exp: number } {
   }
 }
 
+export async function logoutSession(token: string): Promise<void> {
+  await apiRequest("/auth/logout", { method: "POST", token });
+}
+
 export async function requestLoginCode(phone: string): Promise<void> {
   await apiRequest("/auth/request-code", {
     method: "POST",

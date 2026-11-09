@@ -1,7 +1,9 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiSchema } from '@nestjs/swagger';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
+import type { RequestWithUser } from 'src/common/types/request.type';
 import { RateLimit } from 'src/common/rate-limit/rate-limit.decorator';
 import { RateLimitGuard } from 'src/common/rate-limit/rate-limit.guard';
+import { AuthGuard } from './guards';
 import { AuthService } from './auth.service';
 import { LoginRequestCodeDTO } from './validation/login-request-code.DTO';
 import { LoginVerifyCodeDTO } from './validation/login-verify-code.DTO';
@@ -61,4 +63,17 @@ export class AuthController {
         return await this.authService.recoveryVerifyCode(recoveryVerifyCodeDTO);
     }
 
+    @Post('logout')
+    @RateLimit({
+        bucket: 'auth-logout',
+        key: 'user',
+        limit: 30,
+        windowMs: 60000,
+    })
+    @UseGuards(AuthGuard, RateLimitGuard)
+    @ApiBearerAuth('JWT-auth')
+    @ApiOperation({ summary: 'Encerra a sessão atual' })
+    async logout(@Req() request: RequestWithUser) {
+        return await this.authService.logout(request.sessionJti!);
+    }
 }
