@@ -1,4 +1,6 @@
 export { Category } from './categories.model';
+export { GalleryImage } from './gallery-images.model';
+export { SiteBrand } from './site-brand.model';
 export { Client } from './clients.model';
 export { Professional } from './professionals.model';
 export { User } from './users.model';

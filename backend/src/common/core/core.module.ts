@@ -6,6 +6,7 @@ import { GoogleCalendarModule } from 'src/modules/google-calendar/google-calenda
 import { PopsModule } from 'src/modules/pops/pops.module';
 import { ProceduresModule } from 'src/modules/procedures/procedures.module';
 import { SchedulesModule } from 'src/modules/schedules/schedules.module';
+import { SiteModule } from 'src/modules/site/site.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { DatabaseModule } from '../database/database.module';
 import { validate } from '../env.validation/env.validation';
@@ -27,6 +28,7 @@ import { HealthModule } from '../health/health.module';
         AuthModule,
         SchedulesModule,
         GoogleCalendarModule,
+        SiteModule,
     ],
 })
 export class CoreModule {}
