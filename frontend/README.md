@@ -85,7 +85,7 @@ Os contratos completos ficam em `src/app/config/types.ts`; `defaults.json` ofere
 
 Domínios registrados sempre prevalecem sobre `VITE_CLIENTE`. Localhost e previews usam essa variável; sem ela, usam o ID em `src/variants/settings.json` (`defaultVariant`). Reinicie o servidor ao alterar a variável. Uma seleção explícita inexistente gera erro de configuração. Os domínios publicados devem estar cadastrados nos manifestos.
 
-Nos domínios registrados, as chaves de armazenamento existentes são preservadas. Nos demais ambientes, recebem o prefixo `<id>:` para permitir alternar variantes na mesma origem. Edições salvas no navegador prevalecem sobre os dados iniciais, inclusive listas vazias. O formato antigo dos parágrafos e temas é adaptado ao carregar; novos salvamentos usam arrays e a configuração de tema atual. Cadastro, autenticação, usuários, procedimentos, categorias, agenda, disponibilidade, POPs e Google Agenda usam o backend. Notificações, galeria e marca continuam locais; o histórico do cliente usa a API.
+Nos domínios registrados, as chaves de armazenamento existentes são preservadas. Nos demais ambientes, recebem o prefixo `<id>:` para permitir alternar variantes na mesma origem. Edições salvas no navegador prevalecem sobre os dados iniciais, inclusive listas vazias. O formato antigo dos parágrafos e temas é adaptado ao carregar; novos salvamentos usam arrays e a configuração de tema atual. Cadastro, autenticação, usuários, procedimentos, categorias, agenda, disponibilidade, POPs, Google Agenda, marca e galeria usam o backend. Notificações continuam locais; o histórico do cliente usa a API.
 
 Procedimentos têm página pública em `/tratamentos/:id`, com detalhes, POPs e botão de agendamento. Na Vercel, use `frontend` como diretório raiz, `npm run build` e saída `dist`. Associe os domínios ao mesmo projeto e gere uma implantação após cadastrar variantes. `vercel.json` mantém o acesso direto e a recarga das rotas internas. Para previews, defina `VITE_CLIENTE` antes do build. A associação de domínios é feita na plataforma; nenhum domínio é criado pelo comando de cadastro.
 
@@ -114,21 +114,21 @@ Execute `npm run dev` com o backend e suas dependências já disponíveis. O pro
 
 - Cadastro público: cria uma conta de cliente com nome, telefone de 11 dígitos e e-mail. Não confirma o telefone nem inicia uma sessão automaticamente. Após cadastrar, entre com o telefone e o código.
 - Login: solicita um código e valida seus seis dígitos pela API. O envio por WhatsApp ainda está pendente no backend; em desenvolvimento, obtenha o código no log do servidor. O código vale cinco minutos. Telefones desconhecidos recebem a mesma mensagem de solicitação, sem criar conta ou sessão.
-- Sessão: token em `sessionStorage`, isolado por variante e destino da API. A recarga consulta o perfil no servidor; logout e expiração limpam a sessão. A sessão demonstrativa antiga é descartada. Não há refresh token nem endpoint de logout: sair remove a sessão deste navegador.
+- Sessão: token em `sessionStorage`, isolado por variante e destino da API. A recarga consulta o perfil no servidor. O logout chama `POST /auth/logout` para revogar a sessão no Redis e limpa o navegador; a expiração também limpa a sessão local. A sessão demonstrativa antiga é descartada. Não há refresh token.
 - Clientes podem consultar e editar o próprio perfil em `/cliente/perfil` e criar os próprios agendamentos escolhendo procedimento, data, horário disponível e profissional.
-- Profissionais consultam e editam o próprio perfil nas configurações. Podem consultar outros usuários por ID, mas não listar nem editar terceiros.
-- Administradores podem listar, cadastrar, editar e excluir clientes e profissionais. Também gerenciam procedimentos, categorias, POPs, disponibilidade, exceções de agenda, equipe e Google Agenda. Profissionais consultam clientes por telefone. As listas percorrem todas as páginas da API antes da busca local. Uma conta administrativa já existente é necessária; o frontend não cria administradores nem altera privilégios.
+- Profissionais editam o próprio perfil nas configurações e veem apenas os clientes com quem têm agendamento, com histórico filtrado. Não listam usuários, não consultam por telefone e não acessam terceiros por ID.
+- Administradores podem listar, cadastrar, editar e excluir clientes e profissionais. Também gerenciam procedimentos, categorias, POPs, disponibilidade, exceções de agenda, equipe, marca, galeria e Google Agenda. As listas percorrem todas as páginas da API antes da busca local. Uma conta administrativa já existente é necessária; o frontend não cria administradores nem altera privilégios.
 - As rotas de detalhes usam o ID de **usuário**, não o ID do vínculo de cliente/profissional. Excluir remove a conta de usuário e afeta ambos os vínculos quando existentes.
 
-O backend não separa usuários por variante/negócio. As variantes selecionam apresentação e armazenamento local; para bases de usuários separadas, configure destinos de API separados. Não há isolamento por negócio implementado no frontend.
+A arquitetura de produção usa um frontend e um backend por marca, com bancos Supabase separados. Configure `VITE_API_BASE_URL` por projeto; não aponte duas marcas para o mesmo banco. O isolamento é feito na infraestrutura, não no navegador. Consulte `docs/MULTISITE.md`.
 
 ### Recursos demonstrativos e pendências
 
 Os comentários `TODO(integracao)` marcam os limites da integração:
 
-- Status, última visita, cargo específico e documentos do cliente na tela de usuário continuam locais, separados por variante, API e ID real do usuário. Contas novas começam com status demonstrativo “Ativo”, última visita “—”, cargo “Profissional” e documentos vazios. O cargo não altera permissões. Nenhum desses campos é enviado à API de usuários.
+- Documentos do cliente continuam locais, separados por variante, API e ID real do usuário. Status, última visita e cargo demonstrativos não são mais exibidos. Nenhum desses campos é enviado à API de usuários.
 - POPs de procedimento são reais: upload, listagem, download e exclusão usam a API. Listagem e download de POPs são públicos; escrita continua admin. O histórico do cliente é real e ordenado do mais recente para o mais antigo.
-- Agenda, procedimentos, categorias, disponibilidade e POPs usam a API. Notificações continuam mock, mas com filtros e marcação local de leitura. Galeria e marca continuam locais.
+- Agenda, procedimentos, categorias, disponibilidade, POPs, marca e galeria usam a API. Notificações continuam mock, mas com filtros e marcação local de leitura.
 - Recuperação e alteração de telefone/e-mail exigem código enviado ao novo contato; como o envio ainda não existe, o código aparece no log do backend. O PATCH direto de contato é bloqueado. Trocar senha não existe: a rota redireciona para Configurações porque o acesso é por código.
 - Falhas da API aparecem na tela e nunca ativam um fallback para dados fictícios. Erros de permissão não encerram automaticamente a sessão, pois os guards do backend também usam HTTP 401 para autorização.
 
@@ -138,11 +138,12 @@ Em produção, a API é acessada diretamente pela URL configurada em `VITE_API_B
 
 ```sh
 npm test
+npm run test:coverage
 npm run variants:validate
 npm run build
 npm run format:check
 ```
 
-Os testes usam Vitest, jsdom e Testing Library. As respostas HTTP são simuladas conforme os contratos do backend; isso não substitui a validação com PostgreSQL, Redis e uma conta administrativa reais.
+Os testes usam Vitest, jsdom e Testing Library. As respostas HTTP são simuladas conforme os contratos do backend; isso não substitui a validação com PostgreSQL, Redis e uma conta administrativa reais. Rode `npm run test:coverage` para conferir a cobertura de serviços, utilitários de agenda, contextos principais, home, Settings, agenda e páginas do cliente.
 
-Para validar manualmente com o backend disponível: cadastrar um cliente, fazer login com o código do log, recarregar a página, editar o próprio perfil e sair. Com administrador, cadastrar cliente/profissional, consultar a URL de detalhes, editar e excluir uma conta de teste. Com profissional comum, verificar acesso restrito às listas, consulta por ID e edição apenas do próprio perfil. Conferir erros de duplicidade e código inválido/expirado, além da preservação de `treatmentId` entre cadastro e login.
+Para validar manualmente com o backend disponível: cadastrar um cliente, fazer login com o código do log, recarregar a página, editar o próprio perfil e sair. Com administrador, cadastrar cliente/profissional, consultar a URL de detalhes, editar e excluir uma conta de teste. Com profissional comum, verificar acesso restrito às listas, clientes atendidos/histórico e edição apenas do próprio perfil. Conferir erros de duplicidade e código inválido/expirado, além da preservação de `treatmentId` entre cadastro e login.

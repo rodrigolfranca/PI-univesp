@@ -1,11 +1,14 @@
 # Deploy: Vercel + Supabase + Upstash
 
-Arquitetura usada:
+Para a topologia das duas marcas, isolamento de dados e ordem de deploy por variante, comece por [Arquitetura multi-site](MULTISITE.md).
+
+Arquitetura usada por marca:
 
 - **Frontend:** projeto Vercel com root directory `frontend`.
 - **Backend:** projeto Vercel com root directory `backend`, usando o suporte zero-config a NestJS.
 - **Banco:** PostgreSQL do Supabase via pooler.
-- **Redis:** Upstash Free via conexão TCP com TLS (`rediss://`).
+- **Storage:** bucket público do Supabase para logo e galeria.
+- **Redis:** Upstash Free via conexão TCP com TLS (`rediss://`) e REST para rate limit.
 
 O frontend e o backend são projetos separados. O frontend chama a API diretamente pela URL pública do backend, e o backend libera a origem do frontend por CORS.
 
@@ -64,8 +67,9 @@ Preencha `.env.prod` com:
 - `NODE_ENV=prod`
 - credenciais do **session pooler** (`DB_PORT=5432`)
 - `DB_SSL=true`
+- `DB_SSL_CA_BASE64` com o certificado CA do Supabase em base64
 - `DB_SYNC=true`
-- demais variáveis obrigatórias, incluindo JWT e Google
+- demais variáveis obrigatórias, incluindo JWT (mínimo 64 caracteres) e Google
 - `SEED_ADMIN_NAME`, `SEED_ADMIN_PHONE` e `SEED_ADMIN_EMAIL`
 
 Antes do seed, rode as migrações idempotentes:
@@ -74,12 +78,18 @@ Antes do seed, rode as migrações idempotentes:
 NODE_ENV=prod npm run migrate:schedule-exception-name
 NODE_ENV=prod npm run migrate:google-event-link
 NODE_ENV=prod npm run migrate:categories
+NODE_ENV=prod npm run migrate:procedure-status
+NODE_ENV=prod npm run migrate:brand-gallery
 NODE_ENV=prod npm run seed:admin
 ```
 
 Esse comando cria as tabelas e garante o usuário administrador. Depois do seed, altere `DB_SYNC=false` no `.env.prod` para evitar novas sincronizações acidentais.
 
 Na Vercel, `DB_SYNC` deve permanecer `false`.
+
+### Supabase Storage
+
+Crie um bucket público chamado `site-images` e use a service role key apenas no backend. O backend envia logo e galeria para esse bucket, mas mantém fallback em data URL quando as variáveis `SUPABASE_*` não estão configuradas (útil em desenvolvimento).
 
 ## 3. Upstash
 
@@ -103,7 +113,7 @@ REDIS_PASSWORD=<senha>
 REDIS_TLS=true
 ```
 
-O plano gratuito do Upstash oferece 256 MB e 500 mil comandos por mês. O uso atual de códigos OTP e cache de usuário cabe nesse limite.
+O plano gratuito do Upstash oferece 250 MB e 500 mil comandos por mês. O uso atual de códigos OTP e cache de usuário cabe nesse limite.
 
 ## 4. Backend na Vercel
 
@@ -116,26 +126,34 @@ O plano gratuito do Upstash oferece 256 MB e 500 mil comandos por mês. O uso at
 
 ### Variáveis do backend
 
-| Variável | Valor |
-| --- | --- |
-| `NODE_ENV` | `production` |
-| `DB_HOST` | host do transaction pooler |
-| `DB_PORT` | `6543` |
-| `DB_USERNAME` | `postgres.<project-ref>` |
-| `DB_PASSWORD` | senha do Supabase |
-| `DB_NAME` | `postgres` |
-| `DB_SSL` | `true` |
-| `DB_SYNC` | `false` |
-| `REDIS_URL` | `rediss://default:<senha>@<host>:6379` |
-| `JWT_SECRET` | segredo longo e aleatório |
-| `GOOGLE_CLIENT_ID` | credencial do Google Cloud |
-| `GOOGLE_CLIENT_SECRET` | credencial do Google Cloud |
-| `GOOGLE_REDIRECT_URI` | `https://<backend>.vercel.app/google-calendar/callback` |
-| `GOOGLE_TOKEN_ENCRYPTION_KEY` | 64 caracteres hexadecimais |
-| `GOOGLE_CALENDAR_TIMEZONE` | `America/Sao_Paulo` |
-| `AUTH_THROTTLE_TTL_MS` | `60000` |
-| `AUTH_THROTTLE_LIMIT` | `10` |
-| `CORS_ORIGINS` | `https://<frontend>.vercel.app` |
+| Variável                      | Valor                                                   |
+| ----------------------------- | ------------------------------------------------------- |
+| `NODE_ENV`                    | `production`                                            |
+| `DB_HOST`                     | host do transaction pooler                              |
+| `DB_PORT`                     | `6543`                                                  |
+| `DB_USERNAME`                 | `postgres.<project-ref>`                                |
+| `DB_PASSWORD`                 | senha do Supabase                                       |
+| `DB_NAME`                     | `postgres`                                              |
+| `DB_SSL`                      | `true`                                                  |
+| `DB_SSL_CA_BASE64`            | CA do Supabase codificada em base64                     |
+| `DB_SYNC`                     | `false`                                                 |
+| `REDIS_URL`                   | `rediss://default:<senha>@<host>:6379`                  |
+| `UPSTASH_REDIS_REST_URL`      | URL REST do mesmo banco Upstash                         |
+| `UPSTASH_REDIS_REST_TOKEN`    | token REST do mesmo banco Upstash                       |
+| `JWT_SECRET`                  | segredo aleatório com pelo menos 64 caracteres          |
+| `GOOGLE_CLIENT_ID`            | credencial do Google Cloud                              |
+| `GOOGLE_CLIENT_SECRET`        | credencial do Google Cloud                              |
+| `GOOGLE_REDIRECT_URI`         | `https://<backend>.vercel.app/google-calendar/callback` |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY` | 64 caracteres hexadecimais                              |
+| `GOOGLE_CALENDAR_TIMEZONE`    | `America/Sao_Paulo`                                     |
+| `AUTH_THROTTLE_TTL_MS`        | `60000`                                                 |
+| `AUTH_THROTTLE_LIMIT`         | `10`                                                    |
+| `CORS_ORIGINS`                | `https://<frontend>.vercel.app` (sem `*`)               |
+| `TRUST_PROXY`                 | `1` na Vercel                                           |
+| `SITE_ID`                     | identificador curto da variante (`dayane`, `karina`)    |
+| `SUPABASE_URL`                | `https://<project-ref>.supabase.co`                     |
+| `SUPABASE_SERVICE_ROLE_KEY`   | service role key do Supabase                            |
+| `SUPABASE_STORAGE_BUCKET`     | bucket público, por exemplo `site-images`               |
 
 Não defina `PORT`; a Vercel fornece a porta usada pela função.
 
@@ -209,22 +227,25 @@ No frontend, valide:
 - criação de agendamento pelo admin e pelo cliente;
 - conexão, desconexão e sincronização da Google Agenda;
 - alteração de telefone/e-mail com código enviado ao novo contato;
-- consulta de cliente por telefone no painel do profissional;
+- listagem dos clientes atendidos e histórico no painel do profissional;
 - detalhes públicos do procedimento e download de POPs antes do login.
 
 ## 8. Limitações e pendências
 
 - **OTP e códigos de alteração de contato ainda são apenas logados.** O backend não envia WhatsApp nem e-mail. Para testar, leia o código nos Runtime Logs da Vercel. Para usuários reais, integre Z-API e um provedor de e-mail e remova o log do código em produção.
-- **Recuperação por e-mail envia o código ao novo telefone informado.** O contato antigo não confirma a troca; mantenha o throttle e considere evoluir para dupla confirmação.
+- **Recuperação ainda usa um único código enviado ao novo telefone.** O fluxo planejado é confirmar primeiro o e-mail e depois o novo telefone; até lá, mantenha o throttle.
 - **POPs públicos:** listagem e download são públicos por decisão de produto. Não coloque documentos internos em POPs públicos.
-- **Throttle de autenticação é em memória.** Com várias instâncias serverless, o limite não é global. Para produção real, use armazenamento Redis no throttler.
+- **Throttle distribuído:** auth, consulta por telefone e alteração de contato usam Upstash Ratelimit REST com prefixo `SITE_ID`. Sem as variáveis `UPSTASH_REDIS_REST_*`, o backend cai para limite em memória por instância (adequado apenas para desenvolvimento/teste).
+- **Sessões JWT:** todo token de acesso recebe um `jti` único e só é aceito enquanto a sessão existir no Redis. `POST /auth/logout` revoga a sessão atual. O prefixo `SITE_ID` isola as chaves Redis mesmo usando o mesmo banco Upstash.
+- **Cabeçalhos e CORS:** Helmet aplica cabeçalhos de segurança. `CORS_ORIGINS` deve listar origens explícitas; `*` é rejeitado.
+- **Uploads:** POPs aceitam apenas PDF de até 4,5 MB; logo e galeria aceitam PNG/JPG/WebP com limites próprios.
 - **Payload máximo da Vercel:** 4,5 MB por requisição. PDFs de POP maiores precisam ser enviados ao Supabase Storage.
 - **Duração máxima da função:** 300 segundos na Hobby.
 - **Supabase Free:** projetos podem ser pausados por inatividade.
-- **Upstash Free:** 256 MB e 500 mil comandos por mês.
+- **Upstash Free:** 250 MB e 500 mil comandos por mês.
 - **Cold start:** cada nova instância inicializa NestJS, Sequelize e Redis. O schema não deve ser sincronizado nesse bootstrap.
 - **Backend sem migrações versionadas.** O schema inicial usa `DB_SYNC=true` uma única vez. Mudanças futuras de modelo precisam de migração controlada.
-- **PDFs e documentos ficam no Postgres.** Para volume maior, migrar para Supabase Storage.
+- **POPs ficam no Postgres.** Logo e galeria usam Supabase Storage; para volume maior de POPs, migrar também para Storage.
 - **Vercel Hobby:** uso não comercial e restrição para repositórios de organização GitHub.
 - **Matriz de acesso:** consulte `docs/ACCESS.md`.
 

@@ -1,144 +1,106 @@
-# Backend - NestJS Modular Monolith
+# Backend - NestJS
 
-## Description
+API do sistema de agendamentos, usada por dois frontends (Dayane e Karina). Cada marca tem seu próprio projeto Vercel, banco Supabase e bucket de imagens; o Upstash é compartilhado com prefixo `SITE_ID`.
 
-This API is the backend for our Integration Project App. It is a platform where clients can book appointments with an aesthetic professional. The professional, in turn, can manage their single schedule, employees, as well as the required documents for each service and the related Standard Operating Procedures (here named POPs).
+Consulte [arquitetura multi-site](../docs/MULTISITE.md) e [deploy](../docs/DEPLOY.md).
 
-This API coordinates users, clients, professionals, schedules, document templates, sessions, procedures, and POP workflows.
+## Stack
 
----
+- NestJS + Sequelize + PostgreSQL (Supabase)
+- Redis (Upstash) para OTP, cache, sessões, OAuth e rate limit
+- JWT com `jti` e sessão revogável no Redis
+- Supabase Storage para logo e galeria
+- Google Calendar API
 
-## Prerequisites
+## Setup local
 
-- **Node.js** (recommended: >= 22.X LTS) - Prefer version 22 for development
-- **npm** (Comes with Node.js package)
-- **Docker** and **Docker Compose**
-- **Git** (For version control and repository cloning)
-
----
-
-## Setup
-
-1. Clone the repository:
+Requisitos: Node.js 22+, Docker e Docker Compose.
 
 ```bash
-git clone <repository-url>
-cd PI-univesp/backend
-```
-
-2. Set up environment variables:
-
-```bash
+cd backend
 cp .env.example .env.dev
-```
-
-Fill in the values in `.env.dev` according to your needs.
-
----
-
-## Development Modes
-
-This project supports two development modes:
-
----
-
-### 1. Hybrid Mode
-
-In this mode, only PostgreSQL runs inside a Docker container:
-
-- NestJS runs locally on your machine
-- PostgreSQL runs in Docker
-- Faster hot reload and easier debugging
-- Environment variables are loaded via `.env.dev`
-
-#### Install dependencies:
-
-```bash
 npm ci
-```
-
-#### Start Docker for database usage:
-
-```bash
 docker compose --env-file=.env.dev up postgres-service redis-service -d
-```
-
-#### Run the application in development mode:
-
-```bash
 npm run start:dev
 ```
 
----
+O backend usa `NODE_ENV=dev` para carregar `.env.dev`. A API fica em `http://localhost:3000` e o Swagger em `/documentation`.
 
-### 2. Full Docker Mode
+## Variáveis principais
 
-In this mode, everything runs inside containers:
+- `DB_*`, `DB_SSL`, `DB_SSL_CA_BASE64`
+- `REDIS_*` ou `REDIS_URL`
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+- `JWT_SECRET` (mínimo 64 caracteres)
+- `GOOGLE_*`, `GOOGLE_TOKEN_ENCRYPTION_KEY`
+- `CORS_ORIGINS`, `TRUST_PROXY`
+- `SITE_ID`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`
+- `AUTH_THROTTLE_TTL_MS`, `AUTH_THROTTLE_LIMIT`
 
-- NestJS runs inside a Docker container
-- PostgreSQL runs in a separate container
-- Hot reload enabled via volume mounting
-- Backend waits for PostgreSQL healthcheck before starting
-- Environment variables are loaded via `.env.dev`
+Nunca comite `.env.dev`, `.env.prod` ou credenciais reais.
 
-#### Build and run Docker environment:
+## Migrações e seed
 
-```bash
-docker compose --env-file .env.dev up --build -d
-```
-
-#### Backend Logs:
-```bash
-docker compose --env-file .env.dev logs -f pi-backend
-```
-
-#### Database Logs:
-```bash
-docker compose --env-file .env.dev logs -f postgres-service
-```
-
-#### Database Logs:
-```bash
-docker compose --env-file .env.dev logs -f redis-service
-```
-
-#### Stop Environment
+Rode uma vez por banco, na ordem:
 
 ```bash
-docker compose -f docker-compose.dev-full.yml --env-file .env.dev down
+NODE_ENV=prod npm run migrate:schedule-exception-name
+NODE_ENV=prod npm run migrate:google-event-link
+NODE_ENV=prod npm run migrate:categories
+NODE_ENV=prod npm run migrate:procedure-status
+NODE_ENV=prod npm run migrate:brand-gallery
+NODE_ENV=prod npm run seed:admin
 ```
 
-#### Reset environment (clean database)
+Use o session pooler (`DB_PORT=5432`) para migrações e seed. Depois, mantenha `DB_SYNC=false` no runtime da Vercel.
+
+## Endpoints principais
+
+- `POST /auth/request-code`, `POST /auth/verify-code`
+- `POST /auth/recovery/request-code`, `POST /auth/recovery/verify-code`
+- `POST /auth/logout` (revoga a sessão atual)
+- `GET /users`, `GET /users/:id`, `POST /users/client`, `POST /users/professional`
+- `GET /users/by-phone` (admin)
+- `POST /users/:id/contact/request`, `POST /users/:id/contact/verify`
+- `GET /schedules`, `POST /schedules`, `PATCH /schedules/:id`, `DELETE /schedules/:id`
+- `GET /schedules/my-clients`, `GET /schedules/my-clients/:clientId/history`
+- `GET /work-schedules`, `GET /work-schedules/all`, `POST /work-schedules`
+- `PATCH /work-schedules/update/:id`, `DELETE /work-schedules/delete/:id`
+- `GET /schedule-exceptions`, `POST /schedule-exceptions`, `PATCH /schedule-exceptions/:id`
+- `GET /procedures`, `POST /procedures`, `PATCH /procedures/:id`, `DELETE /procedures/:id`
+- `GET /categories`, `POST /categories`, `PATCH /categories/:id`, `DELETE /categories/:id`
+- `GET /pops`, `GET /pops/:id/download`, `POST /pops`, `PATCH /pops/:id`, `DELETE /pops/:id`
+- `GET /site/brand`, `PUT /site/brand`, `POST /site/brand/logo`
+- `GET /site/gallery`, `POST /site/gallery`, `PATCH /site/gallery/:id`, `DELETE /site/gallery/:id`
+- `GET /google-calendar/status`, `GET /google-calendar/connect`, `POST /google-calendar/sync`
+
+## Permissões
+
+- Admin gerencia usuários, procedimentos, categorias, POPs, disponibilidade, exceções, marca, galeria e Google Calendar.
+- Profissional vê apenas a própria agenda e os clientes que atende, com histórico filtrado; não lista usuários nem consulta por telefone.
+- Cliente vê apenas os próprios agendamentos e edita o próprio perfil.
+- POPs, procedimentos e dados públicos do site podem ser lidos sem autenticação.
+
+Detalhes em [docs/ACCESS.md](../docs/ACCESS.md).
+
+## Segurança
+
+- Senhas não existem; acesso por código OTP.
+- Sessões JWT têm `jti` e são validadas no Redis.
+- Rate limit usa Upstash Ratelimit REST quando configurado e fallback em memória em dev/test.
+- CORS não aceita `*`; Helmet aplica cabeçalhos de segurança.
+- SSL do Supabase valida o certificado; use `DB_SSL_CA_BASE64`.
+- POPs aceitam apenas PDF até 4,5 MB; marca/galeria aceitam PNG/JPG/WebP.
+- OTPs ainda aparecem no log do backend até a integração de WhatsApp/e-mail.
+
+## Testes
 
 ```bash
-docker compose --env-file .env.dev down -v
+npm test
+npm run test:e2e
+npm run test:e2e:cov
 ```
 
----
-
-## Access
-
-The application ports are defined in `.env.dev`.
-
-Default values:
-
-- Backend: http://localhost:3000
-- PostgreSQL: localhost:5432
-
----
-
-## Integração com o frontend
-
-- `GET /work-schedules` lista os horários de trabalho cadastrados (admin).
-- `GET /work-schedules/all` retorna os horários disponíveis calculados.
-- `GET /schedules` retorna cliente e profissional com nome/telefone; clientes veem apenas os próprios agendamentos.
-- `POST /schedules` aceita admin ou o próprio cliente autenticado (`client_id` igual ao vínculo do usuário).
-- `POST /google-calendar/sync` sincroniza um agendamento ou todos; admin only.
-- O Google usa cores por status e mantém cancelados como `[CANCELADO]`; exclusão definitiva remove o evento.
-- `PATCH` e `DELETE` de agendamentos continuam restritos a admin.
-- O callback do Google Agenda redireciona navegadores para a primeira origem de `CORS_ORIGINS` e retorna JSON para clientes de API.
-- `schedule_exceptions` aceita `name`; rode `npm run migrate:schedule-exception-name` uma vez por banco.
-- `schedules.google_event_link` requer `npm run migrate:google-event-link` uma vez por banco.
-- `categories` e `procedures.category_id` requerem `npm run migrate:categories` uma vez por banco. A categoria `Geral` é criada e usada como fallback quando o procedimento não informa categoria.
-- `procedures.status` requer `npm run migrate:procedure-status` uma vez por banco.
-- Alteração de telefone/e-mail exige código enviado ao novo contato via `POST /users/:id/contact/request` e `POST /users/:id/contact/verify`. O PATCH direto de contato é bloqueado.
+- Unitário: Jest.
+- Integração: Jest + supertest.
+- Validação externa complementar: repositório/suíte `pi-univesp-testes`.
