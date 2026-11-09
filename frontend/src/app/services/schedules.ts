@@ -125,6 +125,34 @@ export async function listSchedules(
   return await listSchedulePages(token, filters, signal);
 }
 
+export interface ProfessionalClient {
+  clientId: number;
+  userId: number;
+  name: string;
+  phone_number: string;
+}
+
+export async function listMyClients(
+  token: string,
+  signal?: AbortSignal,
+): Promise<ProfessionalClient[]> {
+  return await apiRequest<ProfessionalClient[]>("/schedules/my-clients", {
+    token,
+    signal,
+  });
+}
+
+export async function listMyClientHistory(
+  clientId: number,
+  token: string,
+  signal?: AbortSignal,
+): Promise<ApiSchedule[]> {
+  return await apiRequest<ApiSchedule[]>(`/schedules/my-clients/${clientId}/history`, {
+    token,
+    signal,
+  });
+}
+
 export async function createSchedule(
   payload: SchedulePayload,
   token: string,

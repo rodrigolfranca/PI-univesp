@@ -70,6 +70,64 @@ export class ScheduleRepository {
         return { total: count, page: dto.page, limit: dto.limit, data: rows };
     }
 
+    async findClientsForProfessional(professional_id: number) {
+        const schedules = await Schedule.findAll({
+            where: { professional_id },
+            attributes: ['client_id'],
+            include: [
+                {
+                    model: Client,
+                    as: 'client',
+                    include: [{ model: User, as: 'user', required: true }],
+                },
+            ],
+        });
+
+        const clients = new Map<
+            number,
+            { clientId: number; userId: number; name: string; phone_number: string }
+        >();
+        for (const schedule of schedules) {
+            const client = schedule.client;
+            if (!client?.user) continue;
+            clients.set(client.id, {
+                clientId: client.id,
+                userId: client.user.id,
+                name: client.user.name,
+                phone_number: client.user.phone_number,
+            });
+        }
+        return [...clients.values()].sort((a, b) =>
+            a.name.localeCompare(b.name),
+        );
+    }
+
+    async findClientHistory(
+        professional_id: number,
+        client_id: number,
+    ): Promise<Schedule[]> {
+        return Schedule.findAll({
+            where: { professional_id, client_id },
+            include: [
+                { model: Procedure, as: 'procedure' },
+                {
+                    model: Client,
+                    as: 'client',
+                    include: [{ model: User, as: 'user', required: true }],
+                },
+                {
+                    model: Professional,
+                    as: 'professional',
+                    include: [{ model: User, as: 'user', required: true }],
+                },
+            ],
+            order: [
+                ['date', 'DESC'],
+                ['start_time', 'DESC'],
+            ],
+        });
+    }
+
     async findOverlapping(
         professional_id: number,
         date: string,

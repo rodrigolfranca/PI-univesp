@@ -10,8 +10,6 @@ import {
     Patch,
     Post,
     Query,
-    Req,
-    UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
@@ -19,14 +17,12 @@ import {
     AdminGuard,
     AdminOrSelfGuard,
     AuthGuard,
-    ProfessionalOrSelfGuard,
 } from 'src/modules/auth/guards';
 import { UsersList } from './types/users.interfaces';
 import { UsersService } from './users.service';
 import { UsersCreateDTO } from './validation/users-create.DTO';
 import { ContactChangeRequestDTO } from './validation/contact-change-request.dto';
 import { ContactChangeVerifyDTO } from './validation/contact-change-verify.dto';
-import type { RequestWithUser } from 'src/common/types/request.type';
 import { UsersListDTO } from './validation/users-list.DTO';
 import { UserUpdateDTO } from './validation/users-update.DTO';
 
@@ -58,18 +54,10 @@ export class UsersController {
     }
 
     @Get('by-phone')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, AdminGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Consulta um usuário pelo telefone' })
-    async findByPhone(
-        @Query('phone_number') phone_number: string,
-        @Req() request: RequestWithUser,
-    ) {
-        if (!request.user.professional) {
-            throw new UnauthorizedException(
-                'Apenas profissionais e administradores podem consultar por telefone',
-            );
-        }
+    async findByPhone(@Query('phone_number') phone_number: string) {
         if (!/^\d{11}$/.test(phone_number ?? '')) {
             throw new BadRequestException(
                 'Telefone deve conter exatamente 11 dígitos',
@@ -81,7 +69,7 @@ export class UsersController {
     }
 
     @Get(':id')
-    @UseGuards(AuthGuard, ProfessionalOrSelfGuard)
+    @UseGuards(AuthGuard, AdminOrSelfGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Obtém um usuário por ID' })
     async findById(@Param('id', ParseIntPipe) id: number) {

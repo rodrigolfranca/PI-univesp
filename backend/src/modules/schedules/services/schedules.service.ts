@@ -49,7 +49,10 @@ export class SchedulesService {
 
     async getAll(dto: ScheduleGetAllDto, user?: UserWithType) {
         try {
-            if (user?.client && !user.professional) {
+            if (user?.professional && !user.professional.is_admin) {
+                dto.professional_id = user.professional.id;
+            }
+            if (user?.client) {
                 dto.client_id = user.client.id;
             }
             const result = await this.scheduleRepository.findByFilters(dto);
@@ -92,6 +95,20 @@ export class SchedulesService {
                   }
                 : null,
         };
+    }
+
+    async findClientsForProfessional(professional_id: number) {
+        return this.scheduleRepository.findClientsForProfessional(
+            professional_id,
+        );
+    }
+
+    async findClientHistory(professional_id: number, client_id: number) {
+        const schedules = await this.scheduleRepository.findClientHistory(
+            professional_id,
+            client_id,
+        );
+        return schedules.map((schedule) => this.serializeSchedule(schedule));
     }
 
     async update(id: number, dto: ScheduleUpdateDto) {
