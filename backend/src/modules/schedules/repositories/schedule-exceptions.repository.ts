@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { WhereOptions } from 'sequelize';
-import { ScheduleException } from 'src/common/models/schedule-exceptions.model';
+import { ScheduleException } from '../../../common/models/schedule-exceptions.model';
 import { ScheduleExceptionCreateDto } from '../validation/schedule-exception-create.DTO';
 import { ScheduleExceptionGetAllDto } from '../validation/schedule-exception-get-all.DTO';
 import { ScheduleExceptionUpdateDto } from '../validation/schedule-exception-update.DTO';

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CryptoModule } from 'src/common/crypto/crypto.module';
-import { RedisModule } from 'src/common/redis/redis.module';
+import { CryptoModule } from '../../common/crypto/crypto.module';
+import { RedisModule } from '../../common/redis/redis.module';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { GoogleCalendarController } from './google-calendar.controller';

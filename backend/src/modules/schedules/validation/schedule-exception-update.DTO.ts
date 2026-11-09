@@ -8,7 +8,7 @@ import {
     Length,
     Matches,
 } from 'class-validator';
-import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
+import { ScheduleExceptionType } from '../../../common/models/schedule-exceptions.model';
 
 export class ScheduleExceptionUpdateDto {
     @ApiProperty({ required: false, example: 1 })

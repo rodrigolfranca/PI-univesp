@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Transaction } from 'sequelize';
-import { Professional, User } from 'src/common/models';
+import { Professional, User } from '../../../common/models';
 
 @Injectable()
 export class ProfessionalsRepository {

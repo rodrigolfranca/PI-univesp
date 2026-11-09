@@ -1,8 +1,8 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
-import type { RequestWithUser } from 'src/common/types/request.type';
-import { RateLimit } from 'src/common/rate-limit/rate-limit.decorator';
-import { RateLimitGuard } from 'src/common/rate-limit/rate-limit.guard';
+import type { RequestWithUser } from '../../common/types/request.type';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
+import { RateLimitGuard } from '../../common/rate-limit/rate-limit.guard';
 import { AuthGuard } from './guards';
 import { AuthService } from './auth.service';
 import { LoginRequestCodeDTO } from './validation/login-request-code.DTO';

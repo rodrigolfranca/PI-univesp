@@ -14,7 +14,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { RequestWithUser } from 'src/common/types/request.type';
+import type { RequestWithUser } from '../../common/types/request.type';
 import { AdminGuard, AuthGuard } from '../auth/guards';
 import { GoogleCalendarService } from './google-calendar.service';
 import { GoogleCalendarCallbackDTO } from './validation/google-calendar-callback.DTO';

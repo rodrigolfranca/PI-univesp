@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { RedisModule } from 'src/common/redis/redis.module';
-import { AuthModule } from 'src/modules/auth/auth.module';
-import { AdminGuard } from 'src/modules/auth/guards';
-import { UsersModule } from 'src/modules/users/users.module';
+import { RedisModule } from '../../common/redis/redis.module';
+import { AuthModule } from '../auth/auth.module';
+import { AdminGuard } from '../auth/guards';
+import { UsersModule } from '../users/users.module';
 import { SiteController } from './controllers/site.controller';
 import { SiteRepository } from './repositories/site.repository';
 import { SiteService } from './services/site.service';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Op } from 'sequelize';
-import { Pop } from 'src/common/models';
+import { Pop } from '../../../common/models';
 
 @Injectable()
 export class PopsRepository {

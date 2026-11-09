@@ -3,7 +3,7 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import { GalleryImage, SiteBrand } from 'src/common/models';
+import { GalleryImage, SiteBrand } from '../../../common/models';
 import { SiteRepository } from '../repositories/site.repository';
 import { BrandUpdateDTO } from '../validation/brand-update.dto';
 import { GalleryUpdateDTO } from '../validation/gallery-update.dto';

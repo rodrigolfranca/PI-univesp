@@ -13,13 +13,13 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
-import { RateLimit } from 'src/common/rate-limit/rate-limit.decorator';
-import { RateLimitGuard } from 'src/common/rate-limit/rate-limit.guard';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
+import { RateLimitGuard } from '../../common/rate-limit/rate-limit.guard';
 import {
     AdminGuard,
     AdminOrSelfGuard,
     AuthGuard,
-} from 'src/modules/auth/guards';
+} from '../auth/guards';
 import { UsersList } from './types/users.interfaces';
 import { UsersService } from './users.service';
 import { UsersCreateDTO } from './validation/users-create.DTO';

@@ -4,7 +4,7 @@ import {
     InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
-import { Pop, Procedure } from 'src/common/models';
+import { Pop, Procedure } from '../../common/models';
 import { PopsRepository } from './repositories/pops.repository';
 import { PopsCreateDTO } from './validation/pops-create.dto';
 import { PopsListDTO } from './validation/pops-list.dto';

@@ -11,11 +11,11 @@ import { calendar_v3, calendar } from '@googleapis/calendar';
 import { OAuth2Client } from 'google-auth-library';
 import { Redis } from 'ioredis';
 import * as crypto from 'crypto';
-import { ScheduleStatus } from 'src/common/consts/schedule.status';
-import { CryptoService } from 'src/common/crypto/crypto.service';
-import { redisKey } from 'src/common/redis/redis-keys';
-import { Schedule } from 'src/common/models';
-import { Utils } from 'src/common/utils/utils';
+import { ScheduleStatus } from '../../common/consts/schedule.status';
+import { CryptoService } from '../../common/crypto/crypto.service';
+import { redisKey } from '../../common/redis/redis-keys';
+import { Schedule } from '../../common/models';
+import { Utils } from '../../common/utils/utils';
 import { GoogleCalendarRepository } from './repositories/google-calendar.repository';
 import { GoogleCalendarCallbackDTO } from './validation/google-calendar-callback.DTO';
 

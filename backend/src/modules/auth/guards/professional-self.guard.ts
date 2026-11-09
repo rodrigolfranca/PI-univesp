@@ -5,8 +5,8 @@ import {
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
-import { RequestWithUser } from 'src/common/types/request.type';
-import { Utils } from 'src/common/utils/utils';
+import { RequestWithUser } from '../../../common/types/request.type';
+import { Utils } from '../../../common/utils/utils';
 
 @Injectable()
 export class ProfessionalOrSelfGuard implements CanActivate {

@@ -6,7 +6,7 @@ import {
     Professional,
     Schedule,
     User,
-} from 'src/common/models';
+} from '../../../common/models';
 
 @Injectable()
 export class GoogleCalendarRepository {

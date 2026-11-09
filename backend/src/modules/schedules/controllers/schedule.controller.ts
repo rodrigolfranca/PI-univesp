@@ -13,7 +13,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { RequestWithUser } from 'src/common/types/request.type';
+import type { RequestWithUser } from '../../../common/types/request.type';
 import { AdminGuard, AuthGuard } from '../../auth/guards';
 import { ScheduleCreateGuard } from '../guards/schedule-create.guard';
 import { SchedulesService } from '../services/schedules.service';

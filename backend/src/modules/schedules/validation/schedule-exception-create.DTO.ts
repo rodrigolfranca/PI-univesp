@@ -9,7 +9,7 @@ import {
     Length,
     Matches,
 } from 'class-validator';
-import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
+import { ScheduleExceptionType } from '../../../common/models/schedule-exceptions.model';
 
 export class ScheduleExceptionCreateDto {
     @ApiProperty({ description: 'ID do profissional', example: 1 })

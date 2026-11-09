@@ -4,12 +4,12 @@ import {
     Logger,
     NotFoundException,
 } from '@nestjs/common';
-import { Procedure, Schedule } from 'src/common/models';
-import { UserWithType } from 'src/common/types/users.type';
-import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
-import { Utils } from 'src/common/utils/utils';
-import { GoogleCalendarService } from 'src/modules/google-calendar/google-calendar.service';
-import { UsersService } from 'src/modules/users/users.service';
+import { Procedure, Schedule } from '../../../common/models';
+import { UserWithType } from '../../../common/types/users.type';
+import { ScheduleExceptionType } from '../../../common/models/schedule-exceptions.model';
+import { Utils } from '../../../common/utils/utils';
+import { GoogleCalendarService } from '../../google-calendar/google-calendar.service';
+import { UsersService } from '../../users/users.service';
 import { ScheduleExceptionsRepository } from '../repositories/schedule-exceptions.repository';
 import { ScheduleRepository } from '../repositories/schedules.repository';
 import { WorkScheduleRepository } from '../repositories/work-schedules.repository';

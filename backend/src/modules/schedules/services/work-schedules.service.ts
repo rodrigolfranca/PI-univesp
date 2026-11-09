@@ -1,12 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Schedule } from 'src/common/models';
+import { Schedule } from '../../../common/models';
 import {
     ScheduleException,
     ScheduleExceptionType,
-} from 'src/common/models/schedule-exceptions.model';
-import { WorkSchedule } from 'src/common/models/work-schedules.model';
-import { Utils } from 'src/common/utils/utils';
-import { UsersService } from 'src/modules/users/users.service';
+} from '../../../common/models/schedule-exceptions.model';
+import { WorkSchedule } from '../../../common/models/work-schedules.model';
+import { Utils } from '../../../common/utils/utils';
+import { UsersService } from '../../users/users.service';
 import { WorkScheduleRepository } from '../repositories/work-schedules.repository';
 import { WorkScheduleCreateDto } from '../validation/work-schedule-create.DTO';
 import { WorkScheduleGetAllDto } from '../validation/work-schedule-get-all.DTO';

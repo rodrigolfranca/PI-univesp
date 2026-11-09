@@ -4,8 +4,8 @@ import {
     Logger,
     NotFoundException,
 } from '@nestjs/common';
-import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
-import { Utils } from 'src/common/utils/utils';
+import { ScheduleExceptionType } from '../../../common/models/schedule-exceptions.model';
+import { Utils } from '../../../common/utils/utils';
 import { ScheduleExceptionsRepository } from '../repositories/schedule-exceptions.repository';
 import { ScheduleRepository } from '../repositories/schedules.repository';
 import { WorkScheduleRepository } from '../repositories/work-schedules.repository';

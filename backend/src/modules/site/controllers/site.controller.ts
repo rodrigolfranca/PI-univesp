@@ -21,7 +21,7 @@ import {
     ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AdminGuard, AuthGuard } from 'src/modules/auth/guards';
+import { AdminGuard, AuthGuard } from '../../auth/guards';
 import { SiteService } from '../services/site.service';
 import { BrandUpdateDTO } from '../validation/brand-update.dto';
 import { GalleryUpdateDTO } from '../validation/gallery-update.dto';

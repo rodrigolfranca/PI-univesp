@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Transaction } from 'sequelize';
-import { Client, Professional, User } from 'src/common/models';
+import { Client, Professional, User } from '../../../common/models';
 import { UsersCreateDTO } from '../validation/users-create.DTO';
 import { UsersListDTO } from '../validation/users-list.DTO';
 import { UserUpdateDTO } from '../validation/users-update.DTO';

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProceduresController } from './procedures.controller';
 import { ProceduresService } from './procedures.service';
 import { ProceduresRepository } from './repositories/procedures.repository';
-import { AdminGuard, AuthGuard } from 'src/modules/auth/guards';
+import { AdminGuard, AuthGuard } from '../auth/guards';
 
 describe('ProceduresController', () => {
     let controller: ProceduresController;

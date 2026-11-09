@@ -1,13 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { Op, WhereOptions } from 'sequelize';
-import { ScheduleStatus } from 'src/common/consts/schedule.status';
+import { ScheduleStatus } from '../../../common/consts/schedule.status';
 import {
     Client,
     Procedure,
     Professional,
     Schedule,
     User,
-} from 'src/common/models';
+} from '../../../common/models';
 import { ScheduleCreateDto } from '../validation/schedule-create.DTO';
 import { ScheduleGetAllDto } from '../validation/schedule-get-all.DTO';
 import { ScheduleUpdateDto } from '../validation/schedule-update.DTO';

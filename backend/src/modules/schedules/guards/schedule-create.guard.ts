@@ -4,7 +4,7 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
-import type { RequestWithUser } from 'src/common/types/request.type';
+import type { RequestWithUser } from '../../../common/types/request.type';
 
 type ScheduleBody = { client_id?: unknown };
 

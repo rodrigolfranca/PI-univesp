@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GalleryImage, SiteBrand } from 'src/common/models';
+import { GalleryImage, SiteBrand } from '../../../common/models';
 
 @Injectable()
 export class SiteRepository {

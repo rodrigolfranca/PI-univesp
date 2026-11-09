@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
-import type { RequestWithUser } from 'src/common/types/request.type';
+import type { RequestWithUser } from '../types/request.type';
 import { RATE_LIMIT_METADATA, RateLimitOptions } from './rate-limit.decorator';
 import { RateLimitService } from './rate-limit.service';
 
