@@ -21,6 +21,16 @@ import {
 } from "../../test/fixtures";
 import type { ApiUser } from "../services/users";
 
+vi.mock("../services/site", () => ({
+  getSiteBrand: vi.fn(async () => null),
+  updateSiteBrand: vi.fn(async (brand: unknown) => brand),
+  uploadBrandLogo: vi.fn(),
+  listGalleryImages: vi.fn(async () => []),
+  uploadGalleryImage: vi.fn(),
+  updateGalleryImageTitle: vi.fn(),
+  deleteGalleryImage: vi.fn(),
+}));
+
 afterEach(() => vi.unstubAllGlobals());
 
 function Location() {
@@ -205,15 +215,25 @@ describe("gestão e perfil", () => {
     expect(JSON.parse(creation![1].body as string).is_admin).toBe(false);
   });
 
-  it("profissional comum não solicita listagem nem recebe exemplos locais", async () => {
+  it("profissional comum vê apenas os próprios clientes", async () => {
     restoreAs(professional);
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(professional));
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === "/api/schedules/my-clients")
+        return jsonResponse([
+          { clientId: 7, userId: 42, name: "Maria Silva", phone_number: "11912345678" },
+        ]);
+      return jsonResponse(professional);
+    });
     vi.stubGlobal("fetch", fetchMock);
     renderFlow("/app/clients");
     await waitFor(() => expect(screen.getByTestId("account").textContent).toBe("51"));
-    expect(screen.getByText("Acesso restrito")).toBeTruthy();
+    expect(await screen.findByText("Maria Silva")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Ver histórico de Maria Silva" }).getAttribute("href"),
+    ).toBe("/app/clients/7");
     expect(screen.queryByRole("button", { name: "Cadastrar cliente" })).toBeNull();
-    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["/api/users/51"]);
+    expect(fetchMock.mock.calls.some(([url]) => url.startsWith("/api/users?page="))).toBe(false);
+    expect(fetchMock.mock.calls.some(([url]) => url === "/api/schedules/my-clients")).toBe(true);
   });
 
   it("erro de permissão da listagem não encerra a sessão nem apresenta mock", async () => {

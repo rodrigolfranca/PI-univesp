@@ -1,18 +1,27 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { randomUUID } from 'node:crypto';
 import { Redis } from 'ioredis';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import {
     Category,
     Client,
+    GalleryImage,
     Procedure,
     Professional,
     Schedule,
     ScheduleException,
+    SiteBrand,
     User,
     WorkSchedule,
 } from 'src/common/models';
+import { redisKey } from 'src/common/redis/redis-keys';
+import {
+    ACCESS_TOKEN_TTL_SECONDS,
+    sessionKey,
+} from 'src/modules/auth/session-key';
 import { closeE2EApp, createE2EApp } from './utils/create-e2e-app';
 
 type TestUser = {
@@ -28,6 +37,7 @@ type TestClient = {
 describe('API (e2e)', () => {
     let app: INestApplication<App>;
     let redis: Redis;
+    let siteId: string | undefined;
     let admin: TestUser;
     let professional: TestUser;
     let adminToken: string;
@@ -39,6 +49,8 @@ describe('API (e2e)', () => {
     const createdProcedureIds: number[] = [];
     const createdExceptionIds: number[] = [];
     const createdCategoryIds: number[] = [];
+    const createdGalleryIds: number[] = [];
+    let createdBrandId: number | null = null;
 
     async function createTestClient(): Promise<TestClient> {
         const suffix = String(Date.now()).slice(-8);
@@ -75,22 +87,28 @@ describe('API (e2e)', () => {
         app = (await createE2EApp()) as INestApplication<App>;
         redis = app.get<Redis>('REDIS_CLIENT');
         const jwtService = app.get(JwtService);
+        siteId = app.get(ConfigService).get<string>('SITE_ID');
+
+        async function issueToken(userId: number): Promise<string> {
+            const jti = randomUUID();
+            await redis.setex(
+                sessionKey(siteId, jti),
+                ACCESS_TOKEN_TTL_SECONDS,
+                String(userId),
+            );
+            return jwtService.signAsync({
+                keyType: 'access',
+                id: userId,
+                jti,
+            });
+        }
 
         admin = await createTestUser(true);
         professional = await createTestUser(false);
-        adminToken = await jwtService.signAsync({
-            keyType: 'access',
-            id: admin.user.id,
-        });
-        professionalToken = await jwtService.signAsync({
-            keyType: 'access',
-            id: professional.user.id,
-        });
+        adminToken = await issueToken(admin.user.id);
+        professionalToken = await issueToken(professional.user.id);
         testClient = await createTestClient();
-        clientToken = await jwtService.signAsync({
-            keyType: 'access',
-            id: testClient.user.id,
-        });
+        clientToken = await issueToken(testClient.user.id);
     });
 
     afterAll(async () => {
@@ -114,8 +132,17 @@ describe('API (e2e)', () => {
             for (const id of createdCategoryIds) {
                 await Category.destroy({ where: { id }, force: true });
             }
+            for (const id of createdGalleryIds) {
+                await GalleryImage.destroy({ where: { id }, force: true });
+            }
+            if (createdBrandId) {
+                await SiteBrand.destroy({
+                    where: { id: createdBrandId },
+                    force: true,
+                });
+            }
             for (const { user, professional } of createdUsers) {
-                await redis.del(`user:${user.id}`);
+                await redis.del(redisKey(siteId, 'user', user.id));
                 await Professional.destroy({
                     where: { id: professional.id },
                     force: true,
@@ -123,7 +150,7 @@ describe('API (e2e)', () => {
                 await User.destroy({ where: { id: user.id }, force: true });
             }
             for (const { user, client } of createdClients) {
-                await redis.del(`user:${user.id}`);
+                await redis.del(redisKey(siteId, 'user', user.id));
                 await Client.destroy({ where: { id: client.id }, force: true });
                 await User.destroy({ where: { id: user.id }, force: true });
             }
@@ -269,17 +296,26 @@ describe('API (e2e)', () => {
     });
 
     describe('Consulta por telefone', () => {
-        it('profissional consulta por telefone', () => {
+        it('admin consulta por telefone', () => {
             return request(app.getHttpServer())
                 .get(
                     `/users/by-phone?phone_number=${professional.user.phone_number}`,
                 )
-                .set('Authorization', `Bearer ${professionalToken}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200)
                 .expect((res) => {
                     const body = res.body as { id?: number };
                     expect(body.id).toBe(professional.user.id);
                 });
+        });
+
+        it('profissional não consulta por telefone', () => {
+            return request(app.getHttpServer())
+                .get(
+                    `/users/by-phone?phone_number=${professional.user.phone_number}`,
+                )
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .expect(401);
         });
 
         it('cliente não consulta por telefone', () => {
@@ -288,6 +324,15 @@ describe('API (e2e)', () => {
                     `/users/by-phone?phone_number=${professional.user.phone_number}`,
                 )
                 .set('Authorization', `Bearer ${clientToken}`)
+                .expect(401);
+        });
+    });
+
+    describe('Acesso do profissional a usuários', () => {
+        it('profissional não consulta outro usuário por ID', () => {
+            return request(app.getHttpServer())
+                .get(`/users/${testClient.user.id}`)
+                .set('Authorization', `Bearer ${professionalToken}`)
                 .expect(401);
         });
     });
@@ -399,7 +444,7 @@ describe('API (e2e)', () => {
                 .expect(201);
 
             const stored = await redis.get(
-                `contact_change:${testClient.user.id}:phone`,
+                redisKey(siteId, 'contact_change', testClient.user.id, 'phone'),
             );
             expect(stored).toBeTruthy();
             const { code } = JSON.parse(stored!) as { code: string };
@@ -468,6 +513,132 @@ describe('API (e2e)', () => {
             expect(body.find((entry) => entry.id === id)?.status).toBe(
                 'inactive',
             );
+        });
+    });
+
+    describe('Limite de upload', () => {
+        it('rejeita POP acima de 4,5 MB', () => {
+            return request(app.getHttpServer())
+                .post('/pops')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .attach('file', Buffer.alloc(4.5 * 1024 * 1024 + 1), {
+                    filename: 'grande.pdf',
+                    contentType: 'application/pdf',
+                })
+                .expect(413);
+        });
+    });
+
+    describe('Site', () => {
+        const brandPayload = {
+            name: 'Studio E2E',
+            logoUrl: null,
+            theme: { preset: 'rose', palette: {} },
+            aboutTitle: 'Sobre o studio',
+            aboutParagraphs: ['Primeiro parágrafo'],
+            whatsappNumber: '5511987654321',
+            instagramHandle: 'studioe2e',
+        };
+
+        it('GET /site/brand é público', () => {
+            return request(app.getHttpServer()).get('/site/brand').expect(200);
+        });
+
+        it('PUT /site/brand exige admin', () => {
+            return request(app.getHttpServer())
+                .put('/site/brand')
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .send(brandPayload)
+                .expect(401);
+        });
+
+        it('admin atualiza e lê a marca', async () => {
+            await request(app.getHttpServer())
+                .put('/site/brand')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send(brandPayload)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as typeof brandPayload;
+                    expect(body.name).toBe(brandPayload.name);
+                    expect(body.theme.preset).toBe('rose');
+                    expect(body.aboutParagraphs).toEqual(
+                        brandPayload.aboutParagraphs,
+                    );
+                });
+            const stored = await SiteBrand.findOne();
+            createdBrandId = stored?.id ?? null;
+
+            await request(app.getHttpServer())
+                .get('/site/brand')
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as typeof brandPayload;
+                    expect(body.whatsappNumber).toBe(
+                        brandPayload.whatsappNumber,
+                    );
+                });
+        });
+
+        it('GET /site/gallery é público', async () => {
+            await request(app.getHttpServer())
+                .get('/site/gallery')
+                .expect(200)
+                .expect((res) => {
+                    expect(Array.isArray(res.body)).toBe(true);
+                });
+        });
+
+        it('POST /site/gallery exige arquivo e admin', async () => {
+            await request(app.getHttpServer())
+                .post('/site/gallery')
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .attach('file', Buffer.from('fake'), {
+                    filename: 'teste.png',
+                    contentType: 'image/png',
+                })
+                .expect(401);
+
+            await request(app.getHttpServer())
+                .post('/site/gallery')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(400);
+        });
+
+        it('admin adiciona, edita e remove imagem da galeria', async () => {
+            const created = await request(app.getHttpServer())
+                .post('/site/gallery')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .attach('file', Buffer.from('fake-image'), {
+                    filename: 'teste.png',
+                    contentType: 'image/png',
+                })
+                .field('title', 'Antes e depois')
+                .expect(201);
+            const image = created.body as {
+                id: number;
+                url: string;
+                title?: string;
+            };
+            createdGalleryIds.push(image.id);
+            expect(image.url).toContain('data:image/png;base64,');
+            expect(image.title).toBe('Antes e depois');
+
+            await request(app.getHttpServer())
+                .patch(`/site/gallery/${image.id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ title: 'Nova legenda' })
+                .expect(200)
+                .expect((res) => {
+                    expect((res.body as { title?: string }).title).toBe(
+                        'Nova legenda',
+                    );
+                });
+
+            await request(app.getHttpServer())
+                .delete(`/site/gallery/${image.id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
         });
     });
 
@@ -581,6 +752,72 @@ describe('API (e2e)', () => {
                 });
         });
 
+        it('profissional vê somente os próprios agendamentos', async () => {
+            await request(app.getHttpServer())
+                .get('/schedules')
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as {
+                        data?: { professional_id: number }[];
+                    };
+                    expect(body.data?.length).toBeGreaterThan(0);
+                    expect(
+                        body.data?.every(
+                            (schedule) =>
+                                schedule.professional_id ===
+                                professional.professional.id,
+                        ),
+                    ).toBe(true);
+                });
+        });
+
+        it('profissional lista seus clientes e histórico filtrado', async () => {
+            await request(app.getHttpServer())
+                .get('/schedules/my-clients')
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as {
+                        clientId: number;
+                        name: string;
+                    }[];
+                    expect(
+                        body.some(
+                            (client) =>
+                                client.clientId === testClient.client.id,
+                        ),
+                    ).toBe(true);
+                });
+
+            await request(app.getHttpServer())
+                .get(`/schedules/my-clients/${testClient.client.id}/history`)
+                .set('Authorization', `Bearer ${professionalToken}`)
+                .expect(200)
+                .expect((res) => {
+                    const body = res.body as {
+                        client_id: number;
+                        professional_id: number;
+                    }[];
+                    expect(body.length).toBeGreaterThan(0);
+                    expect(
+                        body.every(
+                            (schedule) =>
+                                schedule.client_id === testClient.client.id &&
+                                schedule.professional_id ===
+                                    professional.professional.id,
+                        ),
+                    ).toBe(true);
+                });
+        });
+
+        it('cliente não acessa lista de clientes do profissional', () => {
+            return request(app.getHttpServer())
+                .get('/schedules/my-clients')
+                .set('Authorization', `Bearer ${clientToken}`)
+                .expect(401);
+        });
+
         it('exceção de agenda aceita e retorna nome', async () => {
             const date = '2031-01-01';
             const created = await request(app.getHttpServer())
@@ -636,6 +873,20 @@ describe('API (e2e)', () => {
                 .delete(`/schedule-exceptions/${id}`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
+        });
+    });
+
+    describe('Logout', () => {
+        it('invalida a sessão atual', async () => {
+            await request(app.getHttpServer())
+                .post('/auth/logout')
+                .set('Authorization', `Bearer ${clientToken}`)
+                .expect(201);
+
+            await request(app.getHttpServer())
+                .get(`/users/${testClient.user.id}`)
+                .set('Authorization', `Bearer ${clientToken}`)
+                .expect(401);
         });
     });
 
