@@ -20,11 +20,13 @@
         "test:cov": "jest --coverage",
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
         "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json",
+        "test:e2e:cov": "NODE_ENV=test jest --config ./test/jest-e2e-coverage.json --runInBand --coverage --forceExit",
         "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
         "migrate:schedule-exception-name": "ts-node -r tsconfig-paths/register src/scripts/migrate-schedule-exception-name.ts",
         "migrate:google-event-link": "ts-node -r tsconfig-paths/register src/scripts/migrate-google-event-link.ts",
         "migrate:categories": "ts-node -r tsconfig-paths/register src/scripts/migrate-categories.ts",
-        "migrate:procedure-status": "ts-node -r tsconfig-paths/register src/scripts/migrate-procedure-status.ts"
+        "migrate:procedure-status": "ts-node -r tsconfig-paths/register src/scripts/migrate-procedure-status.ts",
+        "migrate:brand-gallery": "ts-node -r tsconfig-paths/register src/scripts/migrate-brand-gallery.ts"
     },
     "dependencies": {
         "@googleapis/calendar": "^20.1.0",
@@ -34,10 +36,12 @@
         "@nestjs/jwt": "^11.0.2",
         "@nestjs/platform-express": "^11.0.1",
         "@nestjs/swagger": "^11.4.1",
-        "@nestjs/throttler": "^6.7.1",
+        "@upstash/ratelimit": "^2.2.0",
+        "@upstash/redis": "^1.41.0",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.15.1",
         "google-auth-library": "^11.3.1",
+        "helmet": "^8.3.0",
         "ioredis": "^5.10.1",
         "pg": "^8.20.0",
         "reflect-metadata": "^0.2.2",
