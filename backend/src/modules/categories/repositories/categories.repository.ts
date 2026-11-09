@@ -4,7 +4,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Op } from 'sequelize';
-import { Category, Procedure } from 'src/common/models';
+import { Category, Procedure } from '../../../common/models';
 import { CreateCategoryDto } from '../validation/create-category.dto';
 import { UpdateCategoryDto } from '../validation/update-category.dto';
 

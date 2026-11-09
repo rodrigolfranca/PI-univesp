@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
 import { Op, Transaction, WhereOptions } from 'sequelize';
-import { WorkSchedule } from 'src/common/models';
+import { WorkSchedule } from '../../../common/models';
 import { WorkScheduleCreateDto } from '../validation/work-schedule-create.DTO';
 import { WorkScheduleGetAllDto } from '../validation/work-schedule-get-all.DTO';
 import { WorkScheduleUpdateDto } from '../validation/work-schedule-update.DTO';

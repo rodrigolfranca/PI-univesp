@@ -16,12 +16,12 @@ import {
     SiteBrand,
     User,
     WorkSchedule,
-} from 'src/common/models';
-import { redisKey } from 'src/common/redis/redis-keys';
+} from '../src/common/models';
+import { redisKey } from '../src/common/redis/redis-keys';
 import {
     ACCESS_TOKEN_TTL_SECONDS,
     sessionKey,
-} from 'src/modules/auth/session-key';
+} from '../src/modules/auth/session-key';
 import { closeE2EApp, createE2EApp } from './utils/create-e2e-app';
 
 type TestUser = {

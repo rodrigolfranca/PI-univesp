@@ -10,7 +10,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
-import { AdminGuard, AuthGuard } from 'src/modules/auth/guards';
+import { AdminGuard, AuthGuard } from '../auth/guards';
 import { ProceduresService } from './procedures.service';
 import { CreateProcedureDto } from './validation/create-procedure.dto';
 import { UpdateProcedureDto } from './validation/update-procedure.dto';

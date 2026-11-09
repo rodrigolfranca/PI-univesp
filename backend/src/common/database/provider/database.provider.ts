@@ -1,3 +1,4 @@
+import 'pg';
 import { ConfigService } from '@nestjs/config';
 import { Sequelize } from 'sequelize-typescript';
 import {
@@ -14,7 +15,7 @@ import {
     SiteBrand,
     User,
     WorkSchedule,
-} from 'src/common/models';
+} from '../../models';
 
 function parseBoolean(value: unknown): boolean | undefined {
     if (typeof value === 'boolean') {

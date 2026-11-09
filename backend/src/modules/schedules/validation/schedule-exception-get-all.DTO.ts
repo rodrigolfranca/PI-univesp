@@ -9,7 +9,7 @@ import {
     Max,
     Min,
 } from 'class-validator';
-import { ScheduleExceptionType } from 'src/common/models/schedule-exceptions.model';
+import { ScheduleExceptionType } from '../../../common/models/schedule-exceptions.model';
 
 export class ScheduleExceptionGetAllDto {
     @ApiProperty({ required: false, example: 1 })

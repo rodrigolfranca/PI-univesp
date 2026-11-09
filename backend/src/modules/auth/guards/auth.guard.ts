@@ -10,11 +10,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { Redis } from 'ioredis';
-import { redisKey } from 'src/common/redis/redis-keys';
-import { RequestWithUser } from 'src/common/types/request.type';
-import { UserWithType } from 'src/common/types/users.type';
-import { Utils } from 'src/common/utils/utils';
-import { UsersService } from 'src/modules/users/users.service';
+import { redisKey } from '../../../common/redis/redis-keys';
+import { RequestWithUser } from '../../../common/types/request.type';
+import { UserWithType } from '../../../common/types/users.type';
+import { Utils } from '../../../common/utils/utils';
+import { UsersService } from '../../users/users.service';
 import { sessionKey } from '../session-key';
 import { JwtPayload } from '../types/jwt-payload.interface';
 

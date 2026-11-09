@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { CryptoModule } from 'src/common/crypto/crypto.module';
+import { CryptoModule } from '../../common/crypto/crypto.module';
 import { RedisModule } from '../../common/redis/redis.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';

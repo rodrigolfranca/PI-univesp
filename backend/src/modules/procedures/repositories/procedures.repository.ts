@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ProcedureStatus } from 'src/common/consts/procedure.status';
-import { Category, Procedure } from 'src/common/models';
+import { ProcedureStatus } from '../../../common/consts/procedure.status';
+import { Category, Procedure } from '../../../common/models';
 import { CreateProcedureDto } from '../validation/create-procedure.dto';
 import { UpdateProcedureDto } from '../validation/update-procedure.dto';
 

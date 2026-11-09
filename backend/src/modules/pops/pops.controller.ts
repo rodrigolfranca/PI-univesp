@@ -24,7 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import { AdminGuard, AuthGuard } from 'src/modules/auth/guards';
+import { AdminGuard, AuthGuard } from '../auth/guards';
 import { PopsService } from './pops.service';
 import { PopsCreateDTO } from './validation/pops-create.dto';
 import { PopsListDTO } from './validation/pops-list.dto';

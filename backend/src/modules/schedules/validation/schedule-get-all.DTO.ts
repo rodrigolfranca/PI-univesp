@@ -9,7 +9,7 @@ import {
     Max,
     Min,
 } from 'class-validator';
-import { ScheduleStatus } from 'src/common/consts/schedule.status';
+import { ScheduleStatus } from '../../../common/consts/schedule.status';
 
 export class ScheduleGetAllDto {
     @ApiProperty({ required: false, example: 1 })
