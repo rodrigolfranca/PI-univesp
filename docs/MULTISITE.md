@@ -16,7 +16,7 @@ Cada frontend aponta para o próprio backend via `VITE_API_BASE_URL`. Cada backe
 
 ## Domínios
 
-- `dayane-di-giovanni.vercel.app` → frontend Dayane → backend Dayane.
+- `dayane-di-giovanni-estetica.vercel.app` → frontend Dayane → backend Dayane.
 - `karina-alexisch.vercel.app` → frontend Karina → backend Karina.
 
 Domínios cadastrados nos manifestos dos variantes prevalecem sobre `VITE_CLIENTE`. Use `VITE_CLIENTE=dayane` ou `VITE_CLIENTE=karina` apenas em previews e desenvolvimento.
