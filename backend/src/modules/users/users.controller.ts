@@ -13,6 +13,8 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
+import { RateLimit } from 'src/common/rate-limit/rate-limit.decorator';
+import { RateLimitGuard } from 'src/common/rate-limit/rate-limit.guard';
 import {
     AdminGuard,
     AdminOrSelfGuard,
@@ -54,7 +56,8 @@ export class UsersController {
     }
 
     @Get('by-phone')
-    @UseGuards(AuthGuard, AdminGuard)
+    @RateLimit({ bucket: 'user-lookup', key: 'ip', limit: 30, windowMs: 60000 })
+    @UseGuards(AuthGuard, AdminGuard, RateLimitGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Consulta um usuário pelo telefone' })
     async findByPhone(@Query('phone_number') phone_number: string) {
@@ -92,7 +95,13 @@ export class UsersController {
     }
 
     @Post(':id/contact/request')
-    @UseGuards(AuthGuard, AdminOrSelfGuard)
+    @RateLimit({
+        bucket: 'contact-change',
+        key: 'user',
+        limit: 10,
+        windowMs: 60000,
+    })
+    @UseGuards(AuthGuard, AdminOrSelfGuard, RateLimitGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Solicita código para alterar contato' })
     async requestContactChange(
@@ -103,7 +112,13 @@ export class UsersController {
     }
 
     @Post(':id/contact/verify')
-    @UseGuards(AuthGuard, AdminOrSelfGuard)
+    @RateLimit({
+        bucket: 'contact-change',
+        key: 'user',
+        limit: 10,
+        windowMs: 60000,
+    })
+    @UseGuards(AuthGuard, AdminOrSelfGuard, RateLimitGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Confirma a alteração de contato' })
     async verifyContactChange(
