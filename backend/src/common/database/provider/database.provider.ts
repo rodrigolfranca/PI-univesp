@@ -4,12 +4,14 @@ import {
     Category,
     Client,
     DocumentTemplates,
+    GalleryImage,
     Pop,
     Procedure,
     Professional,
     Schedule,
     ScheduleException,
     Session,
+    SiteBrand,
     User,
     WorkSchedule,
 } from 'src/common/models';
@@ -85,9 +87,12 @@ export const DatabaseProvider = {
             Procedure,
             Session,
             DocumentTemplates,
+    GalleryImage,
             Schedule,
             WorkSchedule,
             ScheduleException,
+            SiteBrand,
+            GalleryImage,
         ]);
 
         if (sync) {

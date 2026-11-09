@@ -2,7 +2,7 @@ import { useTerminology } from "../config/SiteContext";
 import { UserProfile } from "../components/UserProfile";
 import { GoogleCalendarSettings } from "../components/GoogleCalendarSettings";
 import type { Theme } from "../config/types";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Phone,
   Palette,
@@ -16,9 +16,14 @@ import {
 } from "lucide-react";
 import { useBrand, COLOR_THEMES } from "../context/BrandContext";
 import { useGallery } from "../context/GalleryContext";
+import { useAuth } from "../context/AuthContext";
+import { errorMessage } from "../services/api";
+import { uploadBrandLogo } from "../services/site";
+import { toast } from "sonner";
 
 export function SettingsPage() {
   const copy = useTerminology();
+  const { token } = useAuth();
   const {
     name,
     logoUrl,
@@ -38,42 +43,73 @@ export function SettingsPage() {
   const [editWhatsapp, setEditWhatsapp] = useState(whatsappNumber);
   const [editInstagram, setEditInstagram] = useState(instagramHandle);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    setEditName(name);
+    setEditTheme(theme);
+    setPreviewLogo(logoUrl);
+    setEditAboutTitle(aboutTitle);
+    setEditParagraphs(aboutParagraphs);
+    setEditWhatsapp(whatsappNumber);
+    setEditInstagram(instagramHandle);
+  }, [name, logoUrl, theme, aboutTitle, aboutParagraphs, whatsappNumber, instagramHandle]);
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
+    if (!token) {
+      toast.error("Entre na sua conta para enviar o logo.");
+      return;
+    }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setPreviewLogo(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const uploaded = await uploadBrandLogo(file, token);
+      setPreviewLogo(uploaded.url);
+      toast.success("Logo enviado. Salve as alterações para confirmar.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
   };
 
-  const handleSave = () => {
-    updateBrand({
-      name: editName,
-      logoUrl: previewLogo,
-      theme: editTheme,
-      aboutTitle: editAboutTitle,
-      aboutParagraphs: editParagraphs,
-      whatsappNumber: editWhatsapp,
-      instagramHandle: editInstagram,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await updateBrand({
+        name: editName,
+        logoUrl: previewLogo,
+        theme: editTheme,
+        aboutTitle: editAboutTitle,
+        aboutParagraphs: editParagraphs,
+        whatsappNumber: editWhatsapp,
+        instagramHandle: editInstagram,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleGalleryUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    addImages(Array.from(files));
-    event.target.value = "";
+    try {
+      await addImages(Array.from(files));
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      event.target.value = "";
+    }
   };
 
   const startEditTitle = (id: string, current: string | undefined) => {
@@ -87,11 +123,22 @@ export function SettingsPage() {
     );
   };
 
-  const commitEditTitle = () => {
-    if (editingTitleId) {
-      updateTitle(editingTitleId, editingTitleValue);
+  const commitEditTitle = async () => {
+    if (!editingTitleId) return;
+    try {
+      await updateTitle(editingTitleId, editingTitleValue);
       setEditingTitleId(null);
       setEditingTitleValue("");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  };
+
+  const handleRemoveImage = async (id: string) => {
+    try {
+      await removeImage(id);
+    } catch (error) {
+      toast.error(errorMessage(error));
     }
   };
 
@@ -165,13 +212,13 @@ export function SettingsPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/webp"
                     className="hidden"
                     onChange={handleLogoUpload}
                   />
                 </div>
                 <p className="text-xs text-gray-400 mt-1.5">
-                  PNG, SVG ou JPG. Recomendado: fundo transparente.
+                  PNG, JPG ou WebP. Recomendado: fundo transparente.
                 </p>
               </div>
 
@@ -308,13 +355,16 @@ export function SettingsPage() {
               <div className="pt-2">
                 <button
                   onClick={handleSave}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${saved ? "bg-green-600 text-white" : "bg-brand-600 text-white hover:bg-brand-700"}`}
+                  disabled={saving}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-60 ${saved ? "bg-green-600 text-white" : "bg-brand-600 text-white hover:bg-brand-700"}`}
                 >
                   {saved ? (
                     <>
                       <Check className="w-4 h-4" />
                       Salvo!
                     </>
+                  ) : saving ? (
+                    "Salvando..."
                   ) : (
                     "Salvar alterações"
                   )}
@@ -346,7 +396,7 @@ export function SettingsPage() {
               <input
                 ref={galleryInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 multiple
                 className="hidden"
                 onChange={handleGalleryUpload}
@@ -375,7 +425,7 @@ export function SettingsPage() {
                       />
                     </div>
                     <button
-                      onClick={() => removeImage(img.id)}
+                      onClick={() => void handleRemoveImage(img.id)}
                       className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
                       title="Remover imagem"
                     >
