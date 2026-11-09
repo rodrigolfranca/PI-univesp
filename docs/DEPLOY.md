@@ -12,6 +12,15 @@ Arquitetura usada por marca:
 
 O frontend e o backend são projetos separados. O frontend chama a API diretamente pela URL pública do backend, e o backend libera a origem do frontend por CORS.
 
+## Fonte de verdade e deploy
+
+O repositório `rodrigolfranca/PI-univesp`, na branch `main`, é a única fonte de verdade do que pode ir para a infraestrutura.
+
+- Os projetos Vercel devem estar conectados ao repositório pela integração Git nativa e publicar apenas a partir da `main`.
+- Não execute `vercel --prod` a partir de uma árvore local. O deploy deve registrar `source: git`, o SHA da `main` e `gitDirty` ausente ou `0`.
+- Antes de publicar, confirme que `git status` está limpo e que `HEAD` é igual a `origin/main`.
+- Branches novas de trabalho são mantidas por 14 dias após o merge para rollback e depois podem ser removidas manualmente. A exclusão automática de branches no GitHub deve permanecer desativada.
+
 ## 1. Pré-requisitos
 
 - Conta na Vercel, no Supabase e no Upstash.
