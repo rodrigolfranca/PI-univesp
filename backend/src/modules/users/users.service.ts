@@ -6,8 +6,10 @@ import {
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { randomInt } from 'crypto';
 import { Redis } from 'ioredis';
+import { redisKey } from 'src/common/redis/redis-keys';
 import { Utils } from 'src/common/utils/utils';
 import { ClientsRepository } from './repositories/clients.repository';
 import { ProfessionalsRepository } from './repositories/professionals.repository';
@@ -25,8 +27,13 @@ export class UsersService {
         private readonly usersRepository: UsersRepository,
         private readonly clientsRepository: ClientsRepository,
         private readonly professionalsRepository: ProfessionalsRepository,
+        private readonly configService: ConfigService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
+
+    private get siteId() {
+        return this.configService.get<string>('SITE_ID');
+    }
 
     logger = new Logger(UsersService.name);
 
@@ -182,7 +189,7 @@ export class UsersService {
                 throw new BadRequestException('Email já cadastrado');
             }
 
-            await this.redis.del(`user:${id}`);
+            await this.redis.del(redisKey(this.siteId, 'user', id));
 
             return await this.usersRepository.update(id, userUpdateDTO);
         } catch (error) {
@@ -193,7 +200,7 @@ export class UsersService {
 
     async deleteUser(id: number) {
         try {
-            await this.redis.del(`user:${id}`);
+            await this.redis.del(redisKey(this.siteId, 'user', id));
             return await this.usersRepository.delete(id);
         } catch (error) {
             Utils.logError(this.logger, 'Failed to delete user', error);
@@ -249,7 +256,7 @@ export class UsersService {
 
         const code = String(randomInt(100000, 1000000));
         await this.redis.setex(
-            `contact_change:${id}:${dto.field}`,
+            redisKey(this.siteId, 'contact_change', id, dto.field),
             300,
             JSON.stringify({ value, code }),
         );
@@ -261,7 +268,12 @@ export class UsersService {
     }
 
     async verifyContactChange(id: number, dto: ContactChangeVerifyDTO) {
-        const key = `contact_change:${id}:${dto.field}`;
+        const key = redisKey(
+            this.siteId,
+            'contact_change',
+            id,
+            dto.field,
+        );
         const stored = await this.redis.get(key);
         if (!stored) {
             throw new UnauthorizedException('Código inválido ou expirado');
@@ -284,7 +296,7 @@ export class UsersService {
         if (existing && existing.id !== id) {
             throw new BadRequestException('Email já cadastrado');
         }
-        await this.redis.del(`user:${id}`);
+        await this.redis.del(redisKey(this.siteId, 'user', id));
         return await this.usersRepository.update(id, {
             email,
         } as UserUpdateDTO);
@@ -306,7 +318,7 @@ export class UsersService {
                 );
             }
 
-            await this.redis.del(`user:${id}`);
+            await this.redis.del(redisKey(this.siteId, 'user', id));
             return await this.usersRepository.update(id, {
                 phone_number,
             } as UserUpdateDTO);

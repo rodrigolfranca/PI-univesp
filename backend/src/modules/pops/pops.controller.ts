@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -29,6 +30,26 @@ import { PopsCreateDTO } from './validation/pops-create.dto';
 import { PopsListDTO } from './validation/pops-list.dto';
 import { PopsUpdateDTO } from './validation/pops-update.dto';
 
+const PDF_MAX_SIZE = Math.floor(4.5 * 1024 * 1024);
+const pdfUploadOptions = {
+    limits: { fileSize: PDF_MAX_SIZE },
+    fileFilter: (
+        _request: unknown,
+        file: Express.Multer.File,
+        callback: (error: Error | null, acceptFile: boolean) => void,
+    ) => {
+        if (
+            !['application/pdf', 'application/octet-stream'].includes(
+                file.mimetype,
+            )
+        ) {
+            callback(new BadRequestException('Envie um arquivo PDF'), false);
+            return;
+        }
+        callback(null, true);
+    },
+};
+
 @ApiTags('POPs')
 @Controller('pops')
 export class PopsController {
@@ -38,7 +59,7 @@ export class PopsController {
     @Post()
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Cria uma nova POP' })
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', pdfUploadOptions))
     @ApiConsumes('multipart/form-data')
     @ApiBody({
         schema: {
@@ -95,7 +116,7 @@ export class PopsController {
     @Patch(':id')
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Atualiza uma POP' })
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', pdfUploadOptions))
     @ApiConsumes('multipart/form-data')
     @ApiBody({
         schema: {
