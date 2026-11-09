@@ -9,6 +9,7 @@ import {
     Post,
     Query,
     Req,
+    UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -34,6 +35,46 @@ export class ScheduleController {
     @UseGuards(AuthGuard, ScheduleCreateGuard)
     async create(@Body() dto: ScheduleCreateDto) {
         return await this.schedulesService.create(dto);
+    }
+
+    @Get('my-clients')
+    @ApiOperation({
+        summary: 'Lista os clientes que têm agendamento com o profissional logado',
+    })
+    @ApiBearerAuth('JWT-auth')
+    @UseGuards(AuthGuard)
+    async myClients(@Req() request: RequestWithUser) {
+        const professional = request.user.professional;
+        if (!professional) {
+            throw new UnauthorizedException(
+                'Apenas profissionais podem acessar esta lista',
+            );
+        }
+        return this.schedulesService.findClientsForProfessional(
+            professional.id,
+        );
+    }
+
+    @Get('my-clients/:clientId/history')
+    @ApiOperation({
+        summary: 'Lista o histórico do cliente para o profissional logado',
+    })
+    @ApiBearerAuth('JWT-auth')
+    @UseGuards(AuthGuard)
+    async myClientHistory(
+        @Param('clientId', ParseIntPipe) clientId: number,
+        @Req() request: RequestWithUser,
+    ) {
+        const professional = request.user.professional;
+        if (!professional) {
+            throw new UnauthorizedException(
+                'Apenas profissionais podem acessar este histórico',
+            );
+        }
+        return this.schedulesService.findClientHistory(
+            professional.id,
+            clientId,
+        );
     }
 
     @Get()

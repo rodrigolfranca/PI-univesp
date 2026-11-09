@@ -8,7 +8,13 @@ import { STATUS_STYLE } from "../utils/appointments/constants";
 import { displayStatusFromApi, isoToDisplayDate } from "../utils/appointments/appointment";
 import { sortSchedulesNewestFirst } from "../utils/appointments/history";
 
-export function ClientHistory({ clientId }: { clientId: number }) {
+export function ClientHistory({
+  clientId,
+  professionalId,
+}: {
+  clientId: number;
+  professionalId?: number;
+}) {
   const { token } = useAuth();
   const [schedules, setSchedules] = useState<ApiSchedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,7 +29,14 @@ export function ClientHistory({ clientId }: { clientId: number }) {
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    listSchedules(token, { client_id: clientId }, controller.signal)
+    listSchedules(
+      token,
+      {
+        client_id: clientId,
+        ...(professionalId ? { professional_id: professionalId } : {}),
+      },
+      controller.signal,
+    )
       .then((result) => {
         if (!controller.signal.aborted) {
           setSchedules(sortSchedulesNewestFirst(result));
@@ -37,7 +50,7 @@ export function ClientHistory({ clientId }: { clientId: number }) {
       });
 
     return () => controller.abort();
-  }, [clientId, token]);
+  }, [clientId, professionalId, token]);
 
   return (
     <section className="space-y-4 rounded-xl border bg-white p-6">

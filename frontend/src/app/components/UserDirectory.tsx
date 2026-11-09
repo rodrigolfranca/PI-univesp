@@ -1,14 +1,14 @@
 import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import type { ChangeEvent } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { USER_DIRECTORY } from "../config/users";
 import { useAuth } from "../context/AuthContext";
 import { useUsers } from "../context/UsersContext";
 import type { ApiUser, UserFields, UserKind } from "../services/users";
-import { getUserByPhone, normalizePhone } from "../services/users";
-import { errorMessage } from "../services/api";
+import { normalizePhone } from "../services/users";
 import { UserForm } from "./UserForm";
+import { ProfessionalClientsList } from "./ProfessionalClientsList";
 import { RequestState } from "./RequestState";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -56,7 +56,13 @@ export function UserDirectory({ kind }: { kind: UserKind }) {
           </Button>
         )}
       </div>
-      {user?.isAdmin ? <AdminUserList kind={kind} /> : <RestrictedUserLookup kind={kind} />}
+      {user?.isAdmin ? (
+        <AdminUserList kind={kind} />
+      ) : kind === "client" ? (
+        <ProfessionalClientsList />
+      ) : (
+        <RestrictedProfileNotice />
+      )}
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
@@ -81,67 +87,12 @@ export function UserDirectory({ kind }: { kind: UserKind }) {
   );
 }
 
-function RestrictedUserLookup({ kind }: { kind: UserKind }) {
-  const navigate = useNavigate();
-  const { token } = useAuth();
-  const [lookupPhone, setLookupPhone] = useState("");
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const { singular, path } = USER_DIRECTORY[kind];
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    if (!/^\d{11}$/.test(normalizePhone(lookupPhone))) {
-      setError("Informe o DDD e o telefone com 11 dígitos.");
-      return;
-    }
-    if (!token) {
-      setError("Entre na sua conta para continuar.");
-      return;
-    }
-    setPending(true);
-    try {
-      const found = await getUserByPhone(lookupPhone, token);
-      navigate(`${path}/${found.id}`);
-    } catch (cause) {
-      setError(errorMessage(cause));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  function handlePhoneChange(event: ChangeEvent<HTMLInputElement>) {
-    setLookupPhone(event.currentTarget.value);
-  }
-
+function RestrictedProfileNotice() {
   return (
-    <section className="space-y-4 rounded-xl border bg-white p-6">
+    <section className="space-y-2 rounded-xl border bg-white p-6">
       <h2 className="font-semibold">Acesso restrito</h2>
-      <p>
-        A listagem de usuários é exclusiva de administradores. Você pode consultar um {singular}{" "}
-        pelo telefone ou editar seu próprio perfil nas configurações.
-      </p>
-      <form className="flex flex-wrap items-end gap-3" onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="user-lookup" className="mb-1 block text-sm">
-            Telefone do {singular}
-          </label>
-          <input
-            id="user-lookup"
-            required
-            type="tel"
-            value={lookupPhone}
-            onChange={handlePhoneChange}
-            placeholder="(11) 94002-8922"
-            className="rounded-lg border px-3 py-2"
-          />
-        </div>
-        <Button type="submit" disabled={pending}>
-          {pending ? "Consultando..." : "Consultar"}
-        </Button>
-      </form>
-      <RequestState error={error} />
+      <p>A listagem de usuários é exclusiva de administradores.</p>
+      <p>Edite seu próprio perfil nas configurações.</p>
     </section>
   );
 }
