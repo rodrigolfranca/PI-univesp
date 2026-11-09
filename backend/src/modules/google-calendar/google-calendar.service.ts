@@ -13,6 +13,7 @@ import { Redis } from 'ioredis';
 import * as crypto from 'crypto';
 import { ScheduleStatus } from 'src/common/consts/schedule.status';
 import { CryptoService } from 'src/common/crypto/crypto.service';
+import { redisKey } from 'src/common/redis/redis-keys';
 import { Schedule } from 'src/common/models';
 import { Utils } from 'src/common/utils/utils';
 import { GoogleCalendarRepository } from './repositories/google-calendar.repository';
@@ -39,7 +40,11 @@ export class GoogleCalendarService {
         try {
             const state = crypto.randomBytes(32).toString('hex');
             await this.redis.setex(
-                `google_oauth_state:${state}`,
+                redisKey(
+                    this.configService.get<string>('SITE_ID'),
+                    'google_oauth_state',
+                    state,
+                ),
                 OAUTH_STATE_TTL_SECONDS,
                 String(professional_id),
             );
@@ -64,7 +69,11 @@ export class GoogleCalendarService {
 
     async handleCallback(dto: GoogleCalendarCallbackDTO) {
         try {
-            const stateKey = `google_oauth_state:${dto.state}`;
+            const stateKey = redisKey(
+                this.configService.get<string>('SITE_ID'),
+                'google_oauth_state',
+                dto.state,
+            );
             const professional_id = await this.redis.get(stateKey);
             if (!professional_id) {
                 throw new UnauthorizedException(

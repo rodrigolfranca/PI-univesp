@@ -11,6 +11,7 @@ import {
     IsOptional,
     IsString,
     Matches,
+    MinLength,
     ValidateIf,
     validateSync,
 } from 'class-validator';
@@ -72,6 +73,10 @@ export class EnvirontmentVariables {
     DB_SSL?: boolean;
 
     @IsOptional()
+    @IsString()
+    DB_SSL_CA_BASE64?: string;
+
+    @IsOptional()
     @Transform(parseBoolean)
     @IsBoolean()
     DB_SYNC?: boolean;
@@ -104,8 +109,44 @@ export class EnvirontmentVariables {
     @IsString()
     CORS_ORIGINS?: string;
 
+    @IsOptional()
+    @IsString()
+    TRUST_PROXY?: string;
+
+    @ValidateIf((config: { NODE_ENV?: string }) =>
+        ['production', 'prod'].includes(
+            String(config.NODE_ENV).toLowerCase(),
+        ),
+    )
     @IsNotEmpty()
     @IsString()
+    SITE_ID?: string;
+
+    @IsOptional()
+    @IsString()
+    UPSTASH_REDIS_REST_URL?: string;
+
+    @IsOptional()
+    @IsString()
+    UPSTASH_REDIS_REST_TOKEN?: string;
+
+    @IsOptional()
+    @IsString()
+    SUPABASE_URL?: string;
+
+    @IsOptional()
+    @IsString()
+    SUPABASE_SERVICE_ROLE_KEY?: string;
+
+    @IsOptional()
+    @IsString()
+    SUPABASE_STORAGE_BUCKET?: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @MinLength(64, {
+        message: 'JWT_SECRET deve ter pelo menos 64 caracteres',
+    })
     JWT_SECRET: string;
 
     @IsNotEmpty()

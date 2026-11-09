@@ -52,6 +52,10 @@ export const DatabaseProvider = {
         const nodeEnv = configService.get<string>('NODE_ENV');
         const production = isProduction(nodeEnv);
         const ssl = parseBoolean(configService.get('DB_SSL')) ?? production;
+        const sslCaBase64 = configService.get<string>('DB_SSL_CA_BASE64');
+        const sslCa = sslCaBase64
+            ? Buffer.from(sslCaBase64, 'base64').toString('utf8')
+            : undefined;
         const sync = parseBoolean(configService.get('DB_SYNC')) ?? !production;
 
         const sequelize = new Sequelize({
@@ -66,7 +70,8 @@ export const DatabaseProvider = {
                 ? {
                       ssl: {
                           require: true,
-                          rejectUnauthorized: false,
+                          rejectUnauthorized: true,
+                          ...(sslCa ? { ca: sslCa } : {}),
                       },
                   }
                 : undefined,
@@ -87,7 +92,6 @@ export const DatabaseProvider = {
             Procedure,
             Session,
             DocumentTemplates,
-    GalleryImage,
             Schedule,
             WorkSchedule,
             ScheduleException,
