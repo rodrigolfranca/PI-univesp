@@ -6,13 +6,16 @@ import {
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { Redis } from 'ioredis';
+import { redisKey } from 'src/common/redis/redis-keys';
 import { RequestWithUser } from 'src/common/types/request.type';
 import { UserWithType } from 'src/common/types/users.type';
 import { Utils } from 'src/common/utils/utils';
 import { UsersService } from 'src/modules/users/users.service';
+import { sessionKey } from '../session-key';
 import { JwtPayload } from '../types/jwt-payload.interface';
 
 @Injectable()
@@ -20,6 +23,7 @@ export class AuthGuard implements CanActivate {
     constructor(
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
 
@@ -35,10 +39,22 @@ export class AuthGuard implements CanActivate {
             }
 
             const data = this.extractTokenData(token);
+            if (!data.jti) {
+                throw new UnauthorizedException('Invalid or no token');
+            }
+
+            const sessionUserId = await this.redis.get(
+                sessionKey(this.configService.get<string>('SITE_ID'), data.jti),
+            );
+            if (!sessionUserId || Number(sessionUserId) !== data.id) {
+                throw new UnauthorizedException('Invalid or no token');
+            }
 
             let user: UserWithType | null = null;
 
-            const cachedUser = await this.redis.get(`user:${data.id}`);
+            const siteId = this.configService.get<string>('SITE_ID');
+            const userCacheKey = redisKey(siteId, 'user', data.id);
+            const cachedUser = await this.redis.get(userCacheKey);
             if (cachedUser) {
                 user = JSON.parse(cachedUser) as UserWithType;
             }
@@ -54,12 +70,14 @@ export class AuthGuard implements CanActivate {
             }
 
             await this.redis.setex(
-                `user:${data.id}`,
+                userCacheKey,
                 3600,
                 JSON.stringify(user),
             );
 
-            (request as unknown as RequestWithUser).user = user;
+            const authenticatedRequest = request as unknown as RequestWithUser;
+            authenticatedRequest.user = user;
+            authenticatedRequest.sessionJti = data.jti;
             return true;
         } catch (e) {
             Utils.logError(this.logger, 'Authentication failed', e);
