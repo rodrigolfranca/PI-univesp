@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { SiteProvider } from "../app/config/SiteContext";
+import { OtpCodeModalHost } from "../app/components/OtpCodeModal";
 import { normalizeConfig } from "../app/config/schema.mjs";
 import type { ApiUser } from "../app/services/users";
 
@@ -38,5 +39,10 @@ export function jsonResponse(data: unknown, status = 200) {
 
 export function SiteWrapper({ children }: { children: ReactNode }) {
   const site = normalizeConfig({ id: "test", domains: [] }, { identity: { name: "Teste" } });
-  return <SiteProvider site={site}>{children}</SiteProvider>;
+  return (
+    <SiteProvider site={site}>
+      {children}
+      <OtpCodeModalHost />
+    </SiteProvider>
+  );
 }
