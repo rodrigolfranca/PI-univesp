@@ -110,6 +110,10 @@ VITE_API_PROXY_TARGET=http://localhost:3000
 
 Execute `npm run dev` com o backend e suas dependências já disponíveis. O proxy do Vite encaminha `/api/*` ao destino configurado, removendo `/api`; não é necessário modificar o backend nem habilitar CORS para desenvolvimento. Reinicie o Vite após alterar as variáveis. Nenhuma variável `VITE_*` deve conter segredos: seus valores são públicos no navegador.
 
+### Modo demonstração
+
+A tela de login oferece atalhos para admin, profissional e cliente. O código OTP é exibido em modal copiável. Consulte [docs/DEMO.md](../docs/DEMO.md). Esse modo expõe códigos e não deve ser usado com dados reais.
+
 ### Fluxo e permissões
 
 - Cadastro público: cria uma conta de cliente com nome, telefone de 11 dígitos e e-mail. Não confirma o telefone nem inicia uma sessão automaticamente. Após cadastrar, entre com o telefone e o código.
