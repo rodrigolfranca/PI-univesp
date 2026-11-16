@@ -39,7 +39,8 @@ export class ScheduleController {
 
     @Get('my-clients')
     @ApiOperation({
-        summary: 'Lista os clientes que têm agendamento com o profissional logado',
+        summary:
+            'Lista os clientes que têm agendamento com o profissional logado',
     })
     @ApiBearerAuth('JWT-auth')
     @UseGuards(AuthGuard)

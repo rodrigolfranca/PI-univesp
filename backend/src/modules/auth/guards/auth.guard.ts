@@ -69,11 +69,7 @@ export class AuthGuard implements CanActivate {
                 throw new UnauthorizedException('Invalid or no token');
             }
 
-            await this.redis.setex(
-                userCacheKey,
-                3600,
-                JSON.stringify(user),
-            );
+            await this.redis.setex(userCacheKey, 3600, JSON.stringify(user));
 
             const authenticatedRequest = request as unknown as RequestWithUser;
             authenticatedRequest.user = user;
