@@ -5,6 +5,7 @@ import { validateUser } from "../services/users";
 import type { UserFields } from "../services/users";
 import { RequestState } from "./RequestState";
 import { Button } from "./ui/button";
+import { cn } from "./ui/utils";
 
 interface UserFormProps {
   initialValues?: UserFields;
@@ -14,6 +15,7 @@ interface UserFormProps {
   onPendingChange?: (pending: boolean) => void;
   submitLabel?: string;
   lockContact?: boolean;
+  submitFullWidth?: boolean;
 }
 
 const EMPTY_USER: UserFields = { name: "", phone: "", email: "" };
@@ -31,8 +33,10 @@ export function UserForm({
   onPendingChange,
   submitLabel = "Salvar alterações",
   lockContact = false,
+  submitFullWidth = false,
 }: UserFormProps) {
   const id = useId();
+  const contactLockHintId = `${id}-contact-lock-hint`;
   const [fields, setFields] = useState<UserFields>(initialValues);
   const [errors, setErrors] = useState<Partial<Record<keyof UserFields, string>>>({});
   const [error, setError] = useState("");
@@ -71,39 +75,57 @@ export function UserForm({
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
       <fieldset disabled={pending} className="space-y-4">
-        {FIELDS.map((field) => (
-          <div key={field.name}>
-            <label
-              htmlFor={`${id}-${field.name}`}
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              {field.label}
-            </label>
-            <input
-              id={`${id}-${field.name}`}
-              name={field.name}
-              type={field.type}
-              autoComplete={field.autoComplete}
-              value={fields[field.name]}
-              required
-              readOnly={lockContact && field.name !== "name"}
-              maxLength={field.name === "name" ? 150 : undefined}
-              aria-invalid={Boolean(errors[field.name])}
-              aria-describedby={errors[field.name] ? `${id}-${field.name}-error` : undefined}
-              onChange={handleFieldChange}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
-            />
-            {errors[field.name] && (
-              <p id={`${id}-${field.name}-error`} className="mt-1 text-sm text-red-700">
-                {errors[field.name]}
-              </p>
-            )}
-          </div>
-        ))}
+        {FIELDS.map((field) => {
+          const locked = lockContact && field.name !== "name";
+          const describedBy =
+            [
+              errors[field.name] ? `${id}-${field.name}-error` : null,
+              locked ? contactLockHintId : null,
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined;
+          return (
+            <div key={field.name}>
+              <label
+                htmlFor={`${id}-${field.name}`}
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                {field.label}
+              </label>
+              <input
+                id={`${id}-${field.name}`}
+                name={field.name}
+                type={field.type}
+                autoComplete={field.autoComplete}
+                value={fields[field.name]}
+                required
+                disabled={locked}
+                maxLength={field.name === "name" ? 150 : undefined}
+                aria-invalid={Boolean(errors[field.name])}
+                aria-describedby={describedBy}
+                onChange={handleFieldChange}
+                className={cn(
+                  "w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500",
+                  locked ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "disabled:opacity-60",
+                )}
+              />
+              {errors[field.name] && (
+                <p id={`${id}-${field.name}-error`} className="mt-1 text-sm text-red-700">
+                  {errors[field.name]}
+                </p>
+              )}
+            </div>
+          );
+        })}
+        {lockContact && (
+          <p id={contactLockHintId} className="text-sm text-gray-500">
+            Telefone e e-mail só podem ser alterados pelos botões Alterar telefone/e-mail.
+          </p>
+        )}
       </fieldset>
       <RequestState error={error} />
-      <div className="flex flex-wrap gap-3">
-        <Button type="submit" disabled={pending}>
+      <div className={cn("flex flex-wrap gap-3", submitFullWidth && "flex-col")}>
+        <Button type="submit" disabled={pending} className={cn(submitFullWidth && "w-full")}>
           {pending ? "Salvando..." : submitLabel}
         </Button>
         {onCancel && (

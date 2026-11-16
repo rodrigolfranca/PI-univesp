@@ -1,0 +1,4 @@
+export const OTP_TTL_SECONDS = 300;
+export const OTP_RESEND_AFTER_SECONDS = 90;
+export const RECOVERY_SESSION_TTL_SECONDS = 600;
+export const SIGNUP_SESSION_TTL_SECONDS = 600;

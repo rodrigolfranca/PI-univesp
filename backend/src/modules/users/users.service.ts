@@ -9,7 +9,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { randomInt } from 'crypto';
 import { Redis } from 'ioredis';
+import {
+    OTP_RESEND_AFTER_SECONDS,
+    OTP_TTL_SECONDS,
+} from '../../common/otp/otp.constants';
 import { redisKey } from '../../common/redis/redis-keys';
+import { UserWithType } from '../../common/types/users.type';
 import { Utils } from '../../common/utils/utils';
 import { ClientsRepository } from './repositories/clients.repository';
 import { ProfessionalsRepository } from './repositories/professionals.repository';
@@ -55,12 +60,14 @@ export class UsersService {
                 )
             ) {
                 throw new BadRequestException(
-                    'Número de telefone já cadastrado',
+                    'Este telefone já está cadastrado em outra conta.',
                 );
             }
 
             if (await this.usersRepository.findByEmail(userCreateDTO.email)) {
-                throw new BadRequestException('Email já cadastrado');
+                throw new BadRequestException(
+                    'Este e-mail já está cadastrado em outra conta.',
+                );
             }
 
             const user = await this.usersRepository.create(
@@ -80,6 +87,53 @@ export class UsersService {
         }
     }
 
+    async createVerifiedClient(data: {
+        name: string;
+        phone_number: string;
+        email: string;
+    }) {
+        const dbTransaction = await this.usersRepository.startTransaction();
+        try {
+            if (
+                await this.usersRepository.findByPhoneNumber(data.phone_number)
+            ) {
+                throw new BadRequestException(
+                    'Este telefone já está cadastrado em outra conta.',
+                );
+            }
+
+            if (await this.usersRepository.findByEmail(data.email)) {
+                throw new BadRequestException(
+                    'Este e-mail já está cadastrado em outra conta.',
+                );
+            }
+
+            const user = await this.usersRepository.create(
+                {
+                    ...data,
+                    phone_number_confirmed: true,
+                    email_confirmed: true,
+                    is_admin: false,
+                },
+                dbTransaction,
+            );
+            const client = await this.clientsRepository.create(
+                user,
+                dbTransaction,
+            );
+            await dbTransaction.commit();
+            return client;
+        } catch (error) {
+            await dbTransaction.rollback();
+            Utils.logError(
+                this.logger,
+                'Failed to create verified client',
+                error,
+            );
+            Utils.handleError(error);
+        }
+    }
+
     async createProfessional(userCreateDTO: UsersCreateDTO) {
         const dbTransaction = await this.usersRepository.startTransaction();
         try {
@@ -89,12 +143,14 @@ export class UsersService {
                 )
             ) {
                 throw new BadRequestException(
-                    'Número de telefone já cadastrado',
+                    'Este telefone já está cadastrado em outra conta.',
                 );
             }
 
             if (await this.usersRepository.findByEmail(userCreateDTO.email)) {
-                throw new BadRequestException('Email já cadastrado');
+                throw new BadRequestException(
+                    'Este e-mail já está cadastrado em outra conta.',
+                );
             }
 
             const user = await this.usersRepository.create(
@@ -172,7 +228,7 @@ export class UsersService {
                 ))
             ) {
                 throw new BadRequestException(
-                    'Número de telefone já cadastrado',
+                    'Este telefone já está cadastrado em outra conta.',
                 );
             }
 
@@ -186,7 +242,9 @@ export class UsersService {
                     userUpdateDTO.email,
                 ))
             ) {
-                throw new BadRequestException('Email já cadastrado');
+                throw new BadRequestException(
+                    'Este e-mail já está cadastrado em outra conta.',
+                );
             }
 
             await this.redis.del(redisKey(this.siteId, 'user', id));
@@ -198,10 +256,27 @@ export class UsersService {
         }
     }
 
-    async deleteUser(id: number) {
+    async deleteUser(id: number, currentUser?: UserWithType) {
         try {
+            if (currentUser?.professional?.is_admin && currentUser.id === id) {
+                throw new BadRequestException(
+                    'Não é possível excluir a própria conta.',
+                );
+            }
+
+            const today = new Date().toISOString().slice(0, 10);
+            if (
+                (await this.usersRepository.countUpcomingSchedules(id, today)) >
+                0
+            ) {
+                throw new BadRequestException(
+                    'Não é possível excluir: existem agendamentos futuros para esta conta.',
+                );
+            }
+
+            const result = await this.usersRepository.delete(id);
             await this.redis.del(redisKey(this.siteId, 'user', id));
-            return await this.usersRepository.delete(id);
+            return result;
         } catch (error) {
             Utils.logError(this.logger, 'Failed to delete user', error);
             Utils.handleError(error);
@@ -244,36 +319,62 @@ export class UsersService {
                 await this.usersRepository.findByPhoneNumber(value);
             if (existing && existing.id !== id) {
                 throw new BadRequestException(
-                    'Número de telefone já cadastrado',
+                    'Este telefone já está cadastrado em outra conta.',
+                );
+            }
+            if (value === user.phone_number) {
+                throw new BadRequestException(
+                    'Este é o telefone atual da conta. Informe um número diferente.',
                 );
             }
         } else {
             const existing = await this.usersRepository.findByEmail(value);
             if (existing && existing.id !== id) {
-                throw new BadRequestException('Email já cadastrado');
+                throw new BadRequestException(
+                    'Este e-mail já está cadastrado em outra conta.',
+                );
+            }
+            if (value === user.email) {
+                throw new BadRequestException(
+                    'Este é o e-mail atual da conta. Informe um e-mail diferente.',
+                );
             }
         }
 
         const code = String(randomInt(100000, 1000000));
         await this.redis.setex(
             redisKey(this.siteId, 'contact_change', id, dto.field),
-            300,
+            OTP_TTL_SECONDS,
             JSON.stringify({ value, code }),
         );
         this.logger.log(`Contact change code for ${value}: ${code}`);
         return {
             message: 'Código enviado para o novo contato',
-            expires_in: 300,
+            expires_in: OTP_TTL_SECONDS,
+            resend_after: OTP_RESEND_AFTER_SECONDS,
+        };
+    }
+
+    async requestEmailConfirmation(id: number) {
+        const user = await this.usersRepository.getById(id);
+        if (!user) throw new NotFoundException('User not found');
+
+        const code = String(randomInt(100000, 1000000));
+        await this.redis.setex(
+            redisKey(this.siteId, 'contact_change', id, 'email'),
+            OTP_TTL_SECONDS,
+            JSON.stringify({ value: user.email, code }),
+        );
+        this.logger.log(`Contact change code for ${user.email}: ${code}`);
+        return {
+            message: 'Código enviado para o e-mail atual',
+            expires_in: OTP_TTL_SECONDS,
+            resend_after: OTP_RESEND_AFTER_SECONDS,
         };
     }
 
     async verifyContactChange(id: number, dto: ContactChangeVerifyDTO) {
-        const key = redisKey(
-            this.siteId,
-            'contact_change',
-            id,
-            dto.field,
-        );
+        const key = redisKey(this.siteId, 'contact_change', id, dto.field);
         const stored = await this.redis.get(key);
         if (!stored) {
             throw new UnauthorizedException('Código inválido ou expirado');
@@ -294,12 +395,15 @@ export class UsersService {
     async changeEmail(id: number, email: string) {
         const existing = await this.usersRepository.findByEmail(email);
         if (existing && existing.id !== id) {
-            throw new BadRequestException('Email já cadastrado');
+            throw new BadRequestException(
+                'Este e-mail já está cadastrado em outra conta.',
+            );
         }
         await this.redis.del(redisKey(this.siteId, 'user', id));
-        return await this.usersRepository.update(id, {
+        return await this.usersRepository.updateContact(id, {
             email,
-        } as UserUpdateDTO);
+            email_confirmed: true,
+        });
     }
 
     async changePhoneNumber(id: number, phone_number: string) {
@@ -314,18 +418,31 @@ export class UsersService {
                 ))
             ) {
                 throw new BadRequestException(
-                    'Número de telefone já cadastrado',
+                    'Este telefone já está cadastrado em outra conta.',
                 );
             }
 
             await this.redis.del(redisKey(this.siteId, 'user', id));
-            return await this.usersRepository.update(id, {
+            return await this.usersRepository.updateContact(id, {
                 phone_number,
-            } as UserUpdateDTO);
+                phone_number_confirmed: true,
+            });
         } catch (error) {
             Utils.logError(this.logger, 'Failed to change phone number', error);
             Utils.handleError(error);
         }
+    }
+
+    async markPhoneConfirmed(id: number) {
+        return await this.usersRepository.updateContact(id, {
+            phone_number_confirmed: true,
+        });
+    }
+
+    async markEmailConfirmed(id: number) {
+        return await this.usersRepository.updateContact(id, {
+            email_confirmed: true,
+        });
     }
 
     async findProfessionalById(id: number) {

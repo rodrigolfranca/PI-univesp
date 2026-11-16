@@ -3,12 +3,23 @@ import { jsonResponse } from "../../test/fixtures";
 import {
   logoutSession,
   requestLoginCode,
-  requestRecoveryCode,
+  requestRecoveryEmailCode,
+  requestRecoveryPhoneCode,
+  requestSignupCode,
+  resendSignupCode,
+  resendSignupPhoneCode,
   verifyLoginCode,
-  verifyRecoveryCode,
+  verifyRecoveryEmailCode,
+  verifyRecoveryPhoneCode,
+  verifySignupEmailCode,
+  verifySignupPhoneCode,
 } from "./auth";
 import { createCategory, deleteCategory, listCategories, updateCategory } from "./categories";
-import { requestContactChange, verifyContactChange } from "./contact-change";
+import {
+  requestContactChange,
+  requestEmailConfirmation,
+  verifyContactChange,
+} from "./contact-change";
 import {
   disconnectGoogleCalendar,
   getGoogleCalendarConnectUrl,
@@ -44,29 +55,57 @@ describe("auth service", () => {
   it("envia credenciais de login, recuperação e logout", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({}))
+      .mockResolvedValueOnce(jsonResponse({ expires_in: 300, resend_after: 90 }))
       .mockResolvedValueOnce(jsonResponse({ access_token: "jwt" }))
-      .mockResolvedValueOnce(jsonResponse({}))
-      .mockResolvedValueOnce(jsonResponse({}))
       .mockResolvedValueOnce(jsonResponse({}));
     vi.stubGlobal("fetch", fetchMock);
 
-    await requestLoginCode("(11) 91234-5678");
+    await expect(requestLoginCode("(11) 91234-5678")).resolves.toEqual({
+      expires_in: 300,
+      resend_after: 90,
+    });
     await expect(verifyLoginCode("11912345678", "123456")).resolves.toBe("jwt");
-    await requestRecoveryCode("a@b.com", "(11) 91234-5678");
-    await verifyRecoveryCode("a@b.com", "11912345678", "654321");
     await logoutSession("jwt");
 
     expect(fetchMock.mock.calls.map(([url, init]) => [url, init.method])).toEqual([
       ["/api/auth/request-code", "POST"],
       ["/api/auth/verify-code", "POST"],
-      ["/api/auth/recovery/request-code", "POST"],
-      ["/api/auth/recovery/verify-code", "POST"],
       ["/api/auth/logout", "POST"],
     ]);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       phone_number: "11912345678",
     });
+  });
+
+  it("recupera a conta em etapas", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({ recovery_id: "recovery-1", expires_in: 300, resend_after: 90 }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ message: "E-mail confirmado" }))
+      .mockResolvedValueOnce(jsonResponse({ expires_in: 300, resend_after: 90 }))
+      .mockResolvedValueOnce(jsonResponse({ message: "Telefone atualizado" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRecoveryEmailCode("a@b.com")).resolves.toEqual({
+      recovery_id: "recovery-1",
+      expires_in: 300,
+      resend_after: 90,
+    });
+    await verifyRecoveryEmailCode("recovery-1", "111111");
+    await expect(requestRecoveryPhoneCode("recovery-1", "(11) 91234-5678")).resolves.toEqual({
+      expires_in: 300,
+      resend_after: 90,
+    });
+    await verifyRecoveryPhoneCode("recovery-1", "11912345678", "222222");
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "/api/auth/recovery/request-email-code",
+      "/api/auth/recovery/verify-email-code",
+      "/api/auth/recovery/request-phone-code",
+      "/api/auth/recovery/verify-phone-code",
+    ]);
   });
 });
 
@@ -145,19 +184,84 @@ describe("pops, contato e Google Calendar", () => {
     expect(fetchMock.mock.calls[2][1].body).toBeInstanceOf(FormData);
   });
 
-  it("solicita e confirma troca de contato", async () => {
+  it("solicita, reenvia e confirma códigos de cadastro em etapas", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({}))
+      .mockResolvedValueOnce(
+        jsonResponse({ signup_id: "signup-1", expires_in: 300, resend_after: 90 }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ signup_id: "signup-1", expires_in: 300, resend_after: 90 }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ signup_id: "signup-1", expires_in: 300, resend_after: 90 }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ signup_id: "signup-1", expires_in: 300, resend_after: 90 }),
+      )
       .mockResolvedValueOnce(jsonResponse({}));
     vi.stubGlobal("fetch", fetchMock);
 
-    await requestContactChange(7, "phone", "11999999999", "token");
+    await expect(
+      requestSignupCode({
+        name: "Ana Souza",
+        phone: "(11) 91234-5678",
+        email: "ana@example.com",
+      }),
+    ).resolves.toEqual({ signup_id: "signup-1", expires_in: 300, resend_after: 90 });
+    await expect(resendSignupCode("signup-1")).resolves.toEqual({
+      signup_id: "signup-1",
+      expires_in: 300,
+      resend_after: 90,
+    });
+    await expect(verifySignupEmailCode("signup-1", "111111")).resolves.toEqual({
+      signup_id: "signup-1",
+      expires_in: 300,
+      resend_after: 90,
+    });
+    await expect(resendSignupPhoneCode("signup-1")).resolves.toEqual({
+      signup_id: "signup-1",
+      expires_in: 300,
+      resend_after: 90,
+    });
+    await verifySignupPhoneCode("signup-1", "222222");
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "/api/auth/signup/request-code",
+      "/api/auth/signup/resend-code",
+      "/api/auth/signup/verify-email-code",
+      "/api/auth/signup/resend-phone-code",
+      "/api/auth/signup/verify-phone-code",
+    ]);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      name: "Ana Souza",
+      phone_number: "11912345678",
+      email: "ana@example.com",
+    });
+  });
+
+  it("solicita e confirma troca de contato", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ expires_in: 300, resend_after: 90 }))
+      .mockResolvedValueOnce(jsonResponse({}))
+      .mockResolvedValueOnce(jsonResponse({ expires_in: 300, resend_after: 90 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestContactChange(7, "phone", "11999999999", "token")).resolves.toEqual({
+      expires_in: 300,
+      resend_after: 90,
+    });
     await verifyContactChange(7, "email", "a@b.com", "123456", "token");
+    await expect(requestEmailConfirmation(7, "token")).resolves.toEqual({
+      expires_in: 300,
+      resend_after: 90,
+    });
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       "/api/users/7/contact/request",
       "/api/users/7/contact/verify",
+      "/api/users/7/contact/confirm-email/request",
     ]);
   });
 

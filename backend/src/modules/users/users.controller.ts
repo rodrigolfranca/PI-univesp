@@ -10,16 +10,14 @@ import {
     Patch,
     Post,
     Query,
+    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiSchema } from '@nestjs/swagger';
 import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
+import type { RequestWithUser } from '../../common/types/request.type';
 import { RateLimitGuard } from '../../common/rate-limit/rate-limit.guard';
-import {
-    AdminGuard,
-    AdminOrSelfGuard,
-    AuthGuard,
-} from '../auth/guards';
+import { AdminGuard, AdminOrSelfGuard, AuthGuard } from '../auth/guards';
 import { UsersList } from './types/users.interfaces';
 import { UsersService } from './users.service';
 import { UsersCreateDTO } from './validation/users-create.DTO';
@@ -34,6 +32,8 @@ export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
     @Post('client')
+    @UseGuards(AuthGuard, AdminGuard)
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Cria um novo cliente' })
     async createClient(@Body() userCreateDTO: UsersCreateDTO) {
         return await this.usersService.createClient(userCreateDTO);
@@ -111,6 +111,20 @@ export class UsersController {
         return await this.usersService.requestContactChange(id, dto);
     }
 
+    @Post(':id/contact/confirm-email/request')
+    @RateLimit({
+        bucket: 'contact-change',
+        key: 'user',
+        limit: 10,
+        windowMs: 60000,
+    })
+    @UseGuards(AuthGuard, AdminOrSelfGuard, RateLimitGuard)
+    @ApiBearerAuth('JWT-auth')
+    @ApiOperation({ summary: 'Solicita código para confirmar o e-mail atual' })
+    async requestEmailConfirmation(@Param('id', ParseIntPipe) id: number) {
+        return await this.usersService.requestEmailConfirmation(id);
+    }
+
     @Post(':id/contact/verify')
     @RateLimit({
         bucket: 'contact-change',
@@ -132,7 +146,10 @@ export class UsersController {
     @UseGuards(AuthGuard, AdminOrSelfGuard)
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Exclui um usuário por ID' })
-    async deleteUser(@Param('id', ParseIntPipe) id: number) {
-        return await this.usersService.deleteUser(id);
+    async deleteUser(
+        @Param('id', ParseIntPipe) id: number,
+        @Req() request: RequestWithUser,
+    ) {
+        return await this.usersService.deleteUser(id, request.user);
     }
 }
