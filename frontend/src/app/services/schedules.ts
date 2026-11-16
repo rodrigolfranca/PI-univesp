@@ -67,9 +67,47 @@ export interface ProfessionalAvailability {
   slots: AvailabilitySlot[];
 }
 
+export interface ProcedureAvailabilitySummary {
+  procedure_id: number;
+  next_date: string | null;
+}
+
+export async function getAvailableDates(
+  token: string,
+  procedureId: number,
+  from: string,
+  to: string,
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const params = new URLSearchParams({
+    procedure_id: String(procedureId),
+    from,
+    to,
+  });
+  const result = await apiRequest<{ dates: string[] }>(
+    `/work-schedules/available-dates?${params.toString()}`,
+    { token, signal },
+  );
+  return result.dates;
+}
+
+export async function getAvailabilitySummary(
+  token: string,
+  from: string,
+  to: string,
+  signal?: AbortSignal,
+): Promise<ProcedureAvailabilitySummary[]> {
+  const params = new URLSearchParams({ from, to });
+  return await apiRequest<ProcedureAvailabilitySummary[]>(
+    `/work-schedules/availability-summary?${params.toString()}`,
+    { token, signal },
+  );
+}
+
 export async function getAvailabilityForDate(
   token: string,
   date: string,
+  procedureId?: number,
   signal?: AbortSignal,
 ): Promise<ProfessionalAvailability[]> {
   const dayOfWeek = new Date(`${date}T00:00:00Z`).getUTCDay();
@@ -77,6 +115,7 @@ export async function getAvailabilityForDate(
     day_of_week: String(dayOfWeek),
     date,
   });
+  if (procedureId) params.set("procedure_id", String(procedureId));
   const result = await apiRequest<Record<string, AvailabilitySlot[]>>(
     `/work-schedules/all?${params.toString()}`,
     { token, signal },
@@ -188,6 +227,7 @@ export async function getAvailableSlots(
   token: string,
   professionalId: number,
   date: string,
+  procedureId?: number,
   signal?: AbortSignal,
 ): Promise<string[]> {
   const dayOfWeek = new Date(`${date}T00:00:00Z`).getUTCDay();
@@ -196,6 +236,7 @@ export async function getAvailableSlots(
     day_of_week: String(dayOfWeek),
     date,
   });
+  if (procedureId) params.set("procedure_id", String(procedureId));
   const result = await apiRequest<Record<string, AvailabilitySlot[]>>(
     `/work-schedules/all?${params.toString()}`,
     { token, signal },

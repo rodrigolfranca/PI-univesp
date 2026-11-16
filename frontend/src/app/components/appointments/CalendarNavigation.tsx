@@ -1,53 +1,62 @@
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 export function CalendarNavigation({
   label,
   onPrevious,
   onNext,
   onToday,
   onSync,
-  alignRight = false,
 }: {
   label: string;
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
-  onSync: () => void;
-  alignRight?: boolean;
+  onSync?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
+    <div className="mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+      <button
+        type="button"
+        onClick={onToday}
+        aria-label="Ir para hoje"
+        title="Ir para hoje"
+        className="flex cursor-pointer items-center gap-1.5 justify-self-start rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-sm font-medium text-brand-700 shadow-sm transition-colors hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-300"
+      >
+        <CalendarDays className="h-4 w-4" />
+        Hoje
+      </button>
+      <div className="flex min-w-0 items-center justify-center gap-1 justify-self-center">
         <button
+          type="button"
           aria-label="Período anterior"
+          title="Período anterior"
           onClick={onPrevious}
-          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+          className="cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-gray-100"
         >
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
+          <ChevronLeft className="h-5 w-5 text-gray-600" />
         </button>
+        <span className="min-w-0 text-center text-sm font-medium leading-tight text-gray-700">
+          {label}
+        </span>
         <button
-          onClick={onToday}
-          className="px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-        >
-          Hoje
-        </button>
-        <button
+          type="button"
           aria-label="Próximo período"
+          title="Próximo período"
           onClick={onNext}
-          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+          className="cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-gray-100"
         >
-          <ChevronRight className="w-5 h-5 text-gray-600" />
+          <ChevronRight className="h-5 w-5 text-gray-600" />
         </button>
       </div>
-      <span className={`text-sm font-medium text-gray-700 ${alignRight ? "text-right" : ""}`}>
-        {label}
-      </span>
-      <button
-        onClick={onSync}
-        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors"
-      >
-        <RefreshCw className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Sincronizar</span>
-      </button>
+      {onSync && (
+        <button
+          type="button"
+          onClick={onSync}
+          className="flex cursor-pointer items-center gap-1.5 justify-self-end text-xs text-gray-400 transition-colors hover:text-blue-600"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Sincronizar</span>
+        </button>
+      )}
     </div>
   );
 }

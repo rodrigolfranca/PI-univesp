@@ -17,7 +17,7 @@ export function AgendarPage() {
     if (!user) {
       navigate(`/login${suffix}`, { replace: true });
     } else if (user.role === "client") {
-      navigate(`/cliente/novo${suffix}`, { replace: true });
+      navigate(`/cliente/agendamentos/novo${suffix}`, { replace: true });
     } else {
       navigate("/app/appointments", { replace: true });
     }

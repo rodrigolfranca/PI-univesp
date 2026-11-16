@@ -220,6 +220,7 @@ export function AppointmentsPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <div className="px-4 pt-4 md:px-8"></div>
       {error && (
         <p role="alert" className="mx-4 mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 md:mx-8">
           {error}
@@ -251,7 +252,6 @@ export function AppointmentsPage() {
             onNext={navigation.next}
             onToday={navigation.goToToday}
             onSync={() => void handleSync()}
-            alignRight={navigation.view === "day"}
           />
           <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">

@@ -42,7 +42,9 @@ describe("ClienteAgendamentosPage", () => {
     expect(screen.getByText("Histórico")).toBeTruthy();
     expect(screen.getByText("Limpeza")).toBeTruthy();
     expect(screen.getByText("Botox")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Novo" }).getAttribute("href")).toBe("/cliente/novo");
+    expect(screen.getByRole("link", { name: "Novo" }).getAttribute("href")).toBe(
+      "/cliente/agendamentos/novo",
+    );
   });
 
   it("mostra loading, erro e estado vazio", () => {
