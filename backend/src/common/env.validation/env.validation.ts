@@ -114,9 +114,7 @@ export class EnvirontmentVariables {
     TRUST_PROXY?: string;
 
     @ValidateIf((config: { NODE_ENV?: string }) =>
-        ['production', 'prod'].includes(
-            String(config.NODE_ENV).toLowerCase(),
-        ),
+        ['production', 'prod'].includes(String(config.NODE_ENV).toLowerCase()),
     )
     @IsNotEmpty()
     @IsString()

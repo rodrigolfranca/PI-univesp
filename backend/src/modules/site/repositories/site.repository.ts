@@ -34,9 +34,7 @@ export class SiteRepository {
         );
     }
 
-    createGalleryImage(
-        values: Partial<GalleryImage>,
-    ): Promise<GalleryImage> {
+    createGalleryImage(values: Partial<GalleryImage>): Promise<GalleryImage> {
         return GalleryImage.create(values);
     }
 

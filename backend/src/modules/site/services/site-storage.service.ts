@@ -1,7 +1,4 @@
-import {
-    Injectable,
-    InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 
@@ -21,7 +18,9 @@ export class SiteStorageService {
     constructor(private readonly configService: ConfigService) {}
 
     private get supabaseUrl() {
-        return this.configService.get<string>('SUPABASE_URL')?.replace(/\/$/, '');
+        return this.configService
+            .get<string>('SUPABASE_URL')
+            ?.replace(/\/$/, '');
     }
 
     private get serviceRoleKey() {
@@ -80,7 +79,12 @@ export class SiteStorageService {
     }
 
     async remove(path: string | null): Promise<void> {
-        if (!path || !this.supabaseUrl || !this.serviceRoleKey || !this.bucket) {
+        if (
+            !path ||
+            !this.supabaseUrl ||
+            !this.serviceRoleKey ||
+            !this.bucket
+        ) {
             return;
         }
 

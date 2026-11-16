@@ -50,8 +50,7 @@ export class SiteService {
             instagram_handle: dto.instagramHandle,
         };
         const brand =
-            current ??
-            (await this.siteRepository.createBrand(values));
+            current ?? (await this.siteRepository.createBrand(values));
         if (current) {
             current.set(values);
             await this.siteRepository.saveBrand(current);
