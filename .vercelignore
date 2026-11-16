@@ -1,0 +1,9 @@
+.env*
+**/.env*
+**/node_modules
+**/dist
+**/coverage
+**/coverage-e2e
+.git
+.vercel
+.DS_Store
