@@ -179,6 +179,13 @@ describe("sessão real", () => {
       role: "employee",
       isAdmin: true,
     });
+    expect(
+      toAuthUser({
+        ...client,
+        email_confirmed: undefined,
+        phone_number_confirmed: undefined,
+      } as never),
+    ).toMatchObject({ emailConfirmed: true, phoneConfirmed: true });
     expect(() => readAccessToken("invalid")).toThrow("sessão expirou");
   });
 });

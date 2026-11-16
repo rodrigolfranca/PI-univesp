@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { useAuth } from "../context/AuthContext";
+import { formatCountdown, useOtpCountdown } from "../hooks/useOtpCountdown";
 import { errorMessage } from "../services/api";
 import { requestContactChange, verifyContactChange } from "../services/contact-change";
 import type { ContactField } from "../services/contact-change";
@@ -27,6 +28,8 @@ export function ContactChangeDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const submitting = useRef(false);
+  const { remainingSeconds, resendInSeconds, expired, canResend, start, reset } = useOtpCountdown();
 
   useEffect(() => {
     setValue(currentValue);
@@ -34,35 +37,43 @@ export function ContactChangeDialog({
     setStep("value");
     setError("");
     setNotice("");
-  }, [currentValue, field]);
+    reset();
+  }, [currentValue, field, reset]);
 
   async function handleRequest() {
-    if (!token || !field) return;
+    if (!token || !field || submitting.current) return;
+    submitting.current = true;
     setPending(true);
     setError("");
     try {
-      await requestContactChange(userId, field, value.trim(), token);
+      const policy = await requestContactChange(userId, field, value.trim(), token);
       setStep("code");
-      setNotice("Código enviado para o novo contato. Ele expira em cinco minutos.");
+      setCode("");
+      start(policy.expires_in, policy.resend_after);
+      setNotice("Código enviado para o novo contato.");
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      submitting.current = false;
       setPending(false);
     }
   }
 
   async function handleVerify() {
-    if (!token || !field) return;
+    if (!token || !field || submitting.current) return;
+    submitting.current = true;
     setPending(true);
     setError("");
     try {
       await verifyContactChange(userId, field, value.trim(), code, token);
+      reset();
       toast.success("Contato atualizado com sucesso");
       onSuccess();
       onClose();
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      submitting.current = false;
       setPending(false);
     }
   }
@@ -118,12 +129,21 @@ export function ContactChangeDialog({
                 className="w-full rounded-lg border border-gray-300 px-4 py-3"
               />
               <p className="mt-2 text-sm text-amber-800">
-                O envio ainda é por log. Obtenha o código no terminal do backend.
+                O envio é por log. Obtenha o código no terminal do backend.
+              </p>
+              <p
+                role="timer"
+                aria-live={expired ? "polite" : "off"}
+                className={expired ? "mt-2 text-sm text-red-700" : "mt-2 text-sm text-gray-600"}
+              >
+                {expired
+                  ? "Código expirado. Reenvie para continuar."
+                  : `Código válido por ${formatCountdown(remainingSeconds)}`}
               </p>
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
               Cancelar
             </Button>
@@ -132,13 +152,25 @@ export function ContactChangeDialog({
                 {pending ? "Enviando..." : "Enviar código"}
               </Button>
             ) : (
-              <Button
-                type="button"
-                onClick={() => void handleVerify()}
-                disabled={pending || code.length !== 6}
-              >
-                {pending ? "Confirmando..." : "Confirmar alteração"}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleRequest()}
+                  disabled={pending || !canResend}
+                >
+                  {canResend
+                    ? "Reenviar código"
+                    : `Reenviar em ${formatCountdown(resendInSeconds)}`}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void handleVerify()}
+                  disabled={pending || code.length !== 6 || expired}
+                >
+                  {pending ? "Confirmando..." : "Confirmar alteração"}
+                </Button>
+              </>
             )}
           </div>
         </div>

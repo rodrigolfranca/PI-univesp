@@ -57,9 +57,18 @@ async function seedAdmin(): Promise<void> {
                         phone_number: phone,
                         phone_number_confirmed: true,
                         email,
+                        email_confirmed: true,
                     },
                     { transaction },
                 ));
+
+            await user.update(
+                {
+                    phone_number_confirmed: true,
+                    email_confirmed: true,
+                },
+                { transaction },
+            );
 
             const existingProfessional = await Professional.findOne({
                 where: { user_id: user.id },

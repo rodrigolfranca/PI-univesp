@@ -15,6 +15,8 @@ export interface AuthUser {
   name: string;
   phone: string;
   email: string;
+  phoneConfirmed: boolean;
+  emailConfirmed: boolean;
   role: UserRole;
   isAdmin: boolean;
 }
@@ -28,6 +30,8 @@ export function toAuthUser(user: ApiUser): AuthUser {
     name: user.name,
     phone: user.phone_number,
     email: user.email,
+    phoneConfirmed: user.phone_number_confirmed !== false,
+    emailConfirmed: user.email_confirmed !== false,
     role: user.professional ? "employee" : "client",
     isAdmin: user.professional?.is_admin === true,
   };
