@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import { formatCountdown, useOtpCountdown } from "../hooks/useOtpCountdown";
 import { errorMessage } from "../services/api";
 import { requestContactChange, verifyContactChange } from "../services/contact-change";
+import { showOtpCode } from "../services/otp-code";
+import { OtpCodeReopenButton } from "./OtpCodeReopenButton";
 import type { ContactField } from "../services/contact-change";
 
 export function ContactChangeDialog({
@@ -51,6 +53,14 @@ export function ContactChangeDialog({
       setCode("");
       start(policy.expires_in, policy.resend_after);
       setNotice("Código enviado para o novo contato.");
+      if (policy.demo_code) {
+        showOtpCode({
+          code: policy.demo_code,
+          title: field === "phone" ? "Código do novo telefone" : "Código do novo e-mail",
+          description: `Use este código para confirmar ${value.trim()}.`,
+          expiresIn: policy.expires_in,
+        });
+      }
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -128,9 +138,10 @@ export function ContactChangeDialog({
                 onChange={(event) => setCode(event.currentTarget.value.replace(/\D/g, ""))}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3"
               />
-              <p className="mt-2 text-sm text-amber-800">
-                O envio é por log. Obtenha o código no terminal do backend.
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                <span>O código foi gerado.</span>
+                <OtpCodeReopenButton />
+              </div>
               <p
                 role="timer"
                 aria-live={expired ? "polite" : "off"}

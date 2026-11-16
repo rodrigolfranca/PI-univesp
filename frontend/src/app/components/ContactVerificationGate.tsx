@@ -8,6 +8,8 @@ import { useAuth } from "../context/AuthContext";
 import { formatCountdown, useOtpCountdown } from "../hooks/useOtpCountdown";
 import { errorMessage } from "../services/api";
 import { requestEmailConfirmation, verifyContactChange } from "../services/contact-change";
+import { showOtpCode } from "../services/otp-code";
+import { OtpCodeReopenButton } from "./OtpCodeReopenButton";
 
 export function ContactVerificationGate({ children }: { children: ReactNode }) {
   const { user, token, retrySession, logout } = useAuth();
@@ -28,8 +30,16 @@ export function ContactVerificationGate({ children }: { children: ReactNode }) {
       const policy = await requestEmailConfirmation(user.userId, token);
       setSent(true);
       setCode("");
-      setNotice("Código enviado. Consulte o log do backend.");
+      setNotice("Código enviado.");
       start(policy.expires_in, policy.resend_after);
+      if (policy.demo_code) {
+        showOtpCode({
+          code: policy.demo_code,
+          title: "Confirmação de e-mail",
+          description: `Use este código para confirmar ${user.email}.`,
+          expiresIn: policy.expires_in,
+        });
+      }
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -89,9 +99,10 @@ export function ContactVerificationGate({ children }: { children: ReactNode }) {
                 onChange={(event) => setCode(event.currentTarget.value.replace(/\D/g, ""))}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
               />
-              <p className="mt-2 text-sm text-amber-800">
-                O envio é por log. Obtenha o código no terminal do backend.
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                <span>O código foi gerado.</span>
+                <OtpCodeReopenButton />
+              </div>
               <p
                 role="timer"
                 aria-live={expired ? "polite" : "off"}

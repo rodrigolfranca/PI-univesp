@@ -109,4 +109,26 @@ describe("cronômetro do cadastro", () => {
     ).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
+  it("mostra o código do e-mail no modal de demonstração", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({
+          signup_id: "signup-1",
+          expires_in: 300,
+          resend_after: 90,
+          demo_code: "111111",
+        }),
+      ),
+    );
+
+    renderSignup();
+    fillForm();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Cadastrar" }));
+    });
+
+    expect(screen.getByTestId("otp-code").textContent).toBe("111111");
+    expect(screen.getByRole("heading", { name: "Código do e-mail" })).toBeTruthy();
+  });
 });
