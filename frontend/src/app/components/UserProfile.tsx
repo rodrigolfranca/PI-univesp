@@ -103,7 +103,7 @@ function ProfileSummary({
       </dl>
       <div className="flex flex-wrap gap-2">
         <Button type="button" onClick={onEdit}>
-          Editar perfil
+          Editar nome
         </Button>
         <Button type="button" variant="outline" onClick={() => onChangeContact("phone")}>
           Alterar telefone
