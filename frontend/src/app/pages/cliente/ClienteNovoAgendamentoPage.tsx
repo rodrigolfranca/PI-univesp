@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ChevronLeft, ChevronRight, Clock, CheckCircle } from "lucide-react";
 import {
   format,
+  addDays,
   addMonths,
   subMonths,
   startOfMonth,
@@ -15,13 +16,20 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { BackButton } from "../../components/BackButton";
 import { SiteIcon } from "../../components/SiteIcon";
+import { CalendarNavigation } from "../../components/appointments/CalendarNavigation";
 import { useSite, useTerminology } from "../../config/SiteContext";
 import { useAuth } from "../../context/AuthContext";
 import { useProcedures } from "../../context/ProceduresContext";
 import { useAppointments } from "../../context/AppointmentsContext";
 import { errorMessage } from "../../services/api";
-import { createSchedule, getAvailabilityForDate } from "../../services/schedules";
+import {
+  createSchedule,
+  getAvailabilityForDate,
+  getAvailabilitySummary,
+  getAvailableDates,
+} from "../../services/schedules";
 import type { AvailabilitySlot } from "../../services/schedules";
 import { displayDateToIso } from "../../utils/appointments/appointment";
 
@@ -45,42 +53,137 @@ export function ClienteNovoAgendamentoPage() {
   const { procedures } = useProcedures();
   const { reload } = useAppointments();
   const active = procedures.filter((procedure) => procedure.status === "Ativo");
-  const initialProcedure = treatmentId
-    ? active.find((procedure) => String(procedure.id) === treatmentId)
-    : undefined;
-  const [step, setStep] = useState<Step>(initialProcedure ? "datetime" : "procedure");
-  const [selectedProcedureId, setSelectedProcedureId] = useState<number | null>(
-    initialProcedure?.id ?? null,
-  );
+  const [step, setStep] = useState<Step>("procedure");
+  const [selectedProcedureId, setSelectedProcedureId] = useState<number | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [availability, setAvailability] = useState<
     { name: string; professionalId: number; slots: AvailabilitySlot[] }[]
   >([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [procedureAvailability, setProcedureAvailability] = useState<Record<number, string | null>>(
+    {},
+  );
+  const [summaryLoaded, setSummaryLoaded] = useState(false);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [datesLoading, setDatesLoading] = useState(false);
+  const [datesLoadedProcedureId, setDatesLoadedProcedureId] = useState<number | null>(null);
+  const [datesPage, setDatesPage] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
+  const noAvailabilityNotified = useRef(false);
+  const treatmentHandled = useRef(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const today = startOfDay(new Date());
+  const monthLabel = format(currentMonth, "MMMM yyyy", { locale: ptBR });
+  const calendarLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
   const procedure = active.find((entry) => entry.id === selectedProcedureId);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startPadding = getDay(monthStart);
 
-  useEffect(() => {
-    if (!treatmentId || selectedProcedureId !== null) return;
-    const match = procedures.find(
-      (entry) => entry.status === "Ativo" && String(entry.id) === treatmentId,
-    );
-    if (match) {
-      setSelectedProcedureId(match.id);
-      setStep("datetime");
-    }
-  }, [procedures, selectedProcedureId, treatmentId]);
+  const availableDateSet = new Set(availableDates);
+  const datesPageSize = 7;
+  const datesPageCount = Math.max(1, Math.ceil(availableDates.length / datesPageSize));
+  const visibleDates = availableDates.slice(
+    datesPage * datesPageSize,
+    (datesPage + 1) * datesPageSize,
+  );
 
   useEffect(() => {
-    if (!selectedDate) {
+    if (!token || !user?.clientId) return;
+    const controller = new AbortController();
+    const from = format(today, "yyyy-MM-dd");
+    const to = format(addDays(today, 59), "yyyy-MM-dd");
+    setSummaryLoaded(false);
+    getAvailabilitySummary(token, from, to, controller.signal)
+      .then((summary) => {
+        if (controller.signal.aborted) return;
+        setProcedureAvailability(
+          Object.fromEntries(summary.map((entry) => [entry.procedure_id, entry.next_date])),
+        );
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setError(errorMessage(cause));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setSummaryLoaded(true);
+        }
+      });
+    return () => controller.abort();
+  }, [token, user?.clientId]);
+
+  useEffect(() => {
+    if (!summaryLoaded || treatmentHandled.current) return;
+    if (!treatmentId) {
+      treatmentHandled.current = true;
+      return;
+    }
+    const match = active.find((entry) => String(entry.id) === treatmentId);
+    if (!match || !procedureAvailability[match.id]) {
+      toast.error(
+        match
+          ? "Este procedimento está sem disponibilidade no momento."
+          : "Procedimento indisponível.",
+      );
+      treatmentHandled.current = true;
+      return;
+    }
+    setSelectedProcedureId(match.id);
+    setStep("datetime");
+    treatmentHandled.current = true;
+  }, [active, procedureAvailability, summaryLoaded, treatmentId]);
+
+  useEffect(() => {
+    if (!summaryLoaded || noAvailabilityNotified.current) return;
+    if (active.length > 0 && active.every((procedure) => !procedureAvailability[procedure.id])) {
+      toast.error("Nenhum procedimento com disponibilidade no momento.");
+      noAvailabilityNotified.current = true;
+    }
+  }, [active, procedureAvailability, summaryLoaded]);
+
+  useEffect(() => {
+    if (!selectedProcedureId || !token) {
+      setAvailableDates([]);
+      setDatesLoadedProcedureId(null);
+      return;
+    }
+    const controller = new AbortController();
+    const from = format(today, "yyyy-MM-dd");
+    const to = format(addDays(today, 59), "yyyy-MM-dd");
+    setDatesLoading(true);
+    setDatesPage(0);
+    getAvailableDates(token, selectedProcedureId, from, to, controller.signal)
+      .then((dates) => {
+        if (controller.signal.aborted) return;
+        setAvailableDates(dates);
+        setDatesLoadedProcedureId(selectedProcedureId);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setError(errorMessage(cause));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setDatesLoading(false);
+      });
+    return () => controller.abort();
+  }, [selectedProcedureId, token]);
+
+  useEffect(() => {
+    if (
+      step !== "datetime" ||
+      datesLoadedProcedureId !== selectedProcedureId ||
+      datesLoading ||
+      availableDates.length > 0
+    ) {
+      return;
+    }
+    toast.error("Sem disponibilidade neste período.");
+  }, [availableDates.length, datesLoadedProcedureId, datesLoading, selectedProcedureId, step]);
+
+  useEffect(() => {
+    if (!selectedDate || !selectedProcedureId) {
       setAvailability([]);
       setSelectedSlot(null);
       return;
@@ -97,6 +200,7 @@ export function ClienteNovoAgendamentoPage() {
     getAvailabilityForDate(
       token,
       displayDateToIso(format(selectedDate, "dd/MM/yyyy")),
+      selectedProcedureId,
       controller.signal,
     )
       .then((result) => {
@@ -109,10 +213,12 @@ export function ClienteNovoAgendamentoPage() {
         if (!controller.signal.aborted) setAvailabilityLoading(false);
       });
     return () => controller.abort();
-  }, [selectedDate, user?.clientId, token]);
+  }, [selectedDate, selectedProcedureId, user?.clientId, token]);
 
   function handleDateSelect(date: Date) {
     if (isBefore(date, today)) return;
+    if (!availableDateSet.has(format(date, "yyyy-MM-dd"))) return;
+    setCurrentMonth(date);
     setSelectedDate(date);
     setSelectedSlot(null);
   }
@@ -184,18 +290,14 @@ export function ClienteNovoAgendamentoPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={handleBack} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Novo Agendamento</h1>
-          <p className="text-xs text-gray-400">
-            {step === "procedure" && copy("Escolha o procedimento")}
-            {step === "datetime" && "Escolha data e horário"}
-            {step === "confirm" && "Confirme os detalhes"}
-          </p>
-        </div>
+      <BackButton onClick={handleBack} label="Voltar" />
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-gray-900">Novo Agendamento</h1>
+        <p className="text-xs text-gray-400">
+          {step === "procedure" && copy("Escolha o procedimento")}
+          {step === "datetime" && "Escolha data e horário"}
+          {step === "confirm" && "Confirme os detalhes"}
+        </p>
       </div>
 
       {error && (
@@ -217,72 +319,103 @@ export function ClienteNovoAgendamentoPage() {
         ))}
       </div>
 
-      {step === "procedure" && (
-        <div className="space-y-3">
-          {active.length === 0 && (
-            <p className="text-center text-gray-400 py-12">
-              {copy("Nenhum procedimento disponível.")}
+      {step === "procedure" &&
+        (!summaryLoaded ? (
+          <div role="status" aria-live="polite" className="space-y-3">
+            <p className="py-4 text-center text-sm text-gray-400">
+              Carregando procedimentos disponíveis...
             </p>
-          )}
-          {active.map((entry) => (
-            <button
-              key={entry.id}
-              onClick={() => {
-                setSelectedProcedureId(entry.id);
-                setSelectedDate(null);
-                setSelectedSlot(null);
-                setStep("datetime");
-              }}
-              className="w-full text-left bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:border-brand-300 hover:shadow transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <SiteIcon name={site.catalog.icon} className="w-5 h-5 text-brand-700" />
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="animate-pulse rounded-xl border border-gray-100 bg-white p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 flex-shrink-0 rounded-lg bg-gray-100" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-1/3 rounded bg-gray-100" />
+                    <div className="h-3 w-1/4 rounded bg-gray-100" />
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900">{entry.name}</p>
-                  {entry.duration && <p className="text-sm text-gray-400">{entry.duration}</p>}
-                </div>
-                {entry.price && (
-                  <span className="text-sm font-semibold text-brand-700 flex-shrink-0">
-                    {entry.price}
-                  </span>
-                )}
               </div>
-            </button>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {active.length === 0 && (
+              <p className="py-12 text-center text-gray-400">
+                {copy("Nenhum procedimento disponível.")}
+              </p>
+            )}
+            {active.map((entry) => {
+              const unavailable = !procedureAvailability[entry.id];
+              return (
+                <button
+                  key={entry.id}
+                  disabled={unavailable}
+                  onClick={() => {
+                    if (unavailable) return;
+                    setSelectedProcedureId(entry.id);
+                    setSelectedDate(null);
+                    setSelectedSlot(null);
+                    setStep("datetime");
+                  }}
+                  className={`w-full rounded-xl p-4 text-left shadow-sm transition-all ${
+                    unavailable
+                      ? "cursor-not-allowed border border-gray-100 bg-gray-50 opacity-60"
+                      : "border border-gray-100 bg-white hover:border-brand-300 hover:shadow"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${
+                        unavailable ? "bg-gray-200" : "bg-brand-100"
+                      }`}
+                    >
+                      <SiteIcon
+                        name={site.catalog.icon}
+                        className={`h-5 w-5 ${unavailable ? "text-gray-400" : "text-brand-700"}`}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`font-medium ${unavailable ? "text-gray-400" : "text-gray-900"}`}
+                      >
+                        {entry.name}
+                      </p>
+                      {entry.duration && !unavailable && (
+                        <p className="text-sm text-gray-400">{entry.duration}</p>
+                      )}
+                      {unavailable && <p className="text-sm text-gray-400">Sem disponibilidade</p>}
+                    </div>
+                    {entry.price && !unavailable && (
+                      <span className="flex-shrink-0 text-sm font-semibold text-brand-700">
+                        {entry.price}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ))}
 
       {step === "datetime" && procedure && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6">
-              <div className="flex items-center justify-between mb-5">
-                <button
-                  aria-label="Mês anterior"
-                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-brand-100 transition-colors text-brand-700"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <h2 className="text-base font-bold text-brand-800 capitalize">
-                  {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
-                </h2>
-                <button
-                  aria-label="Próximo mês"
-                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-brand-100 transition-colors text-brand-700"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
+            <div className="rounded-2xl border border-brand-100 bg-white p-6 shadow-md lg:col-span-2">
+              <CalendarNavigation
+                label={calendarLabel}
+                onPrevious={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                onNext={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                onToday={() => setCurrentMonth(today)}
+              />
 
-              <div className="grid grid-cols-7 mb-2">
+              <div className="mb-2 grid grid-cols-7">
                 {WEEKDAYS.map((weekday) => (
                   <div
                     key={weekday}
-                    className="text-center text-xs font-semibold text-[#9ca3af] py-1"
+                    className="py-1 text-center text-xs font-semibold text-[#9ca3af]"
                   >
                     {weekday}
                   </div>
@@ -295,6 +428,8 @@ export function ClienteNovoAgendamentoPage() {
                 ))}
                 {days.map((day) => {
                   const isPast = isBefore(day, today);
+                  const isAvailable =
+                    !datesLoading && availableDateSet.has(format(day, "yyyy-MM-dd"));
                   const isSelected = selectedDate?.toDateString() === day.toDateString();
                   const isTodayDay = isToday(day);
 
@@ -302,18 +437,21 @@ export function ClienteNovoAgendamentoPage() {
                     <button
                       key={day.toISOString()}
                       type="button"
-                      disabled={isPast}
+                      disabled={isPast || !isAvailable}
+                      aria-current={isTodayDay ? "date" : undefined}
+                      title={isTodayDay ? "Hoje" : undefined}
                       onClick={() => handleDateSelect(day)}
                       className={[
-                        "aspect-square rounded-lg text-sm font-medium transition-all flex items-center justify-center",
-                        isPast
-                          ? "text-[#d1d5db] cursor-not-allowed"
-                          : isSelected
-                            ? "bg-brand-700 text-white shadow-md"
-                            : isTodayDay
-                              ? "bg-brand-100 text-brand-700 font-bold ring-2 ring-brand-300"
-                              : "text-[#374151] hover:bg-brand-100 hover:text-brand-700",
-                      ].join(" ")}
+                        "flex aspect-square items-center justify-center rounded-lg text-sm font-medium transition-all",
+                        isSelected
+                          ? "bg-brand-700 text-white shadow-md"
+                          : isPast || !isAvailable
+                            ? "text-[#d1d5db]"
+                            : "text-[#374151] hover:bg-brand-100 hover:text-brand-700",
+                        isPast || !isAvailable ? "cursor-not-allowed" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                     >
                       {day.getDate()}
                     </button>
@@ -322,76 +460,138 @@ export function ClienteNovoAgendamentoPage() {
               </div>
             </div>
 
-            {selectedDate && (
-              <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6">
-                <h3 className="text-base font-bold text-brand-800 mb-1 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-brand-700" />
-                  Horários disponíveis
-                </h3>
-                <p className="text-xs text-[#9ca3af] mb-4 capitalize">
-                  {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                </p>
-                {availabilityLoading ? (
-                  <p className="text-sm text-gray-500">Carregando horários...</p>
-                ) : availability.length === 0 ? (
-                  <p className="text-sm text-gray-500">Nenhum horário disponível nesta data.</p>
+            <div className="flex flex-col rounded-2xl border border-brand-100 bg-white p-6 shadow-md">
+              <h3 className="mb-3 text-base font-bold text-brand-800">Resumo</h3>
+              <p className="text-sm font-medium text-gray-900">{procedure.name}</p>
+              <p className="mt-1 text-sm text-gray-500">{procedure.duration}</p>
+              <p className="mt-1 text-sm font-semibold text-brand-700">{procedure.price}</p>
+              {selectedSlot && (
+                <div className="mt-3 rounded-lg bg-brand-50 p-3 text-sm text-brand-800">
+                  <p>{selectedSlot.professionalName}</p>
+                  <p>
+                    {format(selectedDate!, "dd/MM/yyyy", { locale: ptBR })} às {selectedSlot.time}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-5 flex min-h-0 flex-1 flex-col border-t border-gray-100 pt-4">
+                <h4 className="text-sm font-semibold text-gray-800">Datas disponíveis</h4>
+                {datesLoading ? (
+                  <p className="mt-2 text-sm text-gray-500">Carregando datas...</p>
+                ) : availableDates.length === 0 ? (
+                  <p className="mt-2 text-sm text-gray-500">Sem datas disponíveis.</p>
                 ) : (
-                  <div className="space-y-4">
-                    {availability.map((professional) => (
-                      <div key={professional.professionalId}>
-                        <p className="mb-2 text-sm font-medium text-gray-700">
-                          {professional.name}
-                        </p>
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                          {professional.slots.map((slot) => {
-                            const selected =
-                              selectedSlot?.professionalId === professional.professionalId &&
-                              selectedSlot.time === slot.start_time;
-                            return (
-                              <button
-                                key={`${professional.professionalId}-${slot.start_time}`}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedSlot({
-                                    professionalId: professional.professionalId,
-                                    professionalName: professional.name,
-                                    time: slot.start_time,
-                                  });
-                                  setStep("confirm");
-                                }}
-                                className={`py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                                  selected
-                                    ? "bg-brand-700 text-white"
-                                    : "bg-brand-50 text-brand-800 hover:bg-brand-100"
-                                }`}
-                              >
-                                {slot.start_time}
-                              </button>
-                            );
-                          })}
-                        </div>
+                  <>
+                    <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
+                      {visibleDates.map((date) => {
+                        const parsed = new Date(`${date}T00:00:00`);
+                        const selected = selectedDate
+                          ? format(selectedDate, "yyyy-MM-dd") === date
+                          : false;
+                        return (
+                          <button
+                            key={date}
+                            type="button"
+                            onClick={() => handleDateSelect(parsed)}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+                              selected
+                                ? "bg-brand-700 text-white"
+                                : "bg-brand-50 text-brand-800 hover:bg-brand-100"
+                            }`}
+                          >
+                            <span className="capitalize">
+                              {format(parsed, "EEE, dd/MM", { locale: ptBR })}
+                            </span>
+                            {selected && <span className="text-xs">Selecionado</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {datesPageCount > 1 && (
+                      <div className="mt-3 flex items-center justify-between">
+                        <button
+                          type="button"
+                          aria-label="Página anterior de datas"
+                          disabled={datesPage === 0}
+                          onClick={() => setDatesPage((value) => Math.max(0, value - 1))}
+                          className="rounded-lg p-1.5 text-gray-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <span className="text-xs text-gray-500">
+                          {datesPage + 1} / {datesPageCount}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Próxima página de datas"
+                          disabled={datesPage >= datesPageCount - 1}
+                          onClick={() =>
+                            setDatesPage((value) => Math.min(datesPageCount - 1, value + 1))
+                          }
+                          className="rounded-lg p-1.5 text-gray-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-md border border-brand-100 p-6 h-fit">
-            <h3 className="text-base font-bold text-brand-800 mb-3">Resumo</h3>
-            <p className="text-sm font-medium text-gray-900">{procedure.name}</p>
-            <p className="mt-1 text-sm text-gray-500">{procedure.duration}</p>
-            <p className="mt-1 text-sm font-semibold text-brand-700">{procedure.price}</p>
-            {selectedSlot && (
-              <div className="mt-3 rounded-lg bg-brand-50 p-3 text-sm text-brand-800">
-                <p>{selectedSlot.professionalName}</p>
-                <p>
-                  {format(selectedDate!, "dd/MM/yyyy", { locale: ptBR })} às {selectedSlot.time}
-                </p>
-              </div>
-            )}
-          </div>
+          {selectedDate && (
+            <div className="rounded-2xl border border-brand-100 bg-white p-6 shadow-md">
+              <h3 className="mb-1 flex items-center gap-2 text-base font-bold text-brand-800">
+                <Clock className="h-4 w-4 text-brand-700" />
+                Horários disponíveis
+              </h3>
+              <p className="mb-4 text-xs capitalize text-[#9ca3af]">
+                {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              </p>
+              {availabilityLoading ? (
+                <p className="text-sm text-gray-500">Carregando horários...</p>
+              ) : availability.length === 0 ? (
+                <p className="text-sm text-gray-500">Nenhum horário disponível nesta data.</p>
+              ) : (
+                <div className="space-y-4">
+                  {availability.map((professional) => (
+                    <div key={professional.professionalId}>
+                      <p className="mb-2 text-sm font-medium text-gray-700">{professional.name}</p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                        {professional.slots.map((slot) => {
+                          const selected =
+                            selectedSlot?.professionalId === professional.professionalId &&
+                            selectedSlot.time === slot.start_time;
+                          return (
+                            <button
+                              key={`${professional.professionalId}-${slot.start_time}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSlot({
+                                  professionalId: professional.professionalId,
+                                  professionalName: professional.name,
+                                  time: slot.start_time,
+                                });
+                                setStep("confirm");
+                              }}
+                              className={`rounded-lg py-2.5 text-sm font-medium transition-colors ${
+                                selected
+                                  ? "bg-brand-700 text-white"
+                                  : "bg-brand-50 text-brand-800 hover:bg-brand-100"
+                              }`}
+                            >
+                              {slot.start_time}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

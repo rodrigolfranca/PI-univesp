@@ -85,7 +85,7 @@ export function ClienteAgendamentosPage() {
           </p>
         </div>
         <Link
-          to="/cliente/novo"
+          to="/cliente/agendamentos/novo"
           className="flex items-center gap-2 px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium shadow-sm"
         >
           <Plus className="w-4 h-4" />

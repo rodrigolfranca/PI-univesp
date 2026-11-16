@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClienteNovoAgendamentoPage } from "./ClienteNovoAgendamentoPage";
@@ -22,6 +22,7 @@ const state = vi.hoisted(() => ({
       triagem: false,
       triagemMinutes: 0,
       bloqueioPeriodo: null,
+      professionals: [{ id: 1, name: "Admin QA" }],
     },
   ],
 }));
@@ -40,6 +41,8 @@ vi.mock("../../context/AppointmentsContext", () => ({
 }));
 vi.mock("../../services/schedules", () => ({
   getAvailabilityForDate: vi.fn(),
+  getAvailabilitySummary: vi.fn(),
+  getAvailableDates: vi.fn(),
   createSchedule: vi.fn(),
 }));
 
@@ -50,7 +53,11 @@ describe("ClienteNovoAgendamentoPage", () => {
     state.token = "token";
     state.reload.mockReset();
     mocked.getAvailabilityForDate.mockReset();
+    mocked.getAvailabilitySummary.mockReset();
+    mocked.getAvailableDates.mockReset();
     mocked.createSchedule.mockReset();
+    mocked.getAvailabilitySummary.mockResolvedValue([{ procedure_id: 1, next_date: "2026-11-20" }]);
+    mocked.getAvailableDates.mockResolvedValue(["2026-11-20"]);
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 10, 8, 12));
   });
@@ -59,7 +66,7 @@ describe("ClienteNovoAgendamentoPage", () => {
     vi.useRealTimers();
   });
 
-  it("escolhe procedimento, data, horário e confirma", async () => {
+  it("escolhe procedimento, data disponível, horário e confirma", async () => {
     mocked.getAvailabilityForDate.mockResolvedValue([
       {
         name: "Ana",
@@ -91,15 +98,23 @@ describe("ClienteNovoAgendamentoPage", () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
     renderWithSite(<ClienteNovoAgendamentoPage />, {
-      route: "/cliente/novo?treatmentId=1",
+      route: "/cliente/agendamentos/novo?treatmentId=1",
     });
 
-    expect(screen.getByText("Escolha data e horário")).toBeTruthy();
+    expect(await screen.findByText("Escolha data e horário")).toBeTruthy();
+    await waitFor(() =>
+      expect((screen.getByRole("button", { name: "20" }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
     await user.click(screen.getByRole("button", { name: "20" }));
     expect(await screen.findByText("09:00")).toBeTruthy();
+    expect(mocked.getAvailabilitySummary).toHaveBeenCalled();
+    expect(mocked.getAvailableDates).toHaveBeenCalled();
     expect(mocked.getAvailabilityForDate).toHaveBeenCalledWith(
       "token",
       "2026-11-20",
+      1,
       expect.any(AbortSignal),
     );
 
@@ -123,26 +138,91 @@ describe("ClienteNovoAgendamentoPage", () => {
     expect(await screen.findByText("Agendado!")).toBeTruthy();
   });
 
-  it("começa pela lista quando não há treatmentId", async () => {
+  it("começa pela lista e só habilita procedimento com disponibilidade", async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderWithSite(<ClienteNovoAgendamentoPage />, { route: "/cliente/novo" });
+    renderWithSite(<ClienteNovoAgendamentoPage />, {
+      route: "/cliente/agendamentos/novo",
+    });
 
     expect(screen.getByText(/Escolha o serviço/)).toBeTruthy();
+    await waitFor(() =>
+      expect((screen.getByRole("button", { name: /Limpeza/ }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
     await user.click(screen.getByRole("button", { name: /Limpeza/ }));
     expect(screen.getByText("Escolha data e horário")).toBeTruthy();
   });
 
-  it("exibe erro sem cliente autenticado ao escolher data", async () => {
-    state.token = null;
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it("não exibe procedimentos antes de carregar a disponibilidade", async () => {
+    let resolveSummary: (
+      value: Awaited<ReturnType<typeof service.getAvailabilitySummary>>,
+    ) => void = () => {};
+    mocked.getAvailabilitySummary.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSummary = resolve;
+        }),
+    );
+
     renderWithSite(<ClienteNovoAgendamentoPage />, {
-      route: "/cliente/novo?treatmentId=1",
+      route: "/cliente/agendamentos/novo",
     });
 
-    await user.click(screen.getByRole("button", { name: "20" }));
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "Entre com uma conta de cliente para agendar.",
+    expect(screen.getByRole("status").textContent).toContain(
+      "Carregando procedimentos disponíveis...",
     );
-    expect(mocked.getAvailabilityForDate).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /Limpeza/ })).toBeNull();
+
+    await act(async () => {
+      resolveSummary([{ procedure_id: 1, next_date: "2026-11-20" }]);
+    });
+
+    expect(await screen.findByRole("button", { name: /Limpeza/ })).toBeTruthy();
+  });
+
+  it("acinzentra procedimento sem disponibilidade", async () => {
+    mocked.getAvailabilitySummary.mockResolvedValue([{ procedure_id: 1, next_date: null }]);
+
+    renderWithSite(<ClienteNovoAgendamentoPage />, {
+      route: "/cliente/agendamentos/novo",
+    });
+
+    expect(await screen.findByText("Sem disponibilidade")).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Limpeza/ }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(mocked.getAvailableDates).not.toHaveBeenCalled();
+  });
+
+  it("mantém o atalho Hoje sem destacar visualmente o dia atual", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderWithSite(<ClienteNovoAgendamentoPage />, {
+      route: "/cliente/agendamentos/novo",
+    });
+
+    await waitFor(() =>
+      expect((screen.getByRole("button", { name: /Limpeza/ }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: /Limpeza/ }));
+
+    const todayButton = screen.getByRole("button", { name: "8" }) as HTMLButtonElement;
+    expect(todayButton.getAttribute("aria-current")).toBe("date");
+    expect(todayButton.getAttribute("title")).toBe("Hoje");
+    expect(todayButton.disabled).toBe(true);
+    expect(todayButton.className).not.toContain("bg-brand");
+    expect(todayButton.className).not.toContain("ring-brand");
+    expect(todayButton.className).toContain("cursor-not-allowed");
+
+    await user.click(screen.getByRole("button", { name: "Próximo período" }));
+    await user.click(screen.getByRole("button", { name: "Próximo período" }));
+    expect(screen.getByText("Janeiro 2027")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Ir para hoje" }));
+    expect(screen.getByText("Novembro 2026")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "8" }).getAttribute("aria-current")).toBe("date");
+    expect(screen.queryByText("Horários disponíveis")).toBeNull();
   });
 });
