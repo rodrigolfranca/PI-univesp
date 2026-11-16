@@ -13,6 +13,7 @@ export interface ApiProcedure {
   category_id: number;
   status: "active" | "inactive";
   category?: { id: number; name: string };
+  professionals?: { id: number; name: string }[];
 }
 
 export interface ProcedurePayload {
@@ -25,6 +26,7 @@ export interface ProcedurePayload {
   triagem_minutes: number;
   bloqueio_periodo: number | null;
   category_id: number;
+  professional_ids: number[];
   status: "active" | "inactive";
 }
 

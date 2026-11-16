@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
-  ArrowLeft,
   Clock,
   DollarSign,
   FileText,
@@ -10,6 +9,7 @@ import {
   Download,
   Plus,
   X,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -19,10 +19,22 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
+import { BackButton } from "../components/BackButton";
 import { useProcedures } from "../context/ProceduresContext";
 import type { ProcedureFormData } from "../context/ProceduresContext";
 import { useCategories } from "../context/CategoriesContext";
 import { useAuth } from "../context/AuthContext";
+import { useUsers } from "../context/UsersContext";
 import { errorMessage } from "../services/api";
 import * as popsService from "../services/pops";
 import type { ApiPop } from "../services/pops";
@@ -31,6 +43,7 @@ import { useTerminology } from "../config/SiteContext";
 type ProcedureForm = {
   name: string;
   category: string;
+  professionalIds: number[];
   duration: string;
   price: string;
   status: string;
@@ -42,27 +55,35 @@ export function ProcedureDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { procedures, loading, error, editProcedure } = useProcedures();
+  const { procedures, loading, error, editProcedure, deleteProcedure } = useProcedures();
   const { categories } = useCategories();
+  const { users } = useUsers();
   const procedure = procedures.find((entry) => entry.id === Number(id));
+  const professionals = users
+    .filter((entry) => entry.professional)
+    .map((entry) => ({ id: entry.professional!.id, name: entry.name }));
   const [pops, setPops] = useState<ApiPop[]>([]);
   const [popsLoading, setPopsLoading] = useState(false);
   const [popsError, setPopsError] = useState("");
   const [showAddPOP, setShowAddPOP] = useState(false);
+  const [editingPop, setEditingPop] = useState<ApiPop | null>(null);
   const [popName, setPopName] = useState("");
   const [popFile, setPopFile] = useState<File | null>(null);
   const [popSaving, setPopSaving] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [editForm, setEditForm] = useState<ProcedureForm>({
     name: "",
     category: "",
+    professionalIds: [],
     duration: "",
     price: "",
     status: "Ativo",
     description: "",
   });
-  const [editErrors, setEditErrors] = useState<Partial<ProcedureForm>>({});
+  const [editErrors, setEditErrors] = useState<Partial<Record<keyof ProcedureForm, string>>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -95,14 +116,22 @@ export function ProcedureDetailPage() {
   if (!procedure) {
     return (
       <div className="p-4 md:p-8">
-        <button
-          onClick={() => navigate("/app/procedures")}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>{copy("Voltar para Procedimentos")}</span>
-        </button>
+        <BackButton to="/app/procedures" label={copy("Voltar para Procedimentos")} />
         <p className="text-gray-500">{error || copy("Procedimento não encontrado.")}</p>
+      </div>
+    );
+  }
+
+  const canManage = user?.isAdmin === true;
+  const canView =
+    canManage ||
+    procedure.professionals.some((professional) => professional.id === user?.professionalId);
+
+  if (!canView) {
+    return (
+      <div className="p-4 md:p-8">
+        <BackButton to="/app/procedures" label={copy("Voltar para Procedimentos")} />
+        <p className="text-gray-500">Procedimento não disponível para você.</p>
       </div>
     );
   }
@@ -111,6 +140,7 @@ export function ProcedureDetailPage() {
     setEditForm({
       name: procedure!.name,
       category: procedure!.category,
+      professionalIds: procedure!.professionals.map((professional) => professional.id),
       duration: procedure!.duration,
       price: procedure!.price.replace("R$ ", ""),
       status: procedure!.status,
@@ -132,10 +162,26 @@ export function ProcedureDetailPage() {
       }));
   }
 
+  function toggleEditProfessional(id: number) {
+    setEditForm((prev) => ({
+      ...prev,
+      professionalIds: prev.professionalIds.includes(id)
+        ? prev.professionalIds.filter((professionalId) => professionalId !== id)
+        : [...prev.professionalIds, id],
+    }));
+    if (editErrors.professionalIds)
+      setEditErrors((prev) => ({
+        ...prev,
+        professionalIds: "",
+      }));
+  }
+
   async function handleEditSubmit() {
-    const newErrors: Partial<ProcedureForm> = {};
+    const newErrors: Partial<Record<keyof ProcedureForm, string>> = {};
     if (!editForm.name.trim()) newErrors.name = "Nome é obrigatório";
     if (!editForm.category) newErrors.category = "Categoria é obrigatória";
+    if (editForm.professionalIds.length === 0)
+      newErrors.professionalIds = "Selecione pelo menos um profissional";
     if (!editForm.duration.trim()) newErrors.duration = "Duração é obrigatória";
     if (!editForm.price.trim()) newErrors.price = "Preço é obrigatório";
 
@@ -156,6 +202,7 @@ export function ProcedureDetailPage() {
     const payload: ProcedureFormData = {
       name: editForm.name,
       category: editForm.category,
+      professionalIds: editForm.professionalIds,
       status: editForm.status,
       description: editForm.description,
       durationMinutes,
@@ -178,13 +225,44 @@ export function ProcedureDetailPage() {
     }
   }
 
-  async function handleAddPOP() {
+  function openAddPOP() {
+    setEditingPop(null);
+    setPopName("");
+    setPopFile(null);
+    setPopsError("");
+    setShowAddPOP(true);
+  }
+
+  function openEditPOP(pop: ApiPop) {
+    setEditingPop(pop);
+    setPopName(pop.name);
+    setPopFile(null);
+    setPopsError("");
+    setShowAddPOP(true);
+  }
+
+  function closePOP() {
+    if (popSaving) return;
+    setShowAddPOP(false);
+    setEditingPop(null);
+    setPopName("");
+    setPopFile(null);
+    setPopsError("");
+  }
+
+  async function handleSavePOP() {
     if (!token) return;
-    if (!popFile) {
+    const trimmedName = popName.trim();
+
+    if (editingPop && !trimmedName) {
+      setPopsError("Nome é obrigatório.");
+      return;
+    }
+    if (!editingPop && !popFile) {
       setPopsError("Selecione um arquivo PDF.");
       return;
     }
-    if (popFile.size > 4.5 * 1024 * 1024) {
+    if (popFile && popFile.size > 4.5 * 1024 * 1024) {
       setPopsError("O PDF deve ter no máximo 4,5 MB.");
       return;
     }
@@ -192,19 +270,35 @@ export function ProcedureDetailPage() {
     setPopSaving(true);
     setPopsError("");
     try {
-      const created = await popsService.createPop(
-        {
-          procedureId: procedure!.id,
-          name: popName.trim() || popFile.name,
-          file: popFile,
-        },
-        token,
-      );
-      setPops((current) => [created, ...current]);
+      if (editingPop) {
+        const updated = await popsService.updatePop(
+          editingPop.id,
+          {
+            procedureId: procedure!.id,
+            name: trimmedName,
+            file: popFile ?? undefined,
+          },
+          token,
+        );
+        setPops((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)));
+        toast.success("Documento POP atualizado");
+      } else {
+        const created = await popsService.createPop(
+          {
+            procedureId: procedure!.id,
+            name: trimmedName || popFile!.name,
+            file: popFile!,
+          },
+          token,
+        );
+        setPops((current) => [created, ...current]);
+        toast.success("Documento POP adicionado");
+      }
+
       setShowAddPOP(false);
+      setEditingPop(null);
       setPopName("");
       setPopFile(null);
-      toast.success("Documento POP adicionado");
     } catch (cause) {
       setPopsError(errorMessage(cause));
     } finally {
@@ -239,16 +333,24 @@ export function ProcedureDetailPage() {
     }
   }
 
+  async function handleDeleteProcedure() {
+    setDeleting(true);
+    try {
+      await deleteProcedure(procedure!.id);
+      toast.success(copy("Procedimento excluído"));
+      navigate("/app/procedures");
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  }
+
   return (
     <div className="p-4 md:p-8">
       <div className="mb-6">
-        <button
-          onClick={() => navigate("/app/procedures")}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>{copy("Voltar para Procedimentos")}</span>
-        </button>
+        <BackButton to="/app/procedures" label={copy("Voltar para Procedimentos")} />
         <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{procedure.name}</h1>
         <p className="text-gray-500 mt-1 text-sm md:text-base">{procedure.category}</p>
       </div>
@@ -294,6 +396,25 @@ export function ProcedureDetailPage() {
                   {procedure.status}
                 </span>
               </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Profissionais habilitados
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {procedure.professionals.length === 0 ? (
+                    <p className="text-sm text-gray-500">Nenhum profissional vinculado.</p>
+                  ) : (
+                    procedure.professionals.map((professional) => (
+                      <span
+                        key={professional.id}
+                        className="inline-flex rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-700"
+                      >
+                        {professional.name}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -305,9 +426,9 @@ export function ProcedureDetailPage() {
                   {copy("Procedimento Operacional Padrão")}
                 </p>
               </div>
-              {user?.isAdmin && (
+              {canManage && (
                 <button
-                  onClick={() => setShowAddPOP(true)}
+                  onClick={openAddPOP}
                   className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors text-sm md:text-base"
                 >
                   <Plus className="w-4 h-4" />
@@ -357,14 +478,23 @@ export function ProcedureDetailPage() {
                       >
                         <Download className="w-5 h-5" />
                       </button>
-                      {user?.isAdmin && (
-                        <button
-                          onClick={() => void handleDeletePOP(pop)}
-                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                      {canManage && (
+                        <>
+                          <button
+                            onClick={() => openEditPOP(pop)}
+                            className="p-2 text-gray-600 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Pencil className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => void handleDeletePOP(pop)}
+                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -378,7 +508,7 @@ export function ProcedureDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
             <div className="space-y-3">
-              {user?.isAdmin && (
+              {canManage && (
                 <button
                   onClick={openEdit}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-brand-600 text-brand-600 rounded-lg hover:bg-brand-50 transition-colors font-medium"
@@ -392,6 +522,15 @@ export function ProcedureDetailPage() {
               >
                 {copy(" Agendar Procedimento ")}
               </button>
+              {canManage && (
+                <button
+                  onClick={() => setDeleteOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Excluir Procedimento
+                </button>
+              )}
             </div>
           </div>
 
@@ -411,9 +550,11 @@ export function ProcedureDetailPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Adicionar Documento POP</h3>
+              <h3 className="text-xl font-semibold text-gray-900">
+                {editingPop ? "Editar Documento POP" : "Adicionar Documento POP"}
+              </h3>
               <button
-                onClick={() => setShowAddPOP(false)}
+                onClick={closePOP}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -441,9 +582,16 @@ export function ProcedureDetailPage() {
                 >
                   <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600">
-                    {popFile ? popFile.name : "Clique para selecionar o PDF"}
+                    {popFile
+                      ? popFile.name
+                      : editingPop
+                        ? "Manter PDF atual"
+                        : "Clique para selecionar o PDF"}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Somente PDF até 4,5 MB</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {editingPop ? "Deixe vazio para manter o PDF atual. " : ""}
+                    Somente PDF até 4,5 MB
+                  </p>
                 </button>
                 <input
                   ref={fileInputRef}
@@ -460,17 +608,17 @@ export function ProcedureDetailPage() {
               )}
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => setShowAddPOP(false)}
+                  onClick={closePOP}
                   className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={() => void handleAddPOP()}
-                  disabled={popSaving || !popFile}
+                  onClick={() => void handleSavePOP()}
+                  disabled={popSaving || !popName.trim() || (!editingPop && !popFile)}
                   className="flex-1 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  {popSaving ? "Enviando..." : "Adicionar"}
+                  {popSaving ? "Salvando..." : editingPop ? "Salvar" : "Adicionar"}
                 </button>
               </div>
             </div>
@@ -521,6 +669,29 @@ export function ProcedureDetailPage() {
               </div>
               {editErrors.category && (
                 <p className="mt-1 text-xs text-red-500">{editErrors.category}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Profissionais habilitados <span className="text-brand-600">*</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {professionals.map((professional) => {
+                  const selected = editForm.professionalIds.includes(professional.id);
+                  return (
+                    <button
+                      key={professional.id}
+                      type="button"
+                      onClick={() => toggleEditProfessional(professional.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${selected ? "bg-brand-600 text-white border-brand-600" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      {professional.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {editErrors.professionalIds && (
+                <p className="mt-1 text-xs text-red-500">{editErrors.professionalIds}</p>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -606,6 +777,31 @@ export function ProcedureDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy("Excluir procedimento")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{procedure.name}</strong>? Esta ação não pode
+              ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDeleteProcedure();
+              }}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

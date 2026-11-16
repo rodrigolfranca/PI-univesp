@@ -12,6 +12,7 @@ export type { Procedure } from "../config/types";
 export interface ProcedureFormData {
   name: string;
   category: string;
+  professionalIds: number[];
   status: string;
   description: string;
   durationMinutes: number;
@@ -29,6 +30,7 @@ interface ProceduresContextValue {
   reload: () => void;
   addProcedure: (data: ProcedureFormData) => Promise<Procedure>;
   editProcedure: (id: number, data: ProcedureFormData) => Promise<Procedure>;
+  setProcedureStatus: (id: number, active: boolean) => Promise<Procedure>;
   deleteProcedure: (id: number) => Promise<void>;
 }
 
@@ -41,6 +43,7 @@ function formatPrice(value: number): string {
 function toPayload(data: ProcedureFormData, categoryId: number): ProcedurePayload {
   return {
     category_id: categoryId,
+    professional_ids: data.professionalIds,
     status: data.status === "Ativo" ? "active" : "inactive",
     name: data.name.trim(),
     description: data.description.trim(),
@@ -75,6 +78,7 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
       triagem: procedure.triagem,
       triagemMinutes: procedure.triagem_minutes,
       bloqueioPeriodo: procedure.bloqueio_periodo,
+      professionals: procedure.professionals ?? [],
     };
   }, []);
 
@@ -130,6 +134,17 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
     return mapped;
   }
 
+  async function setProcedureStatus(id: number, active: boolean): Promise<Procedure> {
+    const updated = await proceduresService.updateProcedure(
+      id,
+      { status: active ? "active" : "inactive" },
+      requireToken(),
+    );
+    const mapped = mapProcedure(updated);
+    setProcedures((current) => current.map((entry) => (entry.id === id ? mapped : entry)));
+    return mapped;
+  }
+
   async function deleteProcedure(id: number): Promise<void> {
     await proceduresService.deleteProcedure(id, requireToken());
     setProcedures((current) => current.filter((entry) => entry.id !== id));
@@ -137,7 +152,16 @@ export function ProceduresProvider({ children }: { children: ReactNode }) {
 
   return (
     <ProceduresContext.Provider
-      value={{ procedures, loading, error, reload, addProcedure, editProcedure, deleteProcedure }}
+      value={{
+        procedures,
+        loading,
+        error,
+        reload,
+        addProcedure,
+        editProcedure,
+        setProcedureStatus,
+        deleteProcedure,
+      }}
     >
       {children}
     </ProceduresContext.Provider>

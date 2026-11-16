@@ -34,10 +34,12 @@ const apiProcedure = {
   category_id: 1,
   status: "active" as const,
   category: { id: 1, name: "Geral" },
+  professionals: [{ id: 1, name: "Admin QA" }],
 };
 const form = {
   name: " Limpeza ",
   category: "Geral",
+  professionalIds: [1],
   status: "Ativo",
   description: " Pele ",
   durationMinutes: 30,
@@ -72,6 +74,7 @@ describe("ProceduresContext", () => {
       duration: "30 min",
       price: "R$ 100,00",
       status: "Ativo",
+      professionals: [{ id: 1, name: "Admin QA" }],
     });
 
     await act(async () => {
@@ -80,6 +83,7 @@ describe("ProceduresContext", () => {
     expect(mocked.createProcedure).toHaveBeenCalledWith(
       expect.objectContaining({
         category_id: 1,
+        professional_ids: [1],
         name: "Limpeza",
         description: "Pele",
         status: "active",
@@ -97,6 +101,20 @@ describe("ProceduresContext", () => {
       await result.current.deleteProcedure(2);
     });
     expect(result.current.procedures).toHaveLength(1);
+  });
+
+  it("altera somente o status do procedimento", async () => {
+    mocked.listProcedures.mockResolvedValue([apiProcedure]);
+    mocked.updateProcedure.mockResolvedValue({ ...apiProcedure, status: "inactive" });
+    const { result } = renderHook(() => useProcedures(), { wrapper });
+    await waitFor(() => expect(result.current.procedures).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.setProcedureStatus(1, false);
+    });
+
+    expect(mocked.updateProcedure).toHaveBeenCalledWith(1, { status: "inactive" }, "token");
+    expect(result.current.procedures[0].status).toBe("Inativo");
   });
 
   it("valida categoria, token e erro de listagem", async () => {

@@ -2,6 +2,11 @@ export interface Category {
   id: number;
   name: string;
 }
+export interface ProcedureProfessional {
+  id: number;
+  name: string;
+}
+
 export interface Procedure {
   id: number;
   name: string;
@@ -15,6 +20,7 @@ export interface Procedure {
   triagem: boolean;
   triagemMinutes: number;
   bloqueioPeriodo: number | null;
+  professionals: ProcedureProfessional[];
 }
 export interface GalleryImage {
   id: string;

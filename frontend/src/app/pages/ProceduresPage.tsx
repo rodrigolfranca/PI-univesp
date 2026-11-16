@@ -1,5 +1,14 @@
 import { useTerminology } from "../config/SiteContext";
-import { Search, Plus, Clock, DollarSign, Pencil, Trash2, SlidersHorizontal } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Clock,
+  DollarSign,
+  Pencil,
+  Trash2,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
 import React, { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
@@ -20,14 +29,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
+import { Switch } from "../components/ui/switch";
 import { useProcedures } from "../context/ProceduresContext";
 import { useCategories } from "../context/CategoriesContext";
 import { useAuth } from "../context/AuthContext";
+import { useUsers } from "../context/UsersContext";
+import type { Procedure } from "../config/types";
 import { errorMessage } from "../services/api";
 
 type ProcedureForm = {
   name: string;
   category: string;
+  professionalIds: number[];
   duration: string;
   price: string;
   status: string;
@@ -38,9 +51,12 @@ type ProcedureForm = {
   bloqueioPeriodo: string;
 };
 
+type ProcedureFormErrors = Partial<Record<keyof ProcedureForm, string>>;
+
 const emptyForm: ProcedureForm = {
   name: "",
   category: "",
+  professionalIds: [],
   duration: "",
   price: "",
   status: "Ativo",
@@ -53,27 +69,50 @@ const emptyForm: ProcedureForm = {
 
 export function ProceduresPage() {
   const copy = useTerminology();
-  const { procedures, loading, error, addProcedure, editProcedure, deleteProcedure } =
-    useProcedures();
+  const {
+    procedures,
+    loading,
+    error,
+    addProcedure,
+    editProcedure,
+    setProcedureStatus,
+    deleteProcedure,
+  } = useProcedures();
   const { categories } = useCategories();
   const { user } = useAuth();
+  const { users } = useUsers();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<ProcedureForm>(emptyForm);
-  const [errors, setErrors] = useState<Partial<ProcedureForm>>({});
+  const [errors, setErrors] = useState<ProcedureFormErrors>({});
   const [saving, setSaving] = useState(false);
-  const filteredProcedures = procedures.filter((p) => {
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(() => new Set());
+  const professionals = users
+    .filter((entry) => entry.professional)
+    .map((entry) => ({ id: entry.professional!.id, name: entry.name }));
+  const visibleProcedures = user?.isAdmin
+    ? procedures
+    : procedures.filter(
+        (procedure) =>
+          user?.professionalId &&
+          procedure.professionals.some((professional) => professional.id === user.professionalId),
+      );
+  const filteredProcedures = visibleProcedures.filter((p) => {
     const matchesCategory = !selectedCategory || p.category === selectedCategory;
+    const matchesProfessional =
+      !selectedProfessionalId ||
+      p.professionals.some((professional) => professional.id === Number(selectedProfessionalId));
     const matchesSearch =
       !searchQuery ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesProfessional && matchesSearch;
   });
 
   function handleField(field: keyof ProcedureForm, value: string) {
@@ -88,11 +127,27 @@ export function ProceduresPage() {
       }));
   }
 
+  function toggleProfessional(id: number) {
+    setForm((prev) => ({
+      ...prev,
+      professionalIds: prev.professionalIds.includes(id)
+        ? prev.professionalIds.filter((professionalId) => professionalId !== id)
+        : [...prev.professionalIds, id],
+    }));
+    if (errors.professionalIds)
+      setErrors((prev) => ({
+        ...prev,
+        professionalIds: "",
+      }));
+  }
+
   function validate() {
-    const newErrors: Partial<ProcedureForm> = {};
+    const newErrors: ProcedureFormErrors = {};
     if (!form.name.trim()) newErrors.name = "Nome é obrigatório";
 
     if (!form.category) newErrors.category = "Categoria é obrigatória";
+    if (form.professionalIds.length === 0)
+      newErrors.professionalIds = "Selecione pelo menos um profissional";
 
     if (!form.duration.trim()) newErrors.duration = "Duração é obrigatória";
 
@@ -103,7 +158,7 @@ export function ProceduresPage() {
 
   function handleOpenCreate() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
     setErrors({});
     setModalOpen(true);
   }
@@ -118,6 +173,7 @@ export function ProceduresPage() {
     setForm({
       name: proc.name,
       category: proc.category,
+      professionalIds: proc.professionals.map((professional) => professional.id),
       duration: proc.duration,
       price: proc.price.replace("R$ ", ""),
       status: proc.status,
@@ -129,6 +185,24 @@ export function ProceduresPage() {
     });
     setErrors({});
     setModalOpen(true);
+  }
+
+  async function handleToggleStatus(procedure: Procedure, active: boolean) {
+    if (togglingIds.has(procedure.id)) return;
+
+    setTogglingIds((current) => new Set(current).add(procedure.id));
+    try {
+      await setProcedureStatus(procedure.id, active);
+      toast.success(active ? "Procedimento ativado" : "Procedimento desativado");
+    } catch (cause) {
+      toast.error(errorMessage(cause));
+    } finally {
+      setTogglingIds((current) => {
+        const next = new Set(current);
+        next.delete(procedure.id);
+        return next;
+      });
+    }
   }
 
   async function handleSubmit() {
@@ -167,6 +241,7 @@ export function ProceduresPage() {
       const data = {
         name: form.name,
         category: form.category,
+        professionalIds: form.professionalIds,
         status: form.status,
         description: form.description,
         durationMinutes,
@@ -246,11 +321,13 @@ export function ProceduresPage() {
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-3 border rounded-lg transition-colors flex items-center gap-2 ${showFilters || selectedCategory ? "border-brand-500 bg-brand-50 text-brand-700" : "border-gray-300 bg-white hover:bg-gray-50 text-gray-700"}`}
+              className={`px-4 py-3 border rounded-lg transition-colors flex items-center gap-2 ${showFilters || selectedCategory || selectedProfessionalId ? "border-brand-500 bg-brand-50 text-brand-700" : "border-gray-300 bg-white hover:bg-gray-50 text-gray-700"}`}
             >
               <SlidersHorizontal className="w-5 h-5" />
               <span className="hidden md:inline">Filtros</span>
-              {selectedCategory && <span className="w-2 h-2 bg-brand-600 rounded-full" />}
+              {(selectedCategory || selectedProfessionalId) && (
+                <span className="w-2 h-2 bg-brand-600 rounded-full" />
+              )}
             </button>
           </div>
 
@@ -277,82 +354,175 @@ export function ProceduresPage() {
                     ))}
                   </div>
                 </div>
+                {user?.isAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Profissional
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setSelectedProfessionalId("")}
+                        className={`px-4 py-2 rounded-lg text-sm transition-colors ${selectedProfessionalId === "" ? "bg-brand-600 text-white" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                      >
+                        Todos
+                      </button>
+                      {professionals.map((professional) => (
+                        <button
+                          key={professional.id}
+                          onClick={() => setSelectedProfessionalId(String(professional.id))}
+                          className={`px-4 py-2 rounded-lg text-sm transition-colors ${selectedProfessionalId === String(professional.id) ? "bg-brand-600 text-white" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                        >
+                          {professional.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6">
-          {filteredProcedures.map((procedure) => (
-            <Link
-              key={procedure.id}
-              to={`/app/procedures/${procedure.id}`}
-              className="border border-gray-200 rounded-lg p-4 md:p-6 hover:shadow-md hover:border-brand-300 transition-all cursor-pointer relative group"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 text-base md:text-lg mb-2">
-                    {procedure.name}
-                  </h3>
-                  <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-brand-100 text-brand-700">
-                    {procedure.category}
-                  </span>
-                </div>
-                {user?.isAdmin && (
-                  <div className="flex items-center gap-1 ml-2">
-                    <button
-                      onClick={(e) => handleOpenEdit(e, procedure.id)}
-                      className="p-1.5 hover:bg-brand-50 hover:text-brand-600 rounded-lg transition-colors text-gray-400 opacity-0 group-hover:opacity-100"
-                      title="Editar"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDeleteId(procedure.id);
-                      }}
-                      className="p-1.5 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-gray-400 opacity-0 group-hover:opacity-100"
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+          {filteredProcedures.map((procedure) => {
+            const isActive = procedure.status === "Ativo";
+            const isToggling = togglingIds.has(procedure.id);
+            const actionLabel = isToggling
+              ? isActive
+                ? "Desativando..."
+                : "Ativando..."
+              : isActive
+                ? "Desativar"
+                : "Ativar";
+
+            return (
+              <div
+                key={procedure.id}
+                className="group relative rounded-lg border border-gray-200 transition-all hover:border-brand-300 hover:shadow-md"
+              >
+                <Link
+                  to={`/app/procedures/${procedure.id}`}
+                  aria-label={`Abrir ${procedure.name}`}
+                  className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                />
+                <div className="pointer-events-none relative z-10 p-4 md:p-6">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="mb-2 text-base font-semibold text-gray-900 md:text-lg">
+                        {procedure.name}
+                      </h3>
+                      <span className="inline-flex rounded bg-brand-100 px-2 py-1 text-xs font-medium text-brand-700">
+                        {procedure.category}
+                      </span>
+                    </div>
+                    {user?.isAdmin && (
+                      <div className="pointer-events-auto ml-2 flex items-center gap-1.5">
+                        <button
+                          onClick={(e) => handleOpenEdit(e, procedure.id)}
+                          className="rounded-lg p-1.5 text-gray-400 opacity-0 transition-colors hover:bg-brand-50 hover:text-brand-600 group-hover:opacity-100 focus:opacity-100"
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDeleteId(procedure.id);
+                          }}
+                          className="rounded-lg p-1.5 text-gray-400 opacity-0 transition-colors hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 focus:opacity-100"
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {procedure.description && (
-                <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">
-                  {procedure.description}
-                </p>
-              )}
+                  {procedure.description && (
+                    <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-gray-500">
+                      {procedure.description}
+                    </p>
+                  )}
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm">{procedure.duration}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm">{procedure.duration}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-900">
+                      <DollarSign className="h-4 w-4" />
+                      <span className="font-semibold">{procedure.price}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
+                    <div>
+                      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <Users className="h-3.5 w-3.5" />
+                        Profissionais
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {procedure.professionals.length === 0 ? (
+                          <span className="text-xs text-gray-500">
+                            Nenhum profissional vinculado
+                          </span>
+                        ) : (
+                          procedure.professionals.map((professional) => (
+                            <span
+                              key={professional.id}
+                              className="inline-flex rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-100"
+                            >
+                              {professional.name}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}
+                      >
+                        {procedure.status}
+                      </span>
+                      {user?.isAdmin && (
+                        <div className="pointer-events-auto flex items-center gap-2">
+                          <label
+                            htmlFor={`procedure-status-${procedure.id}`}
+                            className="cursor-pointer select-none text-xs font-medium text-gray-600"
+                          >
+                            {actionLabel}
+                          </label>
+                          <Switch
+                            id={`procedure-status-${procedure.id}`}
+                            checked={isActive}
+                            disabled={isToggling}
+                            aria-busy={isToggling}
+                            onCheckedChange={(checked) =>
+                              void handleToggleStatus(procedure, checked)
+                            }
+                            aria-label={
+                              isActive ? `Desativar ${procedure.name}` : `Ativar ${procedure.name}`
+                            }
+                            title={isActive ? "Desativar procedimento" : "Ativar procedimento"}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <DollarSign className="w-4 h-4" />
-                  <span className="font-semibold">{procedure.price}</span>
-                </div>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <span
-                  className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${procedure.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}
-                >
-                  {procedure.status}
-                </span>
-              </div>
-            </Link>
-          ))}
+            );
+          })}
 
           {filteredProcedures.length === 0 && (
             <div className="col-span-full py-16 text-center text-gray-400">
               <p className="text-sm">
-                {loading ? "Carregando procedimentos..." : copy("Nenhum procedimento encontrado")}
+                {loading
+                  ? "Carregando procedimentos..."
+                  : !user?.isAdmin && visibleProcedures.length === 0
+                    ? "Nenhum procedimento habilitado para você."
+                    : copy("Nenhum procedimento encontrado")}
               </p>
             </div>
           )}
@@ -362,6 +532,7 @@ export function ProceduresPage() {
       {user?.isAdmin && (
         <button
           onClick={handleOpenCreate}
+          aria-label="Novo procedimento"
           className="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-110 flex items-center justify-center z-[60]"
         >
           <Plus className="w-6 h-6" />
@@ -436,6 +607,36 @@ export function ProceduresPage() {
                 ))}
               </div>
               {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Profissionais habilitados <span className="text-brand-600">*</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {professionals.map((professional) => {
+                  const selected = form.professionalIds.includes(professional.id);
+                  return (
+                    <button
+                      key={professional.id}
+                      type="button"
+                      onClick={() => toggleProfessional(professional.id)}
+                      aria-pressed={selected}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${selected ? "bg-brand-600 text-white border-brand-600" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      {professional.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {professionals.length === 0 && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Cadastre um profissional antes de criar procedimentos.
+                </p>
+              )}
+              {errors.professionalIds && (
+                <p className="mt-1 text-xs text-red-500">{errors.professionalIds}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

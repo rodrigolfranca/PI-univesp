@@ -38,8 +38,13 @@ export function CreateAppointmentModal({
   const [error, setError] = useState("");
 
   const clients = users.filter((user) => user.client);
-  const professionals = users.filter((user) => user.professional);
   const procedure = procedures.find((entry) => String(entry.id) === selectedProcedureId);
+  const allowedProfessionalIds = new Set(
+    (procedure?.professionals ?? []).map((professional) => professional.id),
+  );
+  const professionals = users.filter(
+    (user) => user.professional && (!procedure || allowedProfessionalIds.has(user.professional.id)),
+  );
 
   useEffect(() => {
     if (!open || !token || !selectedProfessionalId || !selectedDate || !selectedProcedureId) {
@@ -56,6 +61,7 @@ export function CreateAppointmentModal({
       token,
       Number(selectedProfessionalId),
       displayDateToIso(selectedDate),
+      Number(selectedProcedureId),
       controller.signal,
     )
       .then((result) => {
@@ -132,6 +138,7 @@ export function CreateAppointmentModal({
               value={selectedProcedureId}
               onChange={(e) => {
                 setSelectedProcedureId(e.target.value);
+                setSelectedProfessionalId("");
                 setSelectedTime("");
               }}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
@@ -205,6 +212,11 @@ export function CreateAppointmentModal({
                 </option>
               ))}
             </select>
+            {selectedProcedureId && professionals.length === 0 && (
+              <p className="mt-2 text-sm text-gray-500">
+                Nenhum profissional habilitado para este procedimento.
+              </p>
+            )}
           </div>
 
           <div>
