@@ -23,24 +23,10 @@
     "professionals": "profissionais"
   },
   "content": {
-    "pageHeadings": {
-      "treatmentsTitle": "Nossos serviços",
-      "treatmentsIntro": "Conheça os serviços disponíveis.",
-      "aboutTitle": "Sobre nós",
-      "aboutIntro": "Conheça nosso trabalho.",
-      "contactTitle": "Entre em contato",
-      "contactIntro": "Fale com nossa equipe."
-    },
     "homeAbout": {
       "title": "",
       "paragraphs": []
     },
-    "about": {
-      "missionTitle": "",
-      "paragraphs": [],
-      "values": []
-    },
-    "treatments": [],
     "hero": "Conheça nossos serviços e agende seu atendimento.",
     "authTagline": "Acesse sua conta para acompanhar seus agendamentos.",
     "features": [],
@@ -52,8 +38,6 @@
     "catalogIntro": "Escolha o serviço de que você precisa.",
     "contactTitle": "Como podemos ajudar?",
     "contactIntro": "Entre em contato para saber mais.",
-    "contactPageTitle": "Agende seu atendimento",
-    "contactPageIntro": "Fale com nossa equipe para agendar.",
     "footer": "Todos os direitos reservados.",
     "owner": {
       "name": "",
@@ -69,7 +53,8 @@
     "email": "",
     "hours": [],
     "whatsapp": "",
-    "instagram": ""
+    "instagram": "",
+    "googleReviewUrl": ""
   },
   "catalog": {
     "categories": [],

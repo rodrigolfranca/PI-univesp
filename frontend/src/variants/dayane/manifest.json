@@ -1,7 +1,4 @@
 {
   "id": "dayane",
-  "domains": [
-    "dayane-di-giovanni-estetica.vercel.app",
-    "dayane-frontend.vercel.app"
-  ]
+  "domains": ["dayane-di-giovanni-estetica.vercel.app", "dayane-frontend.vercel.app"]
 }

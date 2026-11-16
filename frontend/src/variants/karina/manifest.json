@@ -1,4 +1,8 @@
 {
   "id": "karina",
-  "domains": ["karina-alexisch.vercel.app"]
+  "domains": [
+    "karina-alexitsch-estudio.vercel.app",
+    "karina-frontend.vercel.app",
+    "karina-alexisch.vercel.app"
+  ]
 }

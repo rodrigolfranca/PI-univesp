@@ -30,9 +30,6 @@ function fail(id, field, message) {
 const card = { title: "", description: "", icon: "" };
 const arrayItems = {
   "content.homeAbout.paragraphs": "",
-  "content.about.paragraphs": "",
-  "content.about.values": card,
-  "content.treatments": card,
   "content.features": card,
   "contact.address": "",
   "contact.hours": "",
@@ -193,7 +190,7 @@ export function normalizeConfig(manifest, raw) {
   if (Object.keys(config.theme.palette).length && shades.some((s) => !config.theme.palette[s]))
     fail(id, "theme.palette", "informe todas as tonalidades 50–900");
 
-  for (const field of ["content.features", "content.treatments", "content.about.values"]) {
+  for (const field of ["content.features"]) {
     const cards = field.split(".").reduce((v, k) => v[k], config);
     cards.forEach((c, i) => {
       for (const prop of ["title", "description", "icon"])
@@ -228,13 +225,15 @@ export function normalizeConfig(manifest, raw) {
   if (config.agenda.blockedSlots.some((s) => !config.agenda.timeSlots.includes(s)))
     fail(id, "agenda.blockedSlots", "horário não está em timeSlots");
 
-  for (const key of ["whatsapp", "instagram", "email", "phone"])
+  for (const key of ["whatsapp", "instagram", "email", "phone", "googleReviewUrl"])
     if (typeof config.contact[key] !== "string") fail(id, `contact.${key}`, "esperado texto");
   if (
     config.contact.whatsapp &&
     !/^(\+?[\d ()-]+|https:\/\/wa\.me\/[^\s]+)$/.test(config.contact.whatsapp)
   )
     fail(id, "contact.whatsapp", "use número ou link https://wa.me/...");
+  if (config.contact.googleReviewUrl && !/^https:\/\//.test(config.contact.googleReviewUrl))
+    fail(id, "contact.googleReviewUrl", "use um link https://");
 
   for (const [key, value] of Object.entries(config.terms))
     if (!value.trim()) fail(id, `terms.${key}`, "informe um termo não vazio");
