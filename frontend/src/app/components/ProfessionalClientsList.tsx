@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { ChevronRight, UserRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { errorMessage } from "../services/api";
 import { listMyClients, type ProfessionalClient } from "../services/schedules";
@@ -14,6 +15,7 @@ export function ProfessionalClientsList() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) return;
@@ -72,40 +74,46 @@ export function ProfessionalClientsList() {
       ) : !filtered.length ? (
         <p className="rounded-xl border bg-white p-6">Nenhum resultado para esta busca.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <caption className="sr-only">Seus clientes</caption>
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="p-4">
-                  Nome
-                </th>
-                <th scope="col" className="p-4">
-                  Telefone
-                </th>
-                <th scope="col" className="p-4">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.map((client) => (
-                <tr key={client.clientId}>
-                  <td className="p-4 font-medium">{client.name}</td>
-                  <td className="p-4">{client.phone_number}</td>
-                  <td className="p-4">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="hidden items-center gap-4 border-b border-gray-200 bg-gray-50 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 md:grid md:grid-cols-[minmax(0,1.55fr)_minmax(0,1.35fr)_104px]">
+            <span>Nome</span>
+            <span>Telefone</span>
+            <span className="text-right">Ações</span>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {filtered.map((client) => (
+              <div
+                key={client.clientId}
+                className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 transition-colors hover:bg-gray-50 md:grid-cols-[minmax(0,1.55fr)_minmax(0,1.35fr)_104px] md:gap-4 md:px-6"
+                onClick={() => navigate(`/app/clients/${client.clientId}`)}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100">
+                      <UserRound className="h-4 w-4 text-brand-600" />
+                    </span>
                     <Link
                       to={`/app/clients/${client.clientId}`}
-                      className="text-brand-700 underline"
+                      onClick={(event) => event.stopPropagation()}
                       aria-label={`Ver histórico de ${client.name}`}
+                      className="min-w-0 truncate font-medium text-gray-900 transition-colors hover:text-brand-700"
                     >
-                      Ver histórico
+                      {client.name}
                     </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 md:hidden">{client.phone_number}</p>
+                </div>
+                <div className="hidden min-w-0 md:block">
+                  <p className="text-gray-500">{client.phone_number}</p>
+                </div>
+                <div className="flex items-center justify-end">
+                  <span className="p-2 text-gray-500">
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 
 export function AvailabilityPage() {
   const { user } = useAuth();
-  if (!user?.isAdmin) {
+  if (!user?.professionalId) {
     return <Navigate to="/app/appointments" replace />;
   }
 

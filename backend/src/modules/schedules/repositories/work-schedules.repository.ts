@@ -42,6 +42,10 @@ export class WorkScheduleRepository {
         });
     }
 
+    async findById(id: number) {
+        return await WorkSchedule.findByPk(id);
+    }
+
     async update(id: number, dto: WorkScheduleUpdateDto) {
         const [updatedCount] = await WorkSchedule.update(
             {
