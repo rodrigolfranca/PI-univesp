@@ -18,6 +18,8 @@
 > **Projeto acadêmico em desenvolvimento.**
 >
 > Os códigos OTP são exibidos em modal para demonstração. Não use esta versão com dados reais.
+> O modo demonstração existe porque ainda não há envio real de OTP por e-mail ou WhatsApp.
+> Ele permite testar login, cadastro, recuperação e alteração de contato sem depender de provedores externos.
 > A integração com o Google Agenda é unidirecional, e os provedores de e-mail e WhatsApp ainda estão em avaliação.
 
 ## Demonstração
@@ -125,14 +127,37 @@ O sistema está em desenvolvimento e ainda não deve ser tratado como pronto par
 ## Arquitetura
 
 ```mermaid
-flowchart LR
-    Browser[Cliente / Profissional / Admin] --> Frontend[Frontend React + Vite]
-    Frontend --> Backend[Backend NestJS]
-    Backend --> Postgres[(PostgreSQL / Supabase)]
-    Backend --> Redis[(Redis / Upstash)]
-    Backend --> Storage[Supabase Storage]
-    Backend --> Google[Google Calendar API]
-    Frontend --> Vercel[Vercel]
+flowchart TB
+    subgraph Browser
+        UI[React + Vite]
+    end
+
+    subgraph Vercel
+        FE[Frontend por marca]
+        BE[Backend NestJS por marca]
+    end
+
+    subgraph Supabase
+        DB[(PostgreSQL)]
+        ST[Storage]
+    end
+
+    subgraph Upstash
+        RD[(Redis compartilhado)]
+    end
+
+    subgraph Google
+        GC[Calendar API]
+        OA[OAuth 2.0]
+    end
+
+    UI --> FE
+    FE -->|HTTPS / API| BE
+    BE --> DB
+    BE --> RD
+    BE --> ST
+    BE --> OA
+    BE --> GC
 ```
 
 A aplicação usa dois frontends e dois backends na Vercel, dois bancos no Supabase e um único Upstash compartilhado com prefixo `SITE_ID`.
@@ -272,6 +297,8 @@ O projeto atende Dayane e Karina com:
 Detalhes em [docs/architecture/multi-site.md](docs/architecture/multi-site.md).
 
 ## Modo demonstração
+
+O modo demo foi criado para validar os fluxos de autenticação enquanto os provedores reais de e-mail e WhatsApp não estão implementados.
 
 - O backend retorna `demo_code` nos endpoints que geram códigos.
 - O frontend exibe o código em modal com botão de copiar.
