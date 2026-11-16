@@ -69,4 +69,18 @@ export class WorkScheduleGetAllDto {
     @IsInt()
     @IsPositive()
     professional_id: number;
+
+    @ApiProperty({
+        description:
+            'ID do procedimento para filtrar profissionais habilitados',
+        example: 1,
+        type: Number,
+        required: false,
+    })
+    @IsOptional()
+    @Transform(({ value }) => parseInt(value as string, 10))
+    @IsNumber()
+    @IsInt()
+    @IsPositive()
+    procedure_id: number;
 }

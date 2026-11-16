@@ -1,10 +1,12 @@
 import {
     ConflictException,
+    ForbiddenException,
     Injectable,
     Logger,
     NotFoundException,
 } from '@nestjs/common';
 import { ScheduleExceptionType } from '../../../common/models/schedule-exceptions.model';
+import { UserWithType } from '../../../common/types/users.type';
 import { Utils } from '../../../common/utils/utils';
 import { ScheduleExceptionsRepository } from '../repositories/schedule-exceptions.repository';
 import { ScheduleRepository } from '../repositories/schedules.repository';
@@ -12,6 +14,7 @@ import { WorkScheduleRepository } from '../repositories/work-schedules.repositor
 import { ScheduleExceptionCreateDto } from '../validation/schedule-exception-create.DTO';
 import { ScheduleExceptionGetAllDto } from '../validation/schedule-exception-get-all.DTO';
 import { ScheduleExceptionUpdateDto } from '../validation/schedule-exception-update.DTO';
+import { assertProfessionalAccess } from '../utils/professional-access';
 
 @Injectable()
 export class ScheduleExceptionsService {
@@ -23,8 +26,9 @@ export class ScheduleExceptionsService {
 
     logger = new Logger(ScheduleExceptionsService.name);
 
-    async create(dto: ScheduleExceptionCreateDto) {
+    async create(dto: ScheduleExceptionCreateDto, user: UserWithType) {
         try {
+            assertProfessionalAccess(user, dto.professional_id);
             await this.validateException(
                 dto.professional_id,
                 dto.date,
@@ -43,9 +47,11 @@ export class ScheduleExceptionsService {
         }
     }
 
-    async getAll(dto: ScheduleExceptionGetAllDto) {
+    async getAll(dto: ScheduleExceptionGetAllDto, user: UserWithType) {
         try {
-            return await this.scheduleExceptionsRepository.findByFilters(dto);
+            return await this.scheduleExceptionsRepository.findByFilters(
+                this.scopeToProfessional(dto, user),
+            );
         } catch (error) {
             Utils.logError(
                 this.logger,
@@ -56,7 +62,32 @@ export class ScheduleExceptionsService {
         }
     }
 
-    async update(id: number, dto: ScheduleExceptionUpdateDto) {
+    private scopeToProfessional(
+        dto: ScheduleExceptionGetAllDto,
+        user: UserWithType,
+    ): ScheduleExceptionGetAllDto {
+        if (user.professional?.is_admin) return dto;
+        if (!user.professional) {
+            throw new ForbiddenException(
+                'Você só pode gerenciar a própria disponibilidade',
+            );
+        }
+        if (
+            dto.professional_id !== undefined &&
+            dto.professional_id !== user.professional.id
+        ) {
+            throw new ForbiddenException(
+                'Você só pode gerenciar a própria disponibilidade',
+            );
+        }
+        return { ...dto, professional_id: user.professional.id };
+    }
+
+    async update(
+        id: number,
+        dto: ScheduleExceptionUpdateDto,
+        user: UserWithType,
+    ) {
         try {
             const existing =
                 await this.scheduleExceptionsRepository.findById(id);
@@ -64,6 +95,11 @@ export class ScheduleExceptionsService {
                 throw new NotFoundException(
                     `Exceção de agenda com ID ${id} não encontrada`,
                 );
+
+            assertProfessionalAccess(user, existing.professional_id);
+            if (dto.professional_id !== undefined) {
+                assertProfessionalAccess(user, dto.professional_id);
+            }
 
             await this.validateException(
                 dto.professional_id ?? existing.professional_id,
@@ -86,8 +122,16 @@ export class ScheduleExceptionsService {
         }
     }
 
-    async delete(id: number) {
+    async delete(id: number, user: UserWithType) {
         try {
+            const existing =
+                await this.scheduleExceptionsRepository.findById(id);
+            if (!existing) {
+                throw new NotFoundException(
+                    `Exceção de agenda com ID ${id} não encontrada`,
+                );
+            }
+            assertProfessionalAccess(user, existing.professional_id);
             return await this.scheduleExceptionsRepository.delete(id);
         } catch (error) {
             Utils.logError(

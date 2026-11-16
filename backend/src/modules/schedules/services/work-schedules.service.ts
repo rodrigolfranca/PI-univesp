@@ -1,13 +1,22 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Schedule } from '../../../common/models';
+import {
+    BadRequestException,
+    ForbiddenException,
+    Injectable,
+    Logger,
+    NotFoundException,
+} from '@nestjs/common';
+import { ProcedureProfessional, Schedule } from '../../../common/models';
 import {
     ScheduleException,
     ScheduleExceptionType,
 } from '../../../common/models/schedule-exceptions.model';
 import { WorkSchedule } from '../../../common/models/work-schedules.model';
+import { UserWithType } from '../../../common/types/users.type';
 import { Utils } from '../../../common/utils/utils';
 import { UsersService } from '../../users/users.service';
 import { WorkScheduleRepository } from '../repositories/work-schedules.repository';
+import { assertProfessionalAccess } from '../utils/professional-access';
+import { WorkScheduleAvailabilityDto } from '../validation/work-schedule-availability.DTO';
 import { WorkScheduleCreateDto } from '../validation/work-schedule-create.DTO';
 import { WorkScheduleGetAllDto } from '../validation/work-schedule-get-all.DTO';
 import { WorkScheduleUpdateDto } from '../validation/work-schedule-update.DTO';
@@ -25,10 +34,22 @@ export class WorkSchedulesService {
 
     logger = new Logger(WorkSchedulesService.name);
 
-    async create(dto: WorkScheduleCreateDto) {
+    private async allowedProfessionalIds(
+        procedure_id?: number,
+    ): Promise<Set<number> | null> {
+        if (!procedure_id) return null;
+        const links = await ProcedureProfessional.findAll({
+            where: { procedure_id },
+            attributes: ['professional_id'],
+        });
+        return new Set(links.map((link) => link.professional_id));
+    }
+
+    async create(dto: WorkScheduleCreateDto, user: UserWithType) {
         const dbTransaction = await WorkSchedule.sequelize!.transaction();
 
         try {
+            assertProfessionalAccess(user, dto.professional_id);
             const professional = await this.usersService.findProfessionalById(
                 dto.professional_id,
             );
@@ -59,13 +80,37 @@ export class WorkSchedulesService {
         }
     }
 
-    async findAll(dto: WorkScheduleGetAllDto) {
+    async findAll(dto: WorkScheduleGetAllDto, user: UserWithType) {
         try {
-            return await this.workSchedulesRepository.findAllByFilters(dto);
+            const scopedDto = this.scopeToProfessional(dto, user);
+            return await this.workSchedulesRepository.findAllByFilters(
+                scopedDto,
+            );
         } catch (error) {
             Utils.logError(this.logger, 'Failed to list work schedules', error);
             Utils.handleError(error);
         }
+    }
+
+    private scopeToProfessional(
+        dto: WorkScheduleGetAllDto,
+        user: UserWithType,
+    ): WorkScheduleGetAllDto {
+        if (user.professional?.is_admin) return dto;
+        if (!user.professional) {
+            throw new ForbiddenException(
+                'Você só pode gerenciar a própria disponibilidade',
+            );
+        }
+        if (
+            dto.professional_id !== undefined &&
+            dto.professional_id !== user.professional.id
+        ) {
+            throw new ForbiddenException(
+                'Você só pode gerenciar a própria disponibilidade',
+            );
+        }
+        return { ...dto, professional_id: user.professional.id };
     }
 
     async getAll(dto: WorkScheduleGetAllDto) {
@@ -74,6 +119,9 @@ export class WorkSchedulesService {
             const baseDate = dto.date ?? today;
             const todayDate = new Date(baseDate + 'T00:00:00Z');
             const todayDay = todayDate.getUTCDay();
+            const allowedProfessionalIds = await this.allowedProfessionalIds(
+                dto.procedure_id,
+            );
 
             if (dto.day_of_week !== undefined) {
                 const targetDateStr =
@@ -82,6 +130,12 @@ export class WorkSchedulesService {
                 const effectiveDto = { ...dto, day_of_week: dto.day_of_week };
 
                 if (dto.professional_id) {
+                    if (
+                        allowedProfessionalIds &&
+                        !allowedProfessionalIds.has(dto.professional_id)
+                    ) {
+                        return {};
+                    }
                     const [professional, slots] = await Promise.all([
                         this.usersService.findProfessionalById(
                             dto.professional_id,
@@ -100,8 +154,13 @@ export class WorkSchedulesService {
 
                 const professionals =
                     await this.usersService.findAllProfessionals();
+                const filteredProfessionals = allowedProfessionalIds
+                    ? (professionals ?? []).filter((professional) =>
+                          allowedProfessionalIds.has(professional.id),
+                      )
+                    : (professionals ?? []);
                 const results = await Promise.all(
-                    (professionals ?? []).map(async (p) => ({
+                    filteredProfessionals.map(async (p) => ({
                         name: p.user.name,
                         slots: await this.computeSlotsForProfessional(
                             p.id,
@@ -118,6 +177,12 @@ export class WorkSchedulesService {
             const allDays = [0, 1, 2, 3, 4, 5, 6];
 
             if (dto.professional_id) {
+                if (
+                    allowedProfessionalIds &&
+                    !allowedProfessionalIds.has(dto.professional_id)
+                ) {
+                    return {};
+                }
                 const [professional, dayResults] = await Promise.all([
                     this.usersService.findProfessionalById(dto.professional_id),
                     Promise.all(
@@ -150,8 +215,13 @@ export class WorkSchedulesService {
 
             const professionals =
                 await this.usersService.findAllProfessionals();
+            const filteredProfessionals = allowedProfessionalIds
+                ? (professionals ?? []).filter((professional) =>
+                      allowedProfessionalIds.has(professional.id),
+                  )
+                : (professionals ?? []);
             const results = await Promise.all(
-                (professionals ?? []).map(async (p) => {
+                filteredProfessionals.map(async (p) => {
                     const dayResults = await Promise.all(
                         allDays.map(async (day) => {
                             const dateStr =
@@ -186,6 +256,112 @@ export class WorkSchedulesService {
             );
             Utils.handleError(error);
         }
+    }
+
+    async getAvailableDates(dto: WorkScheduleAvailabilityDto) {
+        try {
+            const dates = await this.availableDatesForRange(
+                dto.from,
+                dto.to,
+                dto.procedure_id,
+            );
+            return { dates };
+        } catch (error) {
+            Utils.logError(this.logger, 'Failed to get available dates', error);
+            Utils.handleError(error);
+        }
+    }
+
+    async getAvailabilitySummary(dto: WorkScheduleAvailabilityDto) {
+        try {
+            const links = await ProcedureProfessional.findAll({
+                attributes: ['procedure_id', 'professional_id'],
+            });
+            const groups = new Map<number, number[]>();
+            for (const link of links) {
+                const ids = groups.get(link.procedure_id) ?? [];
+                ids.push(link.professional_id);
+                groups.set(link.procedure_id, ids);
+            }
+
+            const summary = await Promise.all(
+                [...groups.entries()].map(async ([procedureId, ids]) => {
+                    const dates = await this.availableDatesForRange(
+                        dto.from,
+                        dto.to,
+                        procedureId,
+                        ids,
+                    );
+                    return {
+                        procedure_id: procedureId,
+                        next_date: dates[0] ?? null,
+                    };
+                }),
+            );
+
+            return summary.sort((a, b) => a.procedure_id - b.procedure_id);
+        } catch (error) {
+            Utils.logError(
+                this.logger,
+                'Failed to get availability summary',
+                error,
+            );
+            Utils.handleError(error);
+        }
+    }
+
+    private async availableDatesForRange(
+        from: string,
+        to: string,
+        procedureId?: number,
+        professionalIds?: number[],
+    ) {
+        const start = new Date(`${from}T00:00:00Z`);
+        const end = new Date(`${to}T00:00:00Z`);
+        if (
+            Number.isNaN(start.getTime()) ||
+            Number.isNaN(end.getTime()) ||
+            end < start
+        ) {
+            throw new BadRequestException('Intervalo de datas inválido');
+        }
+        const totalDays =
+            Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
+        if (totalDays > 90) {
+            throw new BadRequestException(
+                'O intervalo máximo de disponibilidade é de 90 dias',
+            );
+        }
+
+        const allowedProfessionalIds =
+            await this.allowedProfessionalIds(procedureId);
+        const ids = professionalIds
+            ? professionalIds
+            : allowedProfessionalIds
+              ? [...allowedProfessionalIds]
+              : ((await this.usersService.findAllProfessionals())?.map(
+                    (professional) => professional.id,
+                ) ?? []);
+
+        const dates: string[] = [];
+        for (let offset = 0; offset < totalDays; offset += 1) {
+            const date = new Date(start.getTime() + offset * 86400000);
+            const dateStr = date.toISOString().slice(0, 10);
+            const dayOfWeek = date.getUTCDay();
+            const results = await Promise.all(
+                ids.map((professionalId) =>
+                    this.computeSlotsForProfessional(professionalId, dateStr, {
+                        day_of_week: dayOfWeek,
+                        date: dateStr,
+                        procedure_id: procedureId,
+                    } as WorkScheduleGetAllDto),
+                ),
+            );
+            if (results.some((slots) => slots.length > 0)) {
+                dates.push(dateStr);
+            }
+        }
+        return dates;
     }
 
     private async computeSlotsForProfessional(
@@ -240,8 +416,18 @@ export class WorkSchedulesService {
             .filter((slot) => slot.available);
     }
 
-    async update(id: number, dto: WorkScheduleUpdateDto) {
+    async update(id: number, dto: WorkScheduleUpdateDto, user: UserWithType) {
         try {
+            const existing = await this.workSchedulesRepository.findById(id);
+            if (!existing) {
+                throw new NotFoundException(
+                    `Work schedule with ID ${id} not found`,
+                );
+            }
+            assertProfessionalAccess(user, existing.professional_id);
+            if (dto.professional_id !== undefined) {
+                assertProfessionalAccess(user, dto.professional_id);
+            }
             return await this.workSchedulesRepository.update(id, dto);
         } catch (error) {
             Utils.logError(
@@ -253,8 +439,15 @@ export class WorkSchedulesService {
         }
     }
 
-    async delete(id: number) {
+    async delete(id: number, user: UserWithType) {
         try {
+            const existing = await this.workSchedulesRepository.findById(id);
+            if (!existing) {
+                throw new NotFoundException(
+                    `Work schedule with ID ${id} not found`,
+                );
+            }
+            assertProfessionalAccess(user, existing.professional_id);
             return await this.workSchedulesRepository.delete(id);
         } catch (error) {
             Utils.logError(

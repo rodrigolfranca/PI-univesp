@@ -8,10 +8,12 @@ import {
     Patch,
     Post,
     Query,
+    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AdminGuard, AuthGuard } from '../../auth/guards';
+import type { RequestWithUser } from '../../../common/types/request.type';
+import { AuthGuard } from '../../auth/guards';
 import { ScheduleExceptionsService } from '../services/schedule-exceptions.service';
 import { ScheduleExceptionCreateDto } from '../validation/schedule-exception-create.DTO';
 import { ScheduleExceptionGetAllDto } from '../validation/schedule-exception-get-all.DTO';
@@ -32,17 +34,23 @@ export class ScheduleExceptionsController {
             '"blocked": deve cobrir um horário de trabalho aberto sem agendamentos existentes.',
     })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
-    async create(@Body() dto: ScheduleExceptionCreateDto) {
-        return await this.scheduleExceptionsService.create(dto);
+    @UseGuards(AuthGuard)
+    async create(
+        @Body() dto: ScheduleExceptionCreateDto,
+        @Req() request: RequestWithUser,
+    ) {
+        return await this.scheduleExceptionsService.create(dto, request.user);
     }
 
     @Get()
     @ApiOperation({ summary: 'Lista exceções de agenda com filtros opcionais' })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
-    async getAll(@Query() dto: ScheduleExceptionGetAllDto) {
-        return await this.scheduleExceptionsService.getAll(dto);
+    @UseGuards(AuthGuard)
+    async getAll(
+        @Query() dto: ScheduleExceptionGetAllDto,
+        @Req() request: RequestWithUser,
+    ) {
+        return await this.scheduleExceptionsService.getAll(dto, request.user);
     }
 
     @Patch(':id')
@@ -51,19 +59,27 @@ export class ScheduleExceptionsController {
             'Atualiza uma exceção de agenda revalidando as regras de negócio',
     })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
+    @UseGuards(AuthGuard)
     async update(
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: ScheduleExceptionUpdateDto,
+        @Req() request: RequestWithUser,
     ) {
-        return await this.scheduleExceptionsService.update(id, dto);
+        return await this.scheduleExceptionsService.update(
+            id,
+            dto,
+            request.user,
+        );
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Exclui (soft delete) uma exceção de agenda' })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
-    async delete(@Param('id', ParseIntPipe) id: number) {
-        return await this.scheduleExceptionsService.delete(id);
+    @UseGuards(AuthGuard)
+    async delete(
+        @Param('id', ParseIntPipe) id: number,
+        @Req() request: RequestWithUser,
+    ) {
+        return await this.scheduleExceptionsService.delete(id, request.user);
     }
 }

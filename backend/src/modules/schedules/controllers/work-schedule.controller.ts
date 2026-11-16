@@ -7,11 +7,14 @@ import {
     Patch,
     Post,
     Query,
+    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AdminGuard, AuthGuard } from '../../auth/guards';
+import type { RequestWithUser } from '../../../common/types/request.type';
+import { AuthGuard } from '../../auth/guards';
 import { WorkSchedulesService } from '../services/work-schedules.service';
+import { WorkScheduleAvailabilityDto } from '../validation/work-schedule-availability.DTO';
 import { WorkScheduleCreateDto } from '../validation/work-schedule-create.DTO';
 import { WorkScheduleGetAllDto } from '../validation/work-schedule-get-all.DTO';
 import { WorkScheduleUpdateDto } from '../validation/work-schedule-update.DTO';
@@ -26,11 +29,15 @@ export class WorkScheduleController {
         summary: 'Cria um horário de trabalho para um profissional',
     })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
+    @UseGuards(AuthGuard)
     async WorkScheduleCreate(
         @Body() workScheduleCreateDto: WorkScheduleCreateDto,
+        @Req() request: RequestWithUser,
     ) {
-        return await this.workSchedulesService.create(workScheduleCreateDto);
+        return await this.workSchedulesService.create(
+            workScheduleCreateDto,
+            request.user,
+        );
     }
 
     @Get('all')
@@ -45,37 +52,66 @@ export class WorkScheduleController {
         return await this.workSchedulesService.getAll(workScheduleGetAllDto);
     }
 
+    @Get('available-dates')
+    @ApiOperation({
+        summary: 'Lista datas com disponibilidade para um procedimento',
+    })
+    @ApiBearerAuth('JWT-auth')
+    @UseGuards(AuthGuard)
+    async availableDates(@Query() dto: WorkScheduleAvailabilityDto) {
+        return await this.workSchedulesService.getAvailableDates(dto);
+    }
+
+    @Get('availability-summary')
+    @ApiOperation({
+        summary: 'Resume a próxima disponibilidade por procedimento',
+    })
+    @ApiBearerAuth('JWT-auth')
+    @UseGuards(AuthGuard)
+    async availabilitySummary(@Query() dto: WorkScheduleAvailabilityDto) {
+        return await this.workSchedulesService.getAvailabilitySummary(dto);
+    }
+
     @Get()
     @ApiOperation({
         summary: 'Lista os horários de trabalho cadastrados',
     })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
+    @UseGuards(AuthGuard)
     async WorkScheduleFindAll(
         @Query() workScheduleGetAllDto: WorkScheduleGetAllDto,
+        @Req() request: RequestWithUser,
     ) {
-        return await this.workSchedulesService.findAll(workScheduleGetAllDto);
+        return await this.workSchedulesService.findAll(
+            workScheduleGetAllDto,
+            request.user,
+        );
     }
 
     @Patch('update/:id')
     @ApiOperation({ summary: 'Atualiza um horário de trabalho existente' })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
+    @UseGuards(AuthGuard)
     async WorkScheduleUpdate(
         @Param('id') id: number,
         @Body() workScheduleUpdateDto: WorkScheduleUpdateDto,
+        @Req() request: RequestWithUser,
     ) {
         return await this.workSchedulesService.update(
             id,
             workScheduleUpdateDto,
+            request.user,
         );
     }
 
     @Delete('delete/:id')
     @ApiOperation({ summary: 'Exclui um horário de trabalho' })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(AuthGuard, AdminGuard)
-    async WorkScheduleDelete(@Param('id') id: number) {
-        return await this.workSchedulesService.delete(id);
+    @UseGuards(AuthGuard)
+    async WorkScheduleDelete(
+        @Param('id') id: number,
+        @Req() request: RequestWithUser,
+    ) {
+        return await this.workSchedulesService.delete(id, request.user);
     }
 }
