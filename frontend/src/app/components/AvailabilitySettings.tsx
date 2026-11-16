@@ -25,10 +25,16 @@ const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export function AvailabilitySettings() {
   const { user, token } = useAuth();
   const { users, loading: usersLoading, error: usersError } = useUsers();
-  const professionals = users.filter((entry) => entry.professional);
+  const isAdmin = user?.isAdmin === true;
+  const professionals = isAdmin ? users.filter((entry) => entry.professional) : [];
   const [professionalId, setProfessionalId] = useState(
     user?.professionalId ? String(user.professionalId) : "",
   );
+  const effectiveProfessionalId = isAdmin
+    ? professionalId
+    : user?.professionalId
+      ? String(user.professionalId)
+      : "";
   const [schedules, setSchedules] = useState<ApiWorkSchedule[]>([]);
   const [exceptions, setExceptions] = useState<ApiScheduleException[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,13 +62,13 @@ export function AvailabilitySettings() {
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
-    if (!professionalId && professionals[0]) {
+    if (isAdmin && !professionalId && professionals[0]) {
       setProfessionalId(String(professionals[0].professional!.id));
     }
-  }, [professionalId, professionals]);
+  }, [isAdmin, professionalId, professionals]);
 
   useEffect(() => {
-    if (!token || !professionalId) {
+    if (!token || !effectiveProfessionalId) {
       setSchedules([]);
       setExceptions([]);
       return;
@@ -72,8 +78,8 @@ export function AvailabilitySettings() {
     setLoading(true);
     setError("");
     Promise.all([
-      listWorkSchedules(token, Number(professionalId), controller.signal),
-      listScheduleExceptions(token, Number(professionalId), controller.signal),
+      listWorkSchedules(token, Number(effectiveProfessionalId), controller.signal),
+      listScheduleExceptions(token, Number(effectiveProfessionalId), controller.signal),
     ])
       .then(([workSchedules, scheduleExceptions]) => {
         if (!controller.signal.aborted) {
@@ -88,9 +94,7 @@ export function AvailabilitySettings() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [token, professionalId, revision]);
-
-  if (!user?.isAdmin) return null;
+  }, [token, effectiveProfessionalId, revision]);
 
   function toggleDay(day: number) {
     setDays((current) =>
@@ -100,7 +104,7 @@ export function AvailabilitySettings() {
 
   async function handleCreate() {
     if (!token) return;
-    if (!professionalId) {
+    if (!effectiveProfessionalId) {
       setError("Selecione um profissional.");
       return;
     }
@@ -118,7 +122,7 @@ export function AvailabilitySettings() {
     try {
       await createWorkSchedule(
         {
-          professional_id: Number(professionalId),
+          professional_id: Number(effectiveProfessionalId),
           days_of_week: days,
           start_time: startTime,
           end_time: endTime,
@@ -136,7 +140,7 @@ export function AvailabilitySettings() {
   }
 
   async function handleCreateException() {
-    if (!token || !professionalId) return;
+    if (!token || !effectiveProfessionalId) return;
     if (!exceptionDate) {
       setError("Informe a data da exceção.");
       return;
@@ -155,7 +159,7 @@ export function AvailabilitySettings() {
     try {
       const created = await createScheduleException(
         {
-          professional_id: Number(professionalId),
+          professional_id: Number(effectiveProfessionalId),
           date: exceptionDate,
           type: exceptionType,
           name: exceptionName.trim() || null,
@@ -284,7 +288,7 @@ export function AvailabilitySettings() {
         </div>
       </div>
 
-      {(error || usersError) && (
+      {(error || (isAdmin && usersError)) && (
         <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
           {error || usersError}
         </p>
@@ -298,25 +302,31 @@ export function AvailabilitySettings() {
           >
             Profissional
           </label>
-          <select
-            id="availability-professional"
-            value={professionalId}
-            disabled={usersLoading || professionals.length === 0}
-            onChange={(event) => setProfessionalId(event.currentTarget.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          >
-            <option value="">
-              {usersLoading ? "Carregando profissionais..." : "Selecione um profissional"}
-            </option>
-            {professionals.map((professional) => (
-              <option key={professional.id} value={professional.professional!.id}>
-                {professional.name}
+          {isAdmin ? (
+            <select
+              id="availability-professional"
+              value={professionalId}
+              disabled={usersLoading || professionals.length === 0}
+              onChange={(event) => setProfessionalId(event.currentTarget.value)}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            >
+              <option value="">
+                {usersLoading ? "Carregando profissionais..." : "Selecione um profissional"}
               </option>
-            ))}
-          </select>
+              {professionals.map((professional) => (
+                <option key={professional.id} value={professional.professional!.id}>
+                  {professional.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700">
+              {user?.name}
+            </p>
+          )}
         </div>
 
-        {professionalId && (
+        {effectiveProfessionalId && (
           <div className="space-y-2">
             {loading ? (
               <p className="text-sm text-gray-500">Carregando horários...</p>
@@ -397,7 +407,60 @@ export function AvailabilitySettings() {
           </div>
         )}
 
-        {professionalId && (
+        <div className="rounded-lg border border-gray-200 p-3">
+          <p className="mb-2 text-sm font-medium text-gray-700">Adicionar horário</p>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {WEEKDAYS.map((label, day) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => toggleDay(day)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                  days.includes(day)
+                    ? "bg-brand-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500" htmlFor="work-start">
+                Início
+              </label>
+              <input
+                id="work-start"
+                type="time"
+                value={startTime}
+                onChange={(event) => setStartTime(event.currentTarget.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500" htmlFor="work-end">
+                Fim
+              </label>
+              <input
+                id="work-end"
+                type="time"
+                value={endTime}
+                onChange={(event) => setEndTime(event.currentTarget.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              onClick={() => void handleCreate()}
+              disabled={saving || !effectiveProfessionalId}
+              className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Adicionar
+            </button>
+          </div>
+        </div>
+        {effectiveProfessionalId && (
           <div className="space-y-2 rounded-lg border border-gray-200 p-3">
             <p className="text-sm font-medium text-gray-700">Exceções de agenda</p>
             {exceptions.length === 0 ? (
@@ -557,7 +620,7 @@ export function AvailabilitySettings() {
               </div>
               <button
                 onClick={() => void handleCreateException()}
-                disabled={savingException || !professionalId}
+                disabled={savingException || !effectiveProfessionalId}
                 className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {savingException ? (
@@ -573,60 +636,6 @@ export function AvailabilitySettings() {
             </p>
           </div>
         )}
-
-        <div className="rounded-lg border border-gray-200 p-3">
-          <p className="mb-2 text-sm font-medium text-gray-700">Adicionar horário</p>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {WEEKDAYS.map((label, day) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => toggleDay(day)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-                  days.includes(day)
-                    ? "bg-brand-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-end gap-2">
-            <div>
-              <label className="mb-1 block text-xs text-gray-500" htmlFor="work-start">
-                Início
-              </label>
-              <input
-                id="work-start"
-                type="time"
-                value={startTime}
-                onChange={(event) => setStartTime(event.currentTarget.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500" htmlFor="work-end">
-                Fim
-              </label>
-              <input
-                id="work-end"
-                type="time"
-                value={endTime}
-                onChange={(event) => setEndTime(event.currentTarget.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <button
-              onClick={() => void handleCreate()}
-              disabled={saving || !professionalId}
-              className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Adicionar
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

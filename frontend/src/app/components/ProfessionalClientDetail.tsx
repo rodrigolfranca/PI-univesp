@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { errorMessage } from "../services/api";
 import { listMyClients, type ProfessionalClient } from "../services/schedules";
+import { BackButton } from "./BackButton";
 import { ClientHistory } from "./ClientHistory";
 import { RequestState } from "./RequestState";
 
@@ -39,9 +39,7 @@ export function ProfessionalClientDetail({ clientId }: { clientId: number }) {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
-      <Link to="/app/clients" className="text-brand-700 underline">
-        ← Voltar para Clientes
-      </Link>
+      <BackButton to="/app/clients" label="Voltar para Clientes" />
       {loading || error ? (
         <RequestState loading={loading} error={error} onRetry={reload} />
       ) : client ? (
