@@ -11,6 +11,7 @@ const procedures = vi.hoisted(() => [
     name: "Limpeza",
     durationMinutes: 30,
     status: "Ativo",
+    professionals: [{ id: 8, name: "Ana" }],
   },
 ]);
 const auth = vi.hoisted(() => ({

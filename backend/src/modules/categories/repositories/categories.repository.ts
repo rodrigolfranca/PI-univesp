@@ -8,6 +8,8 @@ import { Category, Procedure } from '../../../common/models';
 import { CreateCategoryDto } from '../validation/create-category.dto';
 import { UpdateCategoryDto } from '../validation/update-category.dto';
 
+const PROTECTED_CATEGORY_NAME = 'Geral';
+
 @Injectable()
 export class CategoriesRepository {
     async findAll(): Promise<Category[]> {
@@ -32,6 +34,11 @@ export class CategoriesRepository {
 
     async update(id: number, dto: UpdateCategoryDto): Promise<Category> {
         const category = await this.findOne(id);
+        if (category.name === PROTECTED_CATEGORY_NAME) {
+            throw new BadRequestException(
+                'A categoria Geral não pode ser editada',
+            );
+        }
         if (dto.name !== undefined) {
             const name = dto.name.trim();
             await this.ensureUniqueName(name, id);
@@ -54,7 +61,7 @@ export class CategoriesRepository {
 
     async remove(id: number): Promise<{ message: string }> {
         const category = await this.findOne(id);
-        if (category.name === 'Geral') {
+        if (category.name === PROTECTED_CATEGORY_NAME) {
             throw new BadRequestException(
                 'A categoria Geral não pode ser excluída',
             );

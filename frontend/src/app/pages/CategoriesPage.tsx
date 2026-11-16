@@ -1,7 +1,6 @@
 import { useTerminology } from "../config/SiteContext";
 import { useState } from "react";
-import { Link } from "react-router";
-import { Plus, Pencil, Trash2, Tag, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -42,6 +41,10 @@ export function CategoriesPage() {
     return procedures.filter((p) => p.category === categoryName).length;
   }
 
+  function isProtectedCategory(name: string) {
+    return name === "Geral";
+  }
+
   async function handleAdd() {
     const trimmed = addName.trim();
     if (!trimmed) {
@@ -66,6 +69,7 @@ export function CategoriesPage() {
   }
 
   function openEdit(id: number, name: string) {
+    if (isProtectedCategory(name)) return;
     setEditId(id);
     setEditName(name);
     setEditError("");
@@ -95,7 +99,7 @@ export function CategoriesPage() {
 
   function openDelete(id: number) {
     const cat = categories.find((c) => c.id === id);
-    if (!cat) return;
+    if (!cat || isProtectedCategory(cat.name)) return;
 
     const count = procedureCount(cat.name);
     if (count > 0) {
@@ -128,14 +132,6 @@ export function CategoriesPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-4">
-        <Link to="/app/settings" className="hover:text-brand-600 transition-colors">
-          Configurações
-        </Link>
-        <ChevronRight className="w-4 h-4" />
-        <span className="text-gray-900 font-medium">Categorias</span>
-      </nav>
-
       {error && (
         <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
           {error}
@@ -188,22 +184,26 @@ export function CategoriesPage() {
                     {count !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => openEdit(cat.id, cat.name)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-brand-600"
-                    title="Editar"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => openDelete(cat.id)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors text-gray-500 hover:text-red-600"
-                    title="Excluir"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {!isProtectedCategory(cat.name) && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => openEdit(cat.id, cat.name)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-brand-600"
+                      title="Editar"
+                      aria-label={`Editar ${cat.name}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => openDelete(cat.id)}
+                      className="p-2 hover:bg-red-50 rounded-lg transition-colors text-gray-500 hover:text-red-600"
+                      title="Excluir"
+                      aria-label={`Excluir ${cat.name}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -251,22 +251,26 @@ export function CategoriesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEdit(cat.id, cat.name)}
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-brand-600"
-                          title="Editar"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openDelete(cat.id)}
-                          className="p-2 hover:bg-red-50 rounded-lg transition-colors text-gray-500 hover:text-red-600"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {!isProtectedCategory(cat.name) && (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEdit(cat.id, cat.name)}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-brand-600"
+                            title="Editar"
+                            aria-label={`Editar ${cat.name}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openDelete(cat.id)}
+                            className="p-2 hover:bg-red-50 rounded-lg transition-colors text-gray-500 hover:text-red-600"
+                            title="Excluir"
+                            aria-label={`Excluir ${cat.name}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

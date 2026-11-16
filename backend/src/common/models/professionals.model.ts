@@ -1,5 +1,6 @@
 import {
     BelongsTo,
+    BelongsToMany,
     Column,
     DataType,
     DefaultScope,
@@ -7,6 +8,8 @@ import {
     Scopes,
     Table,
 } from 'sequelize-typescript';
+import { Procedure } from './procedures.model';
+import { ProcedureProfessional } from './procedure-professionals.model';
 import { User } from './users.model';
 
 @DefaultScope(() => ({
@@ -60,4 +63,7 @@ export class Professional extends Model {
 
     @BelongsTo(() => User, 'user_id')
     declare user: User;
+
+    @BelongsToMany(() => Procedure, () => ProcedureProfessional)
+    declare procedures: Procedure[];
 }

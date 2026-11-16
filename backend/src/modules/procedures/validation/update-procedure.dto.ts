@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+    ArrayNotEmpty,
+    IsArray,
     IsBoolean,
     IsIn,
     IsInt,
@@ -20,6 +22,19 @@ export class UpdateProcedureDto {
     @IsInt()
     @IsPositive()
     category_id?: number;
+
+    @ApiProperty({
+        description: 'IDs dos profissionais habilitados',
+        example: [1, 2],
+        type: [Number],
+        required: false,
+    })
+    @IsOptional()
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsInt({ each: true })
+    @IsPositive({ each: true })
+    professional_ids?: number[];
 
     @ApiProperty({
         description: 'Status do procedimento',
