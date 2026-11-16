@@ -9,6 +9,7 @@ Sistema de agendamentos para profissionais de estética, com frontend React/Vite
 - [Arquitetura multi-site](docs/MULTISITE.md)
 - [Deploy: Vercel + Supabase + Upstash](docs/DEPLOY.md)
 - [Níveis de acesso](docs/ACCESS.md)
+- [Modo demonstração](docs/DEMO.md)
 
 ## Requisitos
 

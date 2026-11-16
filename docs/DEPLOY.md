@@ -90,6 +90,7 @@ NODE_ENV=prod npm run migrate:categories
 NODE_ENV=prod npm run migrate:procedure-status
 NODE_ENV=prod npm run migrate:brand-gallery
 NODE_ENV=prod npm run seed:admin
+NODE_ENV=prod npm run seed:demo # opcional para ambientes de demonstração
 ```
 
 Esse comando cria as tabelas e garante o usuário administrador. Depois do seed, altere `DB_SYNC=false` no `.env.prod` para evitar novas sincronizações acidentais.
@@ -241,7 +242,7 @@ No frontend, valide:
 
 ## 8. Limitações e pendências
 
-- **OTP e códigos de alteração de contato ainda são apenas logados.** O backend não envia WhatsApp nem e-mail. Para testar, leia o código nos Runtime Logs da Vercel. Para usuários reais, integre Z-API e um provedor de e-mail e remova o log do código em produção.
+- **Modo demonstração de OTP:** o backend retorna `demo_code` e o frontend exibe o código em modal copiável. O envio real por WhatsApp/e-mail ainda não existe. Não use esse modo com dados reais; remova `demo_code` e o modal ao integrar um provedor real.
 - **Recuperação ainda usa um único código enviado ao novo telefone.** O fluxo planejado é confirmar primeiro o e-mail e depois o novo telefone; até lá, mantenha o throttle.
 - **POPs públicos:** listagem e download são públicos por decisão de produto. Não coloque documentos internos em POPs públicos.
 - **Throttle distribuído:** auth, consulta por telefone e alteração de contato usam Upstash Ratelimit REST com prefixo `SITE_ID`. Sem as variáveis `UPSTASH_REDIS_REST_*`, o backend cai para limite em memória por instância (adequado apenas para desenvolvimento/teste).

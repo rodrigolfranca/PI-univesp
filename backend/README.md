@@ -56,6 +56,10 @@ NODE_ENV=prod npm run seed:admin
 
 Use o session pooler (`DB_PORT=5432`) para migrações e seed. Depois, mantenha `DB_SYNC=false` no runtime da Vercel.
 
+## Contas e códigos demo
+
+Para demonstração, use `npm run seed:demo` e consulte [docs/DEMO.md](../docs/DEMO.md). Os endpoints que geram código retornam `demo_code` e o frontend exibe o código em modal. Não use esse comportamento com dados reais.
+
 ## Endpoints principais
 
 - `POST /auth/request-code`, `POST /auth/verify-code`
@@ -95,7 +99,7 @@ Detalhes em [docs/ACCESS.md](../docs/ACCESS.md).
 - CORS não aceita `*`; Helmet aplica cabeçalhos de segurança.
 - SSL do Supabase valida o certificado; use `DB_SSL_CA_BASE64`.
 - POPs aceitam apenas PDF até 4,5 MB; marca/galeria aceitam PNG/JPG/WebP.
-- OTPs ainda aparecem no log do backend até a integração de WhatsApp/e-mail.
+- Nesta versão de demonstração, os códigos são retornados pela API e exibidos em modal. O envio real por WhatsApp/e-mail ainda não existe.
 
 ## Testes
 
