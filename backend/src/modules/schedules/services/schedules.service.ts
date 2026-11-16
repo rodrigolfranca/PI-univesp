@@ -1,10 +1,15 @@
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     Logger,
     NotFoundException,
 } from '@nestjs/common';
-import { Procedure, Schedule } from '../../../common/models';
+import {
+    Procedure,
+    ProcedureProfessional,
+    Schedule,
+} from '../../../common/models';
 import { UserWithType } from '../../../common/types/users.type';
 import { ScheduleExceptionType } from '../../../common/models/schedule-exceptions.model';
 import { Utils } from '../../../common/utils/utils';
@@ -191,6 +196,15 @@ export class SchedulesService {
             throw new NotFoundException(
                 `Procedimento com ID ${procedure_id} não encontrado`,
             );
+
+        const isLinked = await ProcedureProfessional.findOne({
+            where: { procedure_id, professional_id },
+        });
+        if (!isLinked) {
+            throw new BadRequestException(
+                'Profissional não está habilitado para este procedimento',
+            );
+        }
 
         const duration =
             session === 0
