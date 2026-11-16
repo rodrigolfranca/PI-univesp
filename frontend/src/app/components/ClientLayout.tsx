@@ -1,28 +1,30 @@
-import { Outlet, Link, useLocation, useNavigate } from "react-router";
-import { Calendar, Plus, Bell, UserCircle, LogOut } from "lucide-react";
+import { Outlet, Link, useLocation } from "react-router";
+import { Calendar, Bell, UserCircle } from "lucide-react";
+import { NOTIFICATIONS_ENABLED } from "../config/features";
 import { BrandLogo } from "./BrandLogo";
+import { LogoutButton } from "./LogoutButton";
 import { useBrand } from "../context/BrandContext";
 import { useAuth } from "../context/AuthContext";
 
 export function ClientLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { name } = useBrand();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path ||
+    (path === "/cliente/agendamentos" && location.pathname.startsWith(`${path}/`));
 
+  const notificationItem = {
+    path: "/cliente/notificacoes",
+    icon: Bell,
+    label: "Notificações",
+  };
   const navItems = [
     { path: "/cliente/agendamentos", icon: Calendar, label: "Agendamentos" },
-    { path: "/cliente/novo", icon: Plus, label: "Novo" },
-    { path: "/cliente/notificacoes", icon: Bell, label: "Notificações" },
+    ...(NOTIFICATIONS_ENABLED ? [notificationItem] : []),
     { path: "/cliente/perfil", icon: UserCircle, label: "Perfil" },
   ];
-
-  function handleLogout() {
-    logout();
-    navigate("/login");
-  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -56,13 +58,7 @@ export function ClientLayout() {
             })}
           </nav>
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Sair</span>
-          </button>
+          <LogoutButton />
         </div>
       </header>
 
@@ -71,7 +67,10 @@ export function ClientLayout() {
       </main>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-inset-bottom z-50">
-        <div className="grid grid-cols-4 h-16">
+        <div
+          className="grid h-16"
+          style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);

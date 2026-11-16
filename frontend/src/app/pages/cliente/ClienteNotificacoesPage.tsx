@@ -1,4 +1,5 @@
 import { useSite, useStorageKey } from "../../config/SiteContext";
+import { BackButton } from "../../components/BackButton";
 import { Bell, Calendar, CheckCircle, XCircle, Info } from "lucide-react";
 import { useState } from "react";
 
@@ -71,6 +72,7 @@ export function ClienteNotificacoesPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <BackButton to="/cliente/agendamentos" label="Voltar" />
       <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
         Dados de demonstração. Esta seção ainda não foi integrada à sua conta.
       </p>

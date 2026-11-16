@@ -1,8 +1,10 @@
 import { useTerminology } from "../config/SiteContext";
+import { NOTIFICATIONS_ENABLED } from "../config/features";
 import { Outlet, Link, useLocation } from "react-router";
 import { Users, Sparkles, Calendar, Bell, UserCircle, CalendarClock, Tags } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { BrandLogo } from "./BrandLogo";
+import { LogoutButton } from "./LogoutButton";
 import { useBrand } from "../context/BrandContext";
 
 export function RootLayout() {
@@ -15,38 +17,41 @@ export function RootLayout() {
     return location.pathname === path;
   };
 
+  const availabilityItem = {
+    path: "/app/availability",
+    icon: CalendarClock,
+    label: "Disponibilidade",
+  };
+  const appointmentsItem = {
+    path: "/app/appointments",
+    icon: Calendar,
+    label: "Agendamentos",
+  };
   const navItems = [
     {
       path: "/app/clients",
       icon: Users,
       label: "Clientes",
     },
+    ...(user?.professionalId && user.isAdmin ? [availabilityItem] : []),
+    appointmentsItem,
+    ...(user?.professionalId && !user.isAdmin ? [availabilityItem] : []),
     {
       path: "/app/procedures",
       icon: Sparkles,
       label: copy("Procedimentos"),
     },
-    {
-      path: "/app/appointments",
-      icon: Calendar,
-      label: "Agendamentos",
-    },
     ...(user?.isAdmin
       ? [
           {
-            path: "/app/availability",
-            icon: CalendarClock,
-            label: "Disponibilidade",
+            path: "/app/categories",
+            icon: Tags,
+            label: "Categorias",
           },
           {
             path: "/app/employees",
             icon: Users,
             label: "Equipe",
-          },
-          {
-            path: "/app/categories",
-            icon: Tags,
-            label: "Categorias",
           },
         ]
       : []),
@@ -80,18 +85,21 @@ export function RootLayout() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link
-              to="/app/notifications"
-              className={`p-2 rounded-full transition-colors ${isActive("/app/notifications") ? "bg-brand-100 text-brand-600" : "text-gray-600 hover:bg-gray-100"}`}
-            >
-              <Bell className="w-6 h-6" />
-            </Link>
+            {NOTIFICATIONS_ENABLED && (
+              <Link
+                to="/app/notifications"
+                className={`p-2 rounded-full transition-colors ${isActive("/app/notifications") ? "bg-brand-100 text-brand-600" : "text-gray-600 hover:bg-gray-100"}`}
+              >
+                <Bell className="w-6 h-6" />
+              </Link>
+            )}
             <Link
               to="/app/settings"
               className={`p-2 rounded-full transition-colors ${isActive("/app/settings") ? "bg-brand-100 text-brand-600" : "text-gray-600 hover:bg-gray-100"}`}
             >
               <UserCircle className="w-6 h-6" />
             </Link>
+            <LogoutButton />
           </div>
         </div>
       </header>
