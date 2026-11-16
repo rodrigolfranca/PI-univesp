@@ -119,15 +119,12 @@ export class AuthService {
                 OTP_TTL_SECONDS,
                 emailCode,
             );
-            this.logger.log(
-                `Signup email code for ${data.email}: ${emailCode}`,
-            );
-
             return {
                 message: 'Código enviado ao e-mail',
                 signup_id: signupId,
                 expires_in: OTP_TTL_SECONDS,
                 resend_after: OTP_RESEND_AFTER_SECONDS,
+                demo_code: emailCode,
             };
         } catch (e) {
             Utils.logError(this.logger, 'Failed to request signup code', e);
@@ -154,15 +151,12 @@ export class AuthService {
                 OTP_TTL_SECONDS,
                 emailCode,
             );
-            this.logger.log(
-                `Signup email code for ${data.email}: ${emailCode}`,
-            );
-
             return {
                 message: 'Código enviado ao e-mail',
                 signup_id: signupId,
                 expires_in: OTP_TTL_SECONDS,
                 resend_after: OTP_RESEND_AFTER_SECONDS,
+                demo_code: emailCode,
             };
         } catch (e) {
             Utils.logError(this.logger, 'Failed to resend signup code', e);
@@ -199,15 +193,12 @@ export class AuthService {
                 OTP_TTL_SECONDS,
                 phoneCode,
             );
-            this.logger.log(
-                `Signup phone code for ${data.phone_number}: ${phoneCode}`,
-            );
-
             return {
                 message: 'E-mail confirmado',
                 signup_id: signupId,
                 expires_in: OTP_TTL_SECONDS,
                 resend_after: OTP_RESEND_AFTER_SECONDS,
+                demo_code: phoneCode,
             };
         } catch (e) {
             Utils.logError(
@@ -238,15 +229,12 @@ export class AuthService {
                 OTP_TTL_SECONDS,
                 phoneCode,
             );
-            this.logger.log(
-                `Signup phone code for ${data.phone_number}: ${phoneCode}`,
-            );
-
             return {
                 message: 'Código enviado ao telefone',
                 signup_id: signupId,
                 expires_in: OTP_TTL_SECONDS,
                 resend_after: OTP_RESEND_AFTER_SECONDS,
+                demo_code: phoneCode,
             };
         } catch (e) {
             Utils.logError(
@@ -319,14 +307,11 @@ export class AuthService {
                 code,
             );
 
-            // Codes are logged while no delivery provider is configured.
-
-            this.logger.log(`Code for ${phone_number}: ${code}`);
-
             return {
                 message: 'If the phone number is registered, a code was sent',
                 expires_in: OTP_TTL_SECONDS,
                 resend_after: OTP_RESEND_AFTER_SECONDS,
+                demo_code: code,
             };
         } catch (e) {
             Utils.logError(this.logger, 'Failed to request code', e);
@@ -400,13 +385,12 @@ export class AuthService {
                 emailCode,
             );
 
-            this.logger.log(`Recovery email code for ${email}: ${emailCode}`);
-
             return {
                 message: 'Código enviado ao e-mail',
                 recovery_id: recoveryId,
                 expires_in: OTP_TTL_SECONDS,
                 resend_after: OTP_RESEND_AFTER_SECONDS,
+                demo_code: emailCode,
             };
         } catch (e) {
             Utils.logError(
@@ -511,15 +495,12 @@ export class AuthService {
                 phoneCode,
             );
 
-            this.logger.log(
-                `Recovery phone code for ${phoneNumber}: ${phoneCode}`,
-            );
-
             return {
                 message: 'Código enviado ao novo telefone',
                 recovery_id: recoveryId,
                 expires_in: OTP_TTL_SECONDS,
                 resend_after: OTP_RESEND_AFTER_SECONDS,
+                demo_code: phoneCode,
             };
         } catch (e) {
             Utils.logError(

@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { SiteProvider } from "../app/config/SiteContext";
+import { OtpCodeModalHost } from "../app/components/OtpCodeModal";
 import { normalizeConfig } from "../app/config/schema.mjs";
 import type { SiteConfig } from "../app/config/types";
 
@@ -59,6 +60,7 @@ export function renderWithSite(ui: ReactNode, { route = "/" }: { route?: string 
   return render(
     <SiteProvider site={testSite}>
       <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+      <OtpCodeModalHost />
     </SiteProvider>,
   );
 }

@@ -19,6 +19,8 @@ import {
 } from "../services/auth";
 import type { SignupPolicy } from "../services/auth";
 import { normalizePhone } from "../services/users";
+import { showOtpCode } from "../services/otp-code";
+import { OtpCodeReopenButton } from "../components/OtpCodeReopenButton";
 import type { UserFields } from "../services/users";
 
 type SignupStep = "form" | "email-code" | "phone-code";
@@ -47,6 +49,14 @@ export function SignupPage() {
     setEmailCode("");
     setError("");
     start(policy.expires_in, policy.resend_after);
+    if (policy.demo_code) {
+      showOtpCode({
+        code: policy.demo_code,
+        title: "Código do e-mail",
+        description: `Use este código enviado para ${values.email}.`,
+        expiresIn: policy.expires_in,
+      });
+    }
   }
 
   async function handleVerifyEmail(event: FormEvent<HTMLFormElement>) {
@@ -66,6 +76,14 @@ export function SignupPage() {
       setEmailCode("");
       setPhoneCode("");
       start(policy.expires_in, policy.resend_after);
+      if (policy.demo_code) {
+        showOtpCode({
+          code: policy.demo_code,
+          title: "Código do telefone",
+          description: `Use este código enviado para ${fields?.phone ?? ""}.`,
+          expiresIn: policy.expires_in,
+        });
+      }
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -103,6 +121,14 @@ export function SignupPage() {
       setSignup(policy);
       setEmailCode("");
       start(policy.expires_in, policy.resend_after);
+      if (policy.demo_code) {
+        showOtpCode({
+          code: policy.demo_code,
+          title: "Código do e-mail",
+          description: `Use este código enviado para ${fields?.email ?? ""}.`,
+          expiresIn: policy.expires_in,
+        });
+      }
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -119,6 +145,14 @@ export function SignupPage() {
       setSignup(policy);
       setPhoneCode("");
       start(policy.expires_in, policy.resend_after);
+      if (policy.demo_code) {
+        showOtpCode({
+          code: policy.demo_code,
+          title: "Código do telefone",
+          description: `Use este código enviado para ${fields?.phone ?? ""}.`,
+          expiresIn: policy.expires_in,
+        });
+      }
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -173,9 +207,10 @@ export function SignupPage() {
                 }}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
               />
-              <p className="mt-2 text-sm text-amber-800">
-                O envio é por log. Obtenha o código no terminal do backend.
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                <span>O código foi gerado.</span>
+                <OtpCodeReopenButton />
+              </div>
               <p
                 role="timer"
                 aria-live={expired ? "polite" : "off"}

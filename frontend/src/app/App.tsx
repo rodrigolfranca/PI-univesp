@@ -9,6 +9,7 @@ import { UsersProvider } from "./context/UsersContext";
 import { AuthProvider } from "./context/AuthContext";
 import { GoogleCalendarProvider } from "./context/GoogleCalendarContext";
 import { Toaster } from "./components/ui/sonner";
+import { OtpCodeModalHost } from "./components/OtpCodeModal";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
                 <UsersProvider>
                   <AppointmentsProvider>
                     <RouterProvider router={router} />
+                    <OtpCodeModalHost />
                     <Toaster richColors position="bottom-right" />
                   </AppointmentsProvider>
                 </UsersProvider>

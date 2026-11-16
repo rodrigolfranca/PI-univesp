@@ -19,9 +19,17 @@ import {
   verifyRecoveryPhoneCode,
 } from "../services/auth";
 import { normalizePhone } from "../services/users";
+import { showOtpCode } from "../services/otp-code";
+import { OtpCodeReopenButton } from "../components/OtpCodeReopenButton";
 
 type Mode = "login" | "recovery";
 type RecoveryStep = "email" | "email-code" | "phone" | "phone-code";
+
+const DEMO_ACCOUNTS = [
+  { label: "Admin", phone: "11999990001" },
+  { label: "Profissional", phone: "11999990002" },
+  { label: "Cliente", phone: "11999990005" },
+];
 
 export function LoginPage() {
   const site = useSite();
@@ -81,7 +89,15 @@ export function LoginPage() {
         setCode("");
         setStep("code");
         start(policy.expires_in, policy.resend_after);
-        setNotice("Código gerado. Consulte o log do backend.");
+        setNotice("Código gerado.");
+        if (policy.demo_code) {
+          showOtpCode({
+            code: policy.demo_code,
+            title: "Código de login",
+            description: `Use este código para entrar com ${phone}.`,
+            expiresIn: policy.expires_in,
+          });
+        }
       } else {
         const user = await login(phone, code);
         reset();
@@ -137,6 +153,14 @@ export function LoginPage() {
         setRecoveryEmailCode("");
         setRecoveryPhoneCode("");
         start(policy.expires_in, policy.resend_after);
+        if (policy.demo_code) {
+          showOtpCode({
+            code: policy.demo_code,
+            title: "Código de recuperação",
+            description: `Use este código enviado ao e-mail ${recoveryEmail.trim()}.`,
+            expiresIn: policy.expires_in,
+          });
+        }
       } else if (action === "verify-email") {
         await verifyRecoveryEmailCode(recoveryId, recoveryEmailCode);
         reset();
@@ -149,6 +173,14 @@ export function LoginPage() {
         setRecoveryStep("phone-code");
         setRecoveryPhoneCode("");
         start(policy.expires_in, policy.resend_after);
+        if (policy.demo_code) {
+          showOtpCode({
+            code: policy.demo_code,
+            title: "Código do novo telefone",
+            description: `Use este código enviado ao telefone ${recoveryPhone}.`,
+            expiresIn: policy.expires_in,
+          });
+        }
       } else {
         await verifyRecoveryPhoneCode(recoveryId, recoveryPhone, recoveryPhoneCode);
         reset();
@@ -378,9 +410,10 @@ export function LoginPage() {
                     }
                     className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
                   />
-                  <p className="mt-2 text-sm text-amber-800">
-                    O envio é por log. Obtenha o código no terminal do backend.
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                    <span>O código foi gerado.</span>
+                    <OtpCodeReopenButton />
+                  </div>
                   <p
                     role="timer"
                     aria-live={expired ? "polite" : "off"}
@@ -410,9 +443,10 @@ export function LoginPage() {
                     }
                     className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
                   />
-                  <p className="mt-2 text-sm text-amber-800">
-                    O envio é por log. Obtenha o código no terminal do backend.
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                    <span>O código foi gerado.</span>
+                    <OtpCodeReopenButton />
+                  </div>
                   <p
                     role="timer"
                     aria-live={expired ? "polite" : "off"}
@@ -457,9 +491,10 @@ export function LoginPage() {
                     onChange={handleCodeChange}
                     className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-brand-500"
                   />
-                  <p className="mt-2 text-sm text-amber-800">
-                    O envio é por log. Obtenha o código no terminal do backend.
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                    <span>O código foi gerado.</span>
+                    <OtpCodeReopenButton />
+                  </div>
                   <p
                     role="timer"
                     aria-live={expired ? "polite" : "off"}
@@ -514,6 +549,35 @@ export function LoginPage() {
             </Button>
           )}
         </form>
+
+        {!isRecovery && step === "phone" && (
+          <div className="rounded-xl border border-dashed border-brand-200 bg-brand-50 p-4 text-left">
+            <p className="text-sm font-semibold text-brand-800">Acesso de demonstração</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.label}
+                  type="button"
+                  onClick={() => {
+                    reset();
+                    setPhone(account.phone);
+                    setCode("");
+                    setStep("phone");
+                    setError("");
+                    setNotice("");
+                    setAccountNotFound(false);
+                  }}
+                  className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100"
+                >
+                  {account.label} · {account.phone}
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-gray-500">
+              Modo demonstração: os códigos de acesso são exibidos na tela.
+            </p>
+          </div>
+        )}
 
         {!isRecovery && step === "phone" && !accountNotFound && (
           <Link to={signupUrl} className="block text-center text-brand-700 underline">

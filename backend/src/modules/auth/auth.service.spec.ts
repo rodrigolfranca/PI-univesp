@@ -227,6 +227,7 @@ describe('AuthService', () => {
             message: 'If the phone number is registered, a code was sent',
             expires_in: 300,
             resend_after: 90,
+            demo_code: '123456',
         });
         expect(cryptoService.generateCode).toHaveBeenCalled();
         expect(redis.setex).toHaveBeenCalledWith(

@@ -347,11 +347,11 @@ export class UsersService {
             OTP_TTL_SECONDS,
             JSON.stringify({ value, code }),
         );
-        this.logger.log(`Contact change code for ${value}: ${code}`);
         return {
             message: 'Código enviado para o novo contato',
             expires_in: OTP_TTL_SECONDS,
             resend_after: OTP_RESEND_AFTER_SECONDS,
+            demo_code: code,
         };
     }
 
@@ -365,11 +365,11 @@ export class UsersService {
             OTP_TTL_SECONDS,
             JSON.stringify({ value: user.email, code }),
         );
-        this.logger.log(`Contact change code for ${user.email}: ${code}`);
         return {
             message: 'Código enviado para o e-mail atual',
             expires_in: OTP_TTL_SECONDS,
             resend_after: OTP_RESEND_AFTER_SECONDS,
+            demo_code: code,
         };
     }
 
