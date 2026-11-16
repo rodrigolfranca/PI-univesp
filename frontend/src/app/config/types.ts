@@ -82,21 +82,7 @@ export interface SiteConfig extends Manifest {
     professionals: string;
   };
   content: {
-    pageHeadings: {
-      treatmentsTitle: string;
-      treatmentsIntro: string;
-      aboutTitle: string;
-      aboutIntro: string;
-      contactTitle: string;
-      contactIntro: string;
-    };
     homeAbout: { title: string; paragraphs: string[] };
-    about: {
-      missionTitle: string;
-      paragraphs: string[];
-      values: ContentCard[];
-    };
-    treatments: ContentCard[];
     hero: string;
     authTagline: string;
     bookingConfirmation: string;
@@ -106,8 +92,6 @@ export interface SiteConfig extends Manifest {
     catalogIntro: string;
     contactTitle: string;
     contactIntro: string;
-    contactPageTitle: string;
-    contactPageIntro: string;
     footer: string;
     owner: { name: string; role: string; phone: string; registeredAt: string };
   };
@@ -118,6 +102,7 @@ export interface SiteConfig extends Manifest {
     hours: string[];
     whatsapp: string;
     instagram: string;
+    googleReviewUrl: string;
   };
   catalog: {
     categories: Category[];

@@ -1,13 +1,10 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate, useLocation } from "react-router";
 import { RootLayout } from "./components/RootLayout";
 import { ClientLayout } from "./components/ClientLayout";
 import { EmployeeGuard } from "./components/EmployeeGuard";
 import { ClienteGuard } from "./components/ClienteGuard";
+import { PublicAnchorRedirect } from "./components/PublicAnchorRedirect";
 import { LandingPage } from "./pages/LandingPage";
-import { TratamentosPage } from "./pages/TratamentosPage";
-import { PublicProcedureDetailPage } from "./pages/PublicProcedureDetailPage";
-import { SobrePage } from "./pages/SobrePage";
-import { ContatoPage } from "./pages/ContatoPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { ClientsPage } from "./pages/ClientsPage";
@@ -35,19 +32,19 @@ export const router = createBrowserRouter([
   },
   {
     path: "/tratamentos",
-    Component: TratamentosPage,
+    element: <PublicAnchorRedirect anchor="tratamentos" />,
   },
   {
     path: "/tratamentos/:id",
-    Component: PublicProcedureDetailPage,
+    element: <PublicAnchorRedirect anchor="tratamentos" />,
   },
   {
     path: "/sobre",
-    Component: SobrePage,
+    element: <PublicAnchorRedirect anchor="sobre" />,
   },
   {
     path: "/contato",
-    Component: ContatoPage,
+    element: <PublicAnchorRedirect anchor="contato" />,
   },
   {
     path: "/login",
@@ -93,7 +90,8 @@ export const router = createBrowserRouter([
         Component: ClientLayout,
         children: [
           { path: "agendamentos", Component: ClienteAgendamentosPage },
-          { path: "novo", Component: ClienteNovoAgendamentoPage },
+          { path: "agendamentos/novo", Component: ClienteNovoAgendamentoPage },
+          { path: "novo", Component: ClienteNovoRedirect },
           { path: "notificacoes", Component: ClienteNotificacoesPage },
           { path: "perfil", Component: ClientePerfilPage },
         ],
@@ -101,3 +99,8 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+function ClienteNovoRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/cliente/agendamentos/novo${location.search}`} replace />;
+}

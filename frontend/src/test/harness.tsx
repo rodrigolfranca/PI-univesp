@@ -21,8 +21,13 @@ export const testSite = normalizeConfig(
       contactIntro: "Estamos prontos para atender",
     },
     contact: {
+      address: ["Rua Teste, 123", "São Paulo - SP"],
+      phone: "(11) 99999-9999",
+      email: "contato@studio.test",
+      hours: ["Segunda a sexta: 9h às 18h"],
       whatsapp: "5511999999999",
       instagram: "studio.teste",
+      googleReviewUrl: "https://maps.app.goo.gl/test-review",
     },
     catalog: {
       icon: "sparkles",

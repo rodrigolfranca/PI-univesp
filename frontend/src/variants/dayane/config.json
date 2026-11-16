@@ -22,14 +22,6 @@
     "professionals": "profissionais"
   },
   "content": {
-    "pageHeadings": {
-      "treatmentsTitle": "Nossos Tratamentos",
-      "treatmentsIntro": "Descubra nossos tratamentos especializados para realçar sua beleza natural",
-      "aboutTitle": "Sobre Nós",
-      "aboutIntro": "Conheça nossa história e nosso compromisso com a sua beleza",
-      "contactTitle": "Entre em Contato",
-      "contactIntro": "Estamos prontos para atender você e realizar seus sonhos de beleza"
-    },
     "homeAbout": {
       "title": "Cuidado e beleza com quem entende de você",
       "paragraphs": [
@@ -38,57 +30,6 @@
         "Localizada em um espaço pensado para o seu conforto, a clínica oferece um ambiente tranquilo onde você pode relaxar enquanto cuida da sua saúde e beleza."
       ]
     },
-    "about": {
-      "missionTitle": "Nossa Missão",
-      "paragraphs": [
-        "Em nossa clínica, acreditamos que cada pessoa merece se sentir bonita e confiante. Nossa missão é proporcionar tratamentos de estética e bem-estar de alta qualidade, utilizando técnicas modernas e produtos cuidadosamente selecionados.",
-        "Com anos de experiência no mercado, nossa equipe está comprometida em oferecer um atendimento personalizado e acolhedor, sempre respeitando as necessidades individuais de cada cliente."
-      ],
-      "values": [
-        {
-          "title": "Excelência",
-          "description": "Compromisso com a qualidade em cada atendimento",
-          "icon": "award"
-        },
-        {
-          "title": "Profissionais",
-          "description": "Equipe qualificada e experiente",
-          "icon": "users"
-        },
-        {
-          "title": "Cuidado",
-          "description": "Atendimento personalizado e acolhedor",
-          "icon": "heart"
-        },
-        {
-          "title": "Resultados",
-          "description": "Satisfação garantida dos nossos clientes",
-          "icon": "star"
-        }
-      ]
-    },
-    "treatments": [
-      {
-        "title": "Limpeza de Pele",
-        "description": "Tratamento profundo para renovação e limpeza da pele",
-        "icon": "sparkles"
-      },
-      {
-        "title": "Hidratação Facial",
-        "description": "Hidratação profunda para pele radiante e saudável",
-        "icon": "droplet"
-      },
-      {
-        "title": "Peeling",
-        "description": "Renovação celular para uma pele mais jovem",
-        "icon": "zap"
-      },
-      {
-        "title": "Tratamentos Corporais",
-        "description": "Cuidados especiais para todo o corpo",
-        "icon": "activity"
-      }
-    ],
     "hero": "Reserve experiências inesquecíveis de beleza e bem-estar com profissionais especializados",
     "authTagline": "Reserve experiências inesquecíveis de beleza e bem-estar",
     "features": [
@@ -121,8 +62,6 @@
     "catalogTitle": "Tratamentos disponíveis",
     "contactTitle": "Pronta para começar?",
     "contactIntro": "Agende uma avaliação gratuita e descubra o tratamento ideal para você. Estamos aqui para te atender.",
-    "contactPageTitle": "Agende seu Horário",
-    "contactPageIntro": "Entre em contato conosco pelo WhatsApp e agende seu atendimento de forma rápida e fácil",
     "footer": "Todos os direitos reservados.",
     "owner": {
       "name": "Dayane Di Giovanni",
@@ -136,9 +75,10 @@
     "address": ["R. Viana do Castelo, 168", "Vila California, São Paulo - SP", "CEP 03213-070"],
     "phone": "(11) 95368-9541",
     "email": "contato@dayanedigiovanni.com.br",
-    "hours": ["Segunda a Sexta: 9h às 19h", "Sábado: 9h às 14h", "Domingo: Fechado"],
+    "hours": ["Segunda a Sexta: 09:00–19:00", "Sábado: 08:00–14:00", "Domingo: Fechado"],
     "whatsapp": "5511953689541",
-    "instagram": "dayanedigiovanni"
+    "instagram": "esteticadayanedigiovanni",
+    "googleReviewUrl": "https://maps.app.goo.gl/LyJvUBCaivcPWV2z5"
   },
   "catalog": {
     "categories": [
