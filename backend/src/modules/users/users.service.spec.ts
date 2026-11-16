@@ -16,7 +16,9 @@ function setup() {
         create: jest.fn(),
         getById: jest.fn(),
         update: jest.fn(),
+        updateContact: jest.fn(),
         delete: jest.fn(),
+        countUpcomingSchedules: jest.fn().mockResolvedValue(0),
         list: jest.fn(),
     };
     const clientsRepository = { create: jest.fn() };
@@ -70,6 +72,35 @@ describe('UsersService', () => {
         });
         expect(transaction.commit).toHaveBeenCalled();
         expect(transaction.rollback).not.toHaveBeenCalled();
+    });
+
+    it('cria cliente verificado com contatos confirmados', async () => {
+        const { service, transaction, usersRepository, clientsRepository } =
+            setup();
+        usersRepository.findByPhoneNumber.mockResolvedValue(null);
+        usersRepository.findByEmail.mockResolvedValue(null);
+        usersRepository.create.mockResolvedValue({ id: 1 });
+        clientsRepository.create.mockResolvedValue({ id: 2 });
+
+        await expect(
+            service.createVerifiedClient({
+                name: 'Ana Souza',
+                phone_number: '11999999999',
+                email: 'ana@example.com',
+            }),
+        ).resolves.toEqual({ id: 2 });
+        expect(usersRepository.create).toHaveBeenCalledWith(
+            {
+                name: 'Ana Souza',
+                phone_number: '11999999999',
+                email: 'ana@example.com',
+                phone_number_confirmed: true,
+                email_confirmed: true,
+                is_admin: false,
+            },
+            transaction,
+        );
+        expect(transaction.commit).toHaveBeenCalled();
     });
 
     it('rejeita cliente duplicado e desfaz transação', async () => {
@@ -126,8 +157,36 @@ describe('UsersService', () => {
         const { service, usersRepository, redis } = setup();
         usersRepository.delete.mockResolvedValue(true);
         await service.deleteUser(1);
+        expect(usersRepository.countUpcomingSchedules).toHaveBeenCalledWith(
+            1,
+            expect.any(String),
+        );
         expect(usersRepository.delete).toHaveBeenCalledWith(1);
         expect(redis.del).toHaveBeenCalledWith('site-a:user:1');
+    });
+
+    it('impede admin de excluir a própria conta', async () => {
+        const { service, usersRepository } = setup();
+        await expect(
+            service.deleteUser(1, {
+                id: 1,
+                professional: { id: 8, is_admin: true },
+            } as never),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(usersRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('impede exclusão de conta com agendamentos futuros', async () => {
+        const { service, usersRepository, redis } = setup();
+        usersRepository.countUpcomingSchedules.mockResolvedValue(1);
+        await expect(
+            service.deleteUser(42, {
+                id: 51,
+                professional: { id: 8, is_admin: true },
+            } as never),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(usersRepository.delete).not.toHaveBeenCalled();
+        expect(redis.del).not.toHaveBeenCalled();
     });
 
     it('solicita troca de contato com código e valida duplicidade', async () => {
@@ -139,7 +198,7 @@ describe('UsersService', () => {
                 field: 'phone',
                 value: '11988888888',
             } as never),
-        ).resolves.toMatchObject({ expires_in: 300 });
+        ).resolves.toMatchObject({ expires_in: 300, resend_after: 90 });
         expect(redis.setex).toHaveBeenCalledWith(
             'site-a:contact_change:1:phone',
             300,
@@ -163,13 +222,60 @@ describe('UsersService', () => {
         ).rejects.toBeInstanceOf(NotFoundException);
     });
 
+    it('rejeita contato igual ao atual', async () => {
+        const { service, usersRepository } = setup();
+        usersRepository.getById.mockResolvedValue({
+            id: 1,
+            phone_number: '11999999999',
+            email: 'a@b.com',
+        });
+
+        await expect(
+            service.requestContactChange(1, {
+                field: 'phone',
+                value: '11999999999',
+            } as never),
+        ).rejects.toThrow(
+            'Este é o telefone atual da conta. Informe um número diferente.',
+        );
+
+        await expect(
+            service.requestContactChange(1, {
+                field: 'email',
+                value: 'a@b.com',
+            } as never),
+        ).rejects.toThrow(
+            'Este é o e-mail atual da conta. Informe um e-mail diferente.',
+        );
+    });
+
+    it('solicita confirmação do e-mail atual', async () => {
+        const { service, usersRepository, redis } = setup();
+        usersRepository.getById.mockResolvedValue({
+            id: 1,
+            email: 'a@b.com',
+        });
+
+        await expect(
+            service.requestEmailConfirmation(1),
+        ).resolves.toMatchObject({
+            expires_in: 300,
+            resend_after: 90,
+        });
+        expect(redis.setex).toHaveBeenCalledWith(
+            'site-a:contact_change:1:email',
+            300,
+            expect.stringContaining('"value":"a@b.com"'),
+        );
+    });
+
     it('confirma troca de contato apenas com código correto', async () => {
         const { service, usersRepository, redis } = setup();
         redis.get.mockResolvedValue(
             JSON.stringify({ value: '11988888888', code: '123456' }),
         );
         usersRepository.findByPhoneNumber.mockResolvedValue(null);
-        usersRepository.update.mockResolvedValue(true);
+        usersRepository.updateContact.mockResolvedValue(true);
 
         await expect(
             service.verifyContactChange(1, {
@@ -210,9 +316,13 @@ describe('UsersService', () => {
         );
 
         usersRepository.findByEmail.mockResolvedValue(null);
-        usersRepository.update.mockResolvedValue(true);
+        usersRepository.updateContact.mockResolvedValue(true);
         await service.changeEmail(1, 'x@y.com');
         expect(redis.del).toHaveBeenCalledWith('site-a:user:1');
+        expect(usersRepository.updateContact).toHaveBeenCalledWith(1, {
+            email: 'x@y.com',
+            email_confirmed: true,
+        });
 
         usersRepository.findByPhoneNumber.mockResolvedValue({ id: 2 });
         usersRepository.isUserPhoneNumber.mockResolvedValue(false);
@@ -222,8 +332,24 @@ describe('UsersService', () => {
 
         usersRepository.findByPhoneNumber.mockResolvedValue(null);
         await service.changePhoneNumber(1, '11977777777');
-        expect(usersRepository.update).toHaveBeenCalledWith(1, {
+        expect(usersRepository.updateContact).toHaveBeenCalledWith(1, {
             phone_number: '11977777777',
+            phone_number_confirmed: true,
+        });
+    });
+
+    it('marca telefone e e-mail como confirmados', async () => {
+        const { service, usersRepository } = setup();
+        usersRepository.updateContact.mockResolvedValue({ id: 1 });
+
+        await service.markPhoneConfirmed(1);
+        expect(usersRepository.updateContact).toHaveBeenCalledWith(1, {
+            phone_number_confirmed: true,
+        });
+
+        await service.markEmailConfirmed(1);
+        expect(usersRepository.updateContact).toHaveBeenCalledWith(1, {
+            email_confirmed: true,
         });
     });
 
