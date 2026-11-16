@@ -47,8 +47,10 @@ Rode uma vez por banco, na ordem:
 NODE_ENV=prod npm run migrate:schedule-exception-name
 NODE_ENV=prod npm run migrate:google-event-link
 NODE_ENV=prod npm run migrate:categories
+NODE_ENV=prod npm run migrate:procedure-professionals
 NODE_ENV=prod npm run migrate:procedure-status
 NODE_ENV=prod npm run migrate:brand-gallery
+NODE_ENV=prod npm run migrate:confirmed-contacts
 NODE_ENV=prod npm run seed:admin
 ```
 
@@ -57,11 +59,13 @@ Use o session pooler (`DB_PORT=5432`) para migrações e seed. Depois, mantenha 
 ## Endpoints principais
 
 - `POST /auth/request-code`, `POST /auth/verify-code`
-- `POST /auth/recovery/request-code`, `POST /auth/recovery/verify-code`
+- `POST /auth/recovery/request-email-code`, `POST /auth/recovery/verify-email-code`
+- `POST /auth/recovery/request-phone-code`, `POST /auth/recovery/verify-phone-code`
 - `POST /auth/logout` (revoga a sessão atual)
 - `GET /users`, `GET /users/:id`, `POST /users/client`, `POST /users/professional`
 - `GET /users/by-phone` (admin)
 - `POST /users/:id/contact/request`, `POST /users/:id/contact/verify`
+- `POST /users/:id/contact/confirm-email/request`
 - `GET /schedules`, `POST /schedules`, `PATCH /schedules/:id`, `DELETE /schedules/:id`
 - `GET /schedules/my-clients`, `GET /schedules/my-clients/:clientId/history`
 - `GET /work-schedules`, `GET /work-schedules/all`, `POST /work-schedules`
