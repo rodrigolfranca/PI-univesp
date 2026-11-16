@@ -8,9 +8,14 @@ export const client: ApiUser = {
   name: "Maria Silva",
   phone_number: "11912345678",
   email: "maria@example.com",
+  phone_number_confirmed: true,
+  email_confirmed: true,
+  client: { id: 7 },
+};
+export const unconfirmedClient: ApiUser = {
+  ...client,
   phone_number_confirmed: false,
   email_confirmed: false,
-  client: { id: 7 },
 };
 export const professional: ApiUser = {
   ...client,

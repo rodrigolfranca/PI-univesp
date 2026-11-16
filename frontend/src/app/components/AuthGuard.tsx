@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import type { UserRole } from "../context/AuthContext";
+import { ContactVerificationGate } from "./ContactVerificationGate";
 import { RequestState } from "./RequestState";
 
 export function AuthGuard({ role }: { role: UserRole }) {
@@ -10,5 +11,9 @@ export function AuthGuard({ role }: { role: UserRole }) {
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== role)
     return <Navigate to={user.role === "employee" ? "/app" : "/cliente/perfil"} replace />;
-  return <Outlet />;
+  return (
+    <ContactVerificationGate>
+      <Outlet />
+    </ContactVerificationGate>
+  );
 }
