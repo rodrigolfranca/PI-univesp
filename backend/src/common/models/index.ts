@@ -7,6 +7,7 @@ export { User } from './users.model';
 
 export { Pop } from './pops.model';
 export { Procedure } from './procedures.model';
+export { ProcedureProfessional } from './procedure-professionals.model';
 export { Session } from './sessions.model';
 
 export { DocumentTemplates } from './documents.model';

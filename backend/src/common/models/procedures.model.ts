@@ -1,5 +1,6 @@
 import {
     BelongsTo,
+    BelongsToMany,
     Column,
     DataType,
     Model,
@@ -7,6 +8,8 @@ import {
 } from 'sequelize-typescript';
 import { ProcedureStatus } from '../consts/procedure.status';
 import { Category } from './categories.model';
+import { ProcedureProfessional } from './procedure-professionals.model';
+import { Professional } from './professionals.model';
 
 @Table({
     tableName: 'procedures',
@@ -88,4 +91,7 @@ export class Procedure extends Model {
 
     @BelongsTo(() => Category, 'category_id')
     declare category: Category;
+
+    @BelongsToMany(() => Professional, () => ProcedureProfessional)
+    declare professionals: Professional[];
 }
