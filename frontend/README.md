@@ -1,153 +1,188 @@
-# Aplicação de serviços com variantes por domínio
+# Frontend — React + Vite
 
-Uma aplicação React/Vite atende diferentes negócios de serviços. Cada variante tem seu próprio conteúdo, catálogo, tema e dados iniciais. O domínio seleciona a variante antes da montagem da aplicação; apenas a configuração selecionada é carregada. A lista de domínios vem dos manifestos descobertos automaticamente.
+Aplicação web do PI-univesp. Uma única base atende múltiplas marcas por configuração e domínio, com Dayane e Karina como variantes atuais.
 
-## Adicionar uma variante
+- Arquitetura geral: [../docs/architecture/overview.md](../docs/architecture/overview.md)
+- Multi-site: [../docs/architecture/multi-site.md](../docs/architecture/multi-site.md)
+- Variantes: [../docs/reference/variants.md](../docs/reference/variants.md)
+- Known issues: [../docs/reference/known-issues.md](../docs/reference/known-issues.md)
 
-Use Node.js 22 ou superior.
+## Stack real
 
-```sh
-npm install
-npm run variant:create -- oficina
+- React + Vite + TypeScript transpilado
+- React Router
+- Tailwind CSS v4
+- Componentes próprios no estilo shadcn/ui sobre Radix UI
+- lucide-react
+- sonner
+- date-fns
+- Vitest + Testing Library
+
+> A UI em execução não usa Mantine. MUI e Emotion estão instalados, mas sem uso no código e são uma pendência de limpeza.
+
+## Rotas por perfil
+
+### Público
+
+- `/`
+- `/login`
+- `/signup`
+- `/agendar/:treatmentId`
+- `/tratamentos`, `/tratamentos/:id`, `/sobre`, `/contato` → redirecionam para âncoras da home
+
+### Cliente
+
+- `/cliente/agendamentos`
+- `/cliente/agendamentos/novo`
+- `/cliente/novo` → redirect
+- `/cliente/notificacoes` (rota existe, mas está oculta)
+- `/cliente/perfil`
+
+### Profissional e administração
+
+- `/app/appointments`
+- `/app/clients`
+- `/app/procedures`
+- `/app/availability`
+- `/app/settings`
+- `/app/employees`
+- `/app/categories`
+- `/app/notifications` (rota oculta)
+
+## Providers e contextos
+
+- `AuthProvider`: sessão, OTP, logout e perfil.
+- `GoogleCalendarProvider`: status, conexão e sincronização.
+- `BrandProvider`: identidade visual e contato.
+- `GalleryProvider`: galeria pública e administração.
+- `CategoriesProvider`: categorias.
+- `ProceduresProvider`: procedimentos.
+- `UsersProvider`: usuários e clientes.
+- `AppointmentsProvider`: agendamentos e disponibilidade.
+
+O `App` monta também o host do modal de OTP e o Toaster.
+
+## Autenticação e OTP
+
+- Login por telefone + código.
+- Cadastro em duas etapas: e-mail e telefone.
+- Recuperação: e-mail atual e novo telefone.
+- Alteração de contato com código.
+- Gate de confirmação de e-mail.
+
+No modo demonstração atual:
+
+- o backend retorna `demo_code`;
+- o frontend abre um modal;
+- o código pode ser copiado;
+- há atalhos para Admin, Profissional e Cliente.
+
+O modo demo não possui flag no frontend. A segurança depende do backend deixar de retornar `demo_code`.
+
+## Variantes e multi-site
+
+- Variantes ficam em `src/variants/<id>/`.
+- O domínio registrado no manifesto tem prioridade.
+- `VITE_CLIENTE` seleciona a variante em localhost/preview.
+- `src/variants/settings.json` define a variante padrão.
+- `npm run variants:validate` valida manifests, domínios, configuração e assets.
+- `npm run variant:create -- <id>` cria uma nova variante.
+
+Os configs de todas as variantes são emitidos no bundle. Isso não é usado como controle de acesso.
+
+## Fluxo de agendamento
+
+### Cliente
+
+1. Resume procedimentos com disponibilidade.
+2. Carrega datas disponíveis em janela de 60 dias.
+3. Carrega horários por profissional.
+4. Permite selecionar data e horário.
+5. Confirma a criação do agendamento.
+
+### Administração
+
+- Cria agendamentos com cliente, procedimento, profissional, data e horário.
+- Visualiza agenda por dia, semana, mês e lista.
+- A agenda usa disponibilidade e exceções cadastradas.
+
+## Serviços
+
+- `api.ts`: base central para JSON, blobs, FormData e erros.
+- `auth.ts`: login, cadastro, recuperação e logout.
+- `otp.ts` + `otp-code.ts`: políticas e modal OTP.
+- `users.ts`: usuários, validação, contatos e paginação.
+- `procedures.ts`, `categories.ts`, `pops.ts`: catálogo e documentos.
+- `schedules.ts`: agendamentos, disponibilidade, work schedules e exceções.
+- `site.ts`: marca e galeria.
+- `google-calendar.ts`: integração Google.
+- `contact-change.ts`: confirmação de contato.
+
+## Setup local
+
+```bash
+cd frontend
+cp .env.example .env.local
+npm ci
+npm run dev
 ```
 
-O comando cria `src/variants/oficina/manifest.json`, `src/variants/oficina/config.json` e `public/variants/oficina/`. Não sobrescreve pastas existentes. Edite o domínio de exemplo e o nome do negócio:
+- Frontend: `http://localhost:5173`
+- API local padrão: `http://localhost:3000`
+- O proxy do Vite encaminha `/api/*`.
+- `VITE_CLIENTE` é opcional em localhost.
+- `VITE_API_BASE_URL` é obrigatória em produção.
 
-```json
-{
-  "id": "oficina",
-  "domains": ["oficina.vercel.app", "agenda.exemplo.com.br"]
-}
-```
+## Variáveis
 
-O ID deve corresponder ao nome da pasta e conter letras minúsculas, números e hífens. Mantenha o ID estável ao trocar nome ou domínio, pois ele identifica o armazenamento em desenvolvimento e previews.
+- `VITE_API_BASE_URL`
+- `VITE_API_PROXY_TARGET`
+- `VITE_CLIENTE`
 
-A configuração mínima precisa apenas do nome. Os demais campos recebem padrões neutros de `src/app/config/defaults.json`. Nenhum contato, imagem ou dado comercial de outra variante é herdado.
+Nenhuma variável `VITE_*` é secreta. Tudo é público no bundle.
 
-```json
-{
-  "identity": {
-    "name": "Oficina Exemplo",
-    "tagline": "Manutenção e reparos",
-    "description": "Agende a manutenção dos seus equipamentos.",
-    "logo": {
-      "public": "/variants/oficina/logo.svg",
-      "dashboard": "/variants/oficina/logo.svg",
-      "presentation": "plain"
-    }
-  },
-  "theme": { "preset": "azul" },
-  "terms": { "procedure": "reparo", "procedures": "reparos", "establishment": "oficina" },
-  "contact": { "whatsapp": "5511999999999", "instagram": "oficina_exemplo" },
-  "catalog": {
-    "icon": "wrench",
-    "categories": [{ "id": 1, "name": "Manutenção" }],
-    "procedures": [
-      {
-        "id": 1,
-        "name": "Revisão de equipamento",
-        "category": "Manutenção",
-        "duration": "60 min",
-        "price": "A consultar",
-        "status": "Ativo",
-        "description": "Inspeção e manutenção preventiva."
-      }
-    ]
-  },
-  "agenda": { "timeSlots": ["08:30", "13:30"], "blockedSlots": [] }
-}
-```
+## Scripts
 
-Copie o logotipo para `public/variants/oficina/logo.svg`. As referências devem começar com `/variants/oficina/`; a validação verifica se os arquivos existem. Arrays substituem a lista inteira: `[]` significa lista vazia. Objetos podem conter apenas os campos que você deseja alterar. Campos desconhecidos são rejeitados para identificar erros de digitação.
-
-```sh
-npm run variants:validate
-VITE_CLIENTE=oficina npm run dev
-npm run build
-```
-
-Adicionar uma pasta válida basta para o registro automático. Nenhum componente, tipo de ID ou seletor precisa ser editado. Alterações de configuração e assets são validadas no desenvolvimento e no build. Após uma configuração inválida no desenvolvimento, corrija o arquivo para recuperar o carregamento; se a inicialização falhar, reinicie o servidor após a correção.
-
-## Campos disponíveis
-
-- `identity`: nome, descrição, subtítulo e logotipos. `presentation` aceita `plain` ou `framed`; sem imagem, o site mostra as iniciais.
-- `theme`: `preset` (`wine`, `rosa`, `roxo`, `azul`, `dourado` ou `cinza`) e, opcionalmente, `palette` com todas as tonalidades `50`, `100`, `200`, `300`, `400`, `500`, `600`, `700`, `800`, `900`, em `#RRGGBB`. A paleta personalizada prevalece sobre o preset.
-- `terms`: `service`, `services`, `procedure`, `procedures`, `establishment`, `professional`, `professionals`. Altera a terminologia funcional exibida, mantendo as rotas existentes. Os textos comerciais definidos em `content` são exibidos como escritos; ajuste suas frases e concordância diretamente.
-- `content`: apresentação (`hero`, `authTagline`), benefícios (`features`), apresentação da home (`homeAbout`), experiência (`experience`), chamadas do catálogo e contato, rodapé (`footer`) e informações do responsável (`owner`). Parágrafos e cards são listas. Blocos opcionais vazios não são renderizados.
-- `contact`: endereço e horários como listas de linhas, telefone, e-mail, WhatsApp como número com DDI ou link `https://wa.me/...`, Instagram sem `@` e `googleReviewUrl` para o botão de avaliação no Google. Contatos ausentes não geram links vazios.
-- `catalog`: categorias, procedimentos editáveis, galeria e ícone dos serviços.
-- `agenda`: horários padrão de apresentação da variante. A disponibilidade usada no agendamento vem da API de horários de trabalho.
-- `data`: dados demonstrativos usados apenas nas áreas ainda locais, como notificações, complementos de perfil, documentos/histórico do cliente e configuração visual. Clientes, procedimentos e agendamentos reais vêm da API.
-
-Os contratos completos ficam em `src/app/config/types.ts`; `defaults.json` oferece uma referência dos grupos e valores padrão. As configurações existentes exemplificam listas preenchidas. Ícones aceitos: `briefcase`, `calendar`, `sparkles`, `heart`, `star`, `award`, `users`, `droplet`, `zap`, `activity`, `clock`, `wrench`, `scissors`, `phone`.
-
-## Seleção, dados salvos e publicação
-
-Domínios registrados sempre prevalecem sobre `VITE_CLIENTE`. Localhost e previews usam essa variável; sem ela, usam o ID em `src/variants/settings.json` (`defaultVariant`). Reinicie o servidor ao alterar a variável. Uma seleção explícita inexistente gera erro de configuração. Os domínios publicados devem estar cadastrados nos manifestos.
-
-Nos domínios registrados, as chaves de armazenamento existentes são preservadas. Nos demais ambientes, recebem o prefixo `<id>:` para permitir alternar variantes na mesma origem. Edições salvas no navegador prevalecem sobre os dados iniciais, inclusive listas vazias. O formato antigo dos parágrafos e temas é adaptado ao carregar; novos salvamentos usam arrays e a configuração de tema atual. Cadastro, autenticação, usuários, procedimentos, categorias, agenda, disponibilidade, POPs, Google Agenda, marca e galeria usam o backend. Notificações continuam locais; o histórico do cliente usa a API.
-
-Procedimentos abrem em modal na home, com detalhes, POPs e botão de agendamento. Cada procedimento possui profissionais habilitados; a disponibilidade e o agendamento respeitam esse vínculo. As URLs antigas `/tratamentos` e `/tratamentos/:id` redirecionam para `/#tratamentos`. Na Vercel, use `frontend` como diretório raiz, `npm run build` e saída `dist`. Associe os domínios ao mesmo projeto e gere uma implantação após cadastrar variantes. `vercel.json` mantém o acesso direto e a recarga das rotas internas. Para previews, defina `VITE_CLIENTE` antes do build. A associação de domínios é feita na plataforma; nenhum domínio é criado pelo comando de cadastro.
-
-O frontend e o backend são projetos Vercel separados. Em produção, defina `VITE_API_BASE_URL` com a URL pública do backend, sem `/api` no final, e defina `CORS_ORIGINS` no backend com a origem do frontend. O proxy do Vite existe apenas em desenvolvimento; não use `VITE_API_BASE_URL=/api` em produção.
-
-As configurações Dayane e Karina mantêm o conteúdo anterior. O contato, alguns textos e dados de demonstração herdados da Dayane continuam explicitamente na configuração da Karina, conforme solicitado. A pasta original `Karina Alexitsch` permanece como referência.
-
-## Convenções de código
-
-Use `npm run format` para formatar o frontend e `npm run format:check` para conferir o padrão sem alterar arquivos. O Prettier usa dois espaços, aspas duplas, ponto e vírgula, vírgulas finais e largura preferencial de 100 caracteres. Dependências, builds, assets e arquivos gerados ficam fora da formatação.
-
-Separe blocos de responsabilidade com linhas em branco, prefira nomes claros e mantenha comentários para explicar decisões e limitações. Defina handlers nomeados fora dos atributos JSX. Evite ternários aninhados; use condições explícitas ou funções para decisões com vários casos. Nas alternativas de renderização, prefira componentes simples (`condicao ? <ComponenteA /> : <ComponenteB />`) e extraia blocos maiores para componentes próprios. Rótulos que apenas repetem o JSX não são necessários. Preserve os contratos das variantes e as interfaces dos componentes ao fazer limpezas de legibilidade.
-
-## Integração de clientes e profissionais
-
-Use Node.js 22 ou superior. Instale as dependências com `npm install` e copie `.env.example` para `.env.local` se precisar alterar o destino da API:
-
-```env
-VITE_API_BASE_URL=/api
-VITE_API_PROXY_TARGET=http://localhost:3000
-```
-
-Execute `npm run dev` com o backend e suas dependências já disponíveis. O proxy do Vite encaminha `/api/*` ao destino configurado, removendo `/api`; não é necessário modificar o backend nem habilitar CORS para desenvolvimento. Reinicie o Vite após alterar as variáveis. Nenhuma variável `VITE_*` deve conter segredos: seus valores são públicos no navegador.
-
-### Modo demonstração
-
-A tela de login oferece atalhos para admin, profissional e cliente. O código OTP é exibido em modal copiável. Consulte [docs/DEMO.md](../docs/DEMO.md). Esse modo expõe códigos e não deve ser usado com dados reais.
-
-### Fluxo e permissões
-
-- Cadastro público: cria uma conta de cliente com nome, telefone de 11 dígitos e e-mail. Não confirma o telefone nem inicia uma sessão automaticamente. Após cadastrar, entre com o telefone e o código.
-- Login: solicita um código e valida seus seis dígitos pela API. O envio por WhatsApp ainda está pendente no backend; em desenvolvimento, obtenha o código no log do servidor. O código vale cinco minutos. Telefones desconhecidos recebem a mesma mensagem de solicitação, sem criar conta ou sessão.
-- Sessão: token em `sessionStorage`, isolado por variante e destino da API. A recarga consulta o perfil no servidor. O logout chama `POST /auth/logout` para revogar a sessão no Redis e limpa o navegador; a expiração também limpa a sessão local. A sessão demonstrativa antiga é descartada. Não há refresh token.
-- Clientes podem consultar e editar o próprio perfil em `/cliente/perfil` e criar os próprios agendamentos escolhendo procedimento, data, horário disponível e profissional.
-- Profissionais editam o próprio perfil nas configurações e veem apenas os clientes com quem têm agendamento, com histórico filtrado. Não listam usuários, não consultam por telefone e não acessam terceiros por ID.
-- Administradores podem listar, cadastrar, editar e excluir clientes e profissionais. Também gerenciam procedimentos, categorias, POPs, disponibilidade, exceções de agenda, equipe, marca, galeria e Google Agenda. As listas percorrem todas as páginas da API antes da busca local. Uma conta administrativa já existente é necessária; o frontend não cria administradores nem altera privilégios.
-- As rotas de detalhes usam o ID de **usuário**, não o ID do vínculo de cliente/profissional. Excluir remove a conta de usuário e afeta ambos os vínculos quando existentes.
-
-A arquitetura de produção usa um frontend e um backend por marca, com bancos Supabase separados. Configure `VITE_API_BASE_URL` por projeto; não aponte duas marcas para o mesmo banco. O isolamento é feito na infraestrutura, não no navegador. Consulte `docs/MULTISITE.md`.
-
-### Recursos demonstrativos e pendências
-
-Os comentários `TODO(integracao)` marcam os limites da integração:
-
-- Documentos do cliente continuam locais, separados por variante, API e ID real do usuário. Status, última visita e cargo demonstrativos não são mais exibidos. Nenhum desses campos é enviado à API de usuários.
-- POPs de procedimento são reais: upload, listagem, download e exclusão usam a API. Listagem e download de POPs são públicos; escrita continua admin. O histórico do cliente é real e ordenado do mais recente para o mais antigo.
-- Agenda, procedimentos, categorias, disponibilidade, POPs, marca e galeria usam a API. Notificações continuam mock, mas com filtros e marcação local de leitura.
-- Recuperação e alteração de telefone/e-mail exigem código enviado ao novo contato; como o envio ainda não existe, o código aparece no log do backend. O PATCH direto de contato é bloqueado. Trocar senha não existe: a rota redireciona para Configurações porque o acesso é por código.
-- Falhas da API aparecem na tela e nunca ativam um fallback para dados fictícios. Erros de permissão não encerram automaticamente a sessão, pois os guards do backend também usam HTTP 401 para autorização.
-
-Em produção, a API é acessada diretamente pela URL configurada em `VITE_API_BASE_URL`; o backend precisa liberar a origem do frontend em `CORS_ORIGINS`. O rewrite de `vercel.json` atende apenas as rotas internas do SPA.
-
-### Validação
-
-```sh
+```bash
+npm run dev
 npm test
 npm run test:coverage
-npm run variants:validate
 npm run build
+npm run variants:validate
+npm run variant:create -- <id>
+npm run format
 npm run format:check
 ```
 
-Os testes usam Vitest, jsdom e Testing Library. As respostas HTTP são simuladas conforme os contratos do backend; isso não substitui a validação com PostgreSQL, Redis e uma conta administrativa reais. Rode `npm run test:coverage` para conferir a cobertura de serviços, utilitários de agenda, contextos principais, home, Settings, agenda e páginas do cliente.
+## Testes
 
-Para validar manualmente com o backend disponível: cadastrar um cliente, fazer login com o código do log, recarregar a página, editar o próprio perfil e sair. Com administrador, cadastrar cliente/profissional, consultar a URL de detalhes, editar e excluir uma conta de teste. Com profissional comum, verificar acesso restrito às listas, clientes atendidos/histórico e edição apenas do próprio perfil. Conferir erros de duplicidade e código inválido/expirado, além da preservação de `treatmentId` entre cadastro e login.
+- Vitest + jsdom + Testing Library.
+- Estado atual: 146 testes.
+- Cobertura cobre parte dos serviços, contextos, utilidades, home, configurações e páginas principais.
+- A cobertura não cobre atualmente todo o `src`.
+- Não há typecheck, lint ou CI configurados.
+
+## Limitações conhecidas do frontend
+
+- Não possui `tsconfig.json`, typecheck nem lint.
+- O bundle é único e grande; não há code splitting por rota.
+- 42 dependências não estão no runtime real; MUI, Emotion e vários wrappers não são usados.
+- 40 módulos de UI shadcn/Radix estão inalcançáveis.
+- READMEs/documentos antigos citavam Mantine/MUI incorretamente.
+- Admin sem vínculo profissional não acessa disponibilidade.
+- Controles de marca e galeria aparecem para não-admin; o backend rejeita escritas.
+- `/app/categories` e `/app/employees/:id` não têm gate visual de admin.
+- Galeria vazia reidrata imagens padrão.
+- `/cliente` não tem index route.
+- Usuário autenticado não é redirecionado ao abrir `/login`.
+- “Agendar agora” envia usuário autenticado para `/login`.
+- Rotas de detalhe de cliente usam semânticas diferentes para admin e profissional.
+- Tailwind v4: overlay do POP usa `bg-opacity-50`, removido na versão 4.
+- Notificações estão ocultas por feature flag.
+- Todos os configs de variantes são emitidos no bundle.
+- O contato da Karina ainda contém dados herdados da Dayane.
+- Sem ErrorBoundary, 404 customizado ou Suspense.
+- Imagens grandes e sem otimização.
+- Acessibilidade incompleta em overlays e controles somente-ícone.
+
+Lista completa: [../docs/reference/known-issues.md](../docs/reference/known-issues.md).
