@@ -51,12 +51,28 @@ export class ScheduleRepository {
                 {
                     model: Client,
                     as: 'client',
-                    include: [{ model: User, as: 'user', required: true }],
+                    paranoid: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            required: true,
+                            paranoid: false,
+                        },
+                    ],
                 },
                 {
                     model: Professional,
                     as: 'professional',
-                    include: [{ model: User, as: 'user', required: true }],
+                    paranoid: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            required: true,
+                            paranoid: false,
+                        },
+                    ],
                 },
             ],
             limit: dto.limit,
@@ -78,14 +94,27 @@ export class ScheduleRepository {
                 {
                     model: Client,
                     as: 'client',
-                    include: [{ model: User, as: 'user', required: true }],
+                    paranoid: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            required: true,
+                            paranoid: false,
+                        },
+                    ],
                 },
             ],
         });
 
         const clients = new Map<
             number,
-            { clientId: number; userId: number; name: string; phone_number: string }
+            {
+                clientId: number;
+                userId: number;
+                name: string;
+                phone_number: string;
+            }
         >();
         for (const schedule of schedules) {
             const client = schedule.client;
@@ -113,12 +142,28 @@ export class ScheduleRepository {
                 {
                     model: Client,
                     as: 'client',
-                    include: [{ model: User, as: 'user', required: true }],
+                    paranoid: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            required: true,
+                            paranoid: false,
+                        },
+                    ],
                 },
                 {
                     model: Professional,
                     as: 'professional',
-                    include: [{ model: User, as: 'user', required: true }],
+                    paranoid: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            required: true,
+                            paranoid: false,
+                        },
+                    ],
                 },
             ],
             order: [
