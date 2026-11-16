@@ -1,4 +1,5 @@
 import { apiRequest } from "./api";
+import type { OtpPolicy } from "./otp";
 
 export type ContactField = "phone" | "email";
 
@@ -7,11 +8,18 @@ export async function requestContactChange(
   field: ContactField,
   value: string,
   token: string,
-): Promise<void> {
-  await apiRequest(`/users/${userId}/contact/request`, {
+): Promise<OtpPolicy> {
+  return apiRequest<OtpPolicy>(`/users/${userId}/contact/request`, {
     method: "POST",
     token,
     body: { field, value },
+  });
+}
+
+export async function requestEmailConfirmation(userId: number, token: string): Promise<OtpPolicy> {
+  return apiRequest<OtpPolicy>(`/users/${userId}/contact/confirm-email/request`, {
+    method: "POST",
+    token,
   });
 }
 

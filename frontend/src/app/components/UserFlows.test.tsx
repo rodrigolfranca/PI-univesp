@@ -86,7 +86,7 @@ async function fillUser(name = "Ana Souza", phone = "11987654321", email = "ana@
     ["E-mail", email],
   ]) {
     const field = screen.getByLabelText(label) as HTMLInputElement;
-    if (field.readOnly) continue;
+    if (field.readOnly || field.disabled) continue;
     await input.clear(field);
     await input.type(field, value);
   }
@@ -119,17 +119,34 @@ describe("fluxos de entrada", () => {
   });
 
   it("cadastro real encaminha ao login sem criar sessão e mantém treatmentId", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ user: client, client: { id: 7 } }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({ signup_id: "signup-1", expires_in: 300, resend_after: 90 }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ signup_id: "signup-1", expires_in: 300, resend_after: 90 }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ message: "Cadastro confirmado" }));
     vi.stubGlobal("fetch", fetchMock);
     renderFlow("/signup?treatmentId=15");
     const input = await fillUser();
     await input.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await input.type(await screen.findByLabelText("Código do e-mail"), "111111");
+    await input.click(screen.getByRole("button", { name: "Confirmar código" }));
+    await input.type(await screen.findByLabelText("Código do telefone"), "222222");
+    await input.click(screen.getByRole("button", { name: "Confirmar cadastro" }));
     await waitFor(() =>
       expect(screen.getByTestId("location").textContent).toBe("/login?treatmentId=15"),
     );
+    expect((screen.getByLabelText("Telefone") as HTMLInputElement).value).toBe("11987654321");
     expect(screen.getByTestId("account").textContent).toBe("anonymous");
     expect(sessionStorage.length).toBe(0);
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/users/client");
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "/api/auth/signup/request-code",
+      "/api/auth/signup/verify-email-code",
+      "/api/auth/signup/verify-phone-code",
+    ]);
   });
 
   it.each(["Email já cadastrado", "Número de telefone já cadastrado"])(

@@ -1,5 +1,15 @@
 import { ApiError, apiRequest } from "./api";
-import { normalizePhone } from "./users";
+import type { OtpPolicy } from "./otp";
+import { normalizePhone, userPayload } from "./users";
+import type { UserFields } from "./users";
+
+export interface SignupPolicy extends OtpPolicy {
+  signup_id: string;
+}
+
+export interface RecoveryPolicy extends OtpPolicy {
+  recovery_id: string;
+}
 
 export function readAccessToken(token: string): { id: number; exp: number } {
   try {
@@ -23,8 +33,8 @@ export async function logoutSession(token: string): Promise<void> {
   await apiRequest("/auth/logout", { method: "POST", token });
 }
 
-export async function requestLoginCode(phone: string): Promise<void> {
-  await apiRequest("/auth/request-code", {
+export async function requestLoginCode(phone: string): Promise<OtpPolicy> {
+  return apiRequest<OtpPolicy>("/auth/request-code", {
     method: "POST",
     body: { phone_number: normalizePhone(phone) },
   });
@@ -38,24 +48,82 @@ export async function verifyLoginCode(phone: string, code: string): Promise<stri
   return result.access_token;
 }
 
-export async function requestRecoveryCode(email: string, phone: string): Promise<void> {
-  await apiRequest("/auth/recovery/request-code", {
+export async function requestSignupCode(fields: UserFields): Promise<SignupPolicy> {
+  return apiRequest<SignupPolicy>("/auth/signup/request-code", {
     method: "POST",
-    body: { email, phone_number: normalizePhone(phone) },
+    body: userPayload(fields),
   });
 }
 
-export async function verifyRecoveryCode(
-  email: string,
-  phone: string,
-  code: string,
+export async function resendSignupCode(signupId: string): Promise<SignupPolicy> {
+  return apiRequest<SignupPolicy>("/auth/signup/resend-code", {
+    method: "POST",
+    body: { signup_id: signupId },
+  });
+}
+
+export async function verifySignupEmailCode(
+  signupId: string,
+  emailCode: string,
+): Promise<SignupPolicy> {
+  return apiRequest<SignupPolicy>("/auth/signup/verify-email-code", {
+    method: "POST",
+    body: { signup_id: signupId, email_code: emailCode },
+  });
+}
+
+export async function resendSignupPhoneCode(signupId: string): Promise<SignupPolicy> {
+  return apiRequest<SignupPolicy>("/auth/signup/resend-phone-code", {
+    method: "POST",
+    body: { signup_id: signupId },
+  });
+}
+
+export async function verifySignupPhoneCode(signupId: string, phoneCode: string): Promise<void> {
+  await apiRequest("/auth/signup/verify-phone-code", {
+    method: "POST",
+    body: { signup_id: signupId, phone_code: phoneCode },
+  });
+}
+
+export async function requestRecoveryEmailCode(email: string): Promise<RecoveryPolicy> {
+  return apiRequest<RecoveryPolicy>("/auth/recovery/request-email-code", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export async function verifyRecoveryEmailCode(
+  recoveryId: string,
+  emailCode: string,
 ): Promise<void> {
-  await apiRequest("/auth/recovery/verify-code", {
+  await apiRequest("/auth/recovery/verify-email-code", {
+    method: "POST",
+    body: { recovery_id: recoveryId, email_code: emailCode },
+  });
+}
+
+export async function requestRecoveryPhoneCode(
+  recoveryId: string,
+  phone: string,
+): Promise<OtpPolicy> {
+  return apiRequest<OtpPolicy>("/auth/recovery/request-phone-code", {
+    method: "POST",
+    body: { recovery_id: recoveryId, phone_number: normalizePhone(phone) },
+  });
+}
+
+export async function verifyRecoveryPhoneCode(
+  recoveryId: string,
+  phone: string,
+  phoneCode: string,
+): Promise<void> {
+  await apiRequest("/auth/recovery/verify-phone-code", {
     method: "POST",
     body: {
-      email,
+      recovery_id: recoveryId,
       phone_number: normalizePhone(phone),
-      verification_code: code,
+      phone_code: phoneCode,
     },
   });
 }
